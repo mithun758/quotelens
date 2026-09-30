@@ -19,4 +19,10 @@ export type ManifestResponse = {
   documents: ManifestDocument[];
 };
 
-export const SUPPLIER_RESPONSES = manifestJson as ManifestResponse[];
+type Manifest = { responses: ManifestResponse[]; clarification_replies: ManifestResponse[] };
+const manifest = manifestJson as Manifest;
+
+// Loaded as Response and Document rows at seed time.
+export const SUPPLIER_RESPONSES = manifest.responses;
+// Uploaded at seed time; rows are created only when the clarification reply arrives.
+export const CLARIFICATION_REPLIES = manifest.clarification_replies;

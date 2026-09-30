@@ -1,0 +1,27 @@
+From: Daniel Tan <daniel.tan@lionbridgetech.example>
+To: Priya <priya@meridiandiagnostics.example>
+Date: Wed, 30 Sep 2026 11:05 +0800
+Subject: RE: Clarification - India warranty and lines 17, 18, 23 - RFx IT Refresh 2026
+Attachments: Lionbridge_ISO_9001_Certificate.pdf, Lionbridge_OEM_Authorisation_HP.pdf
+
+Hi Priya,
+
+Confirming India warranty: every item we have quoted, including the laptops, carries a 3-year onsite warranty in India, serviced in Bengaluru, Chennai and Hyderabad through our Chennai branch and HP's authorised service network.
+
+We are not able to quote the UPS units (lines 17 and 18) or the branch firewall (line 23).
+
+To complete your questionnaire:
+- ISO 9001: certificate attached.
+- OEM authorisation: HP authorisation letter attached.
+- Delivery: within 18 days of PO to all three hubs.
+- GST: registered in Tamil Nadu, GSTIN 33AAGCL8104H1ZP.
+- E-waste take-back: yes, through our authorised recycler in Chennai.
+- Escalation contact: Mei Ling Goh, Country Manager India, +91 44 4000 0000.
+- Healthcare references: Coastal Care Hospitals, Chennai; Deccan Pathology Labs, Hyderabad.
+
+Our prices and other terms are as in my email of 14 September.
+
+Best regards,
+Daniel Tan
+Regional Sales, Lionbridge Tech Trading Pte Ltd, Singapore
+India branch: Chennai | GSTIN 33AAGCL8104H1ZP

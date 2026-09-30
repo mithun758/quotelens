@@ -10,7 +10,7 @@ import { buildSupplierA } from "./supplierA";
 import { buildSupplierBHtml } from "./supplierB";
 import { buildSupplierC } from "./supplierC";
 import { buildPhotoHtml } from "./supplierD";
-import { buildSupplierE } from "./supplierE";
+import { buildClarificationReplyE, buildSupplierE } from "./supplierE";
 
 const SEED_DIR = path.join(process.cwd(), "seed");
 const OUT = path.join(SEED_DIR, "suppliers");
@@ -128,13 +128,37 @@ async function main() {
     documents: [doc("E", eFile, 1)],
   });
 
-  writeFileSync(path.join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+  // E's seeded clarification reply: uploaded now, turned into rows only when the reply arrives.
+  const replyFile = "Lionbridge_clarification_reply_2026-09-30.txt";
+  const replyBody = buildClarificationReplyE();
+  writeFileSync(path.join(OUT, "E", replyFile), replyBody);
+  const clarificationReplies: ManifestResponse[] = [
+    {
+      supplier_code: "E",
+      received_at: "2026-09-30T08:35:00+05:30",
+      channel: "email",
+      body_text: replyBody,
+      documents: [
+        doc("E", replyFile, 1),
+        await writePdfFromHtml("E", "Lionbridge_ISO_9001_Certificate", ATTACHMENTS.E_ISO()),
+        await writePdfFromHtml("E", "Lionbridge_OEM_Authorisation_HP", ATTACHMENTS.E_OEM()),
+      ],
+    },
+  ];
+
+  writeFileSync(
+    path.join(OUT, "manifest.json"),
+    JSON.stringify({ responses: manifest, clarification_replies: clarificationReplies }, null, 2) + "\n",
+  );
   writeFileSync(path.join(SEED_DIR, "ground_truth.json"), JSON.stringify(groundTruth, null, 2) + "\n");
 
-  for (const r of manifest) {
+  for (const r of [...manifest, ...clarificationReplies.map((c) => ({ ...c, supplier_code: `${c.supplier_code} (clarification reply)` }))]) {
     console.log(`${r.supplier_code}: ${r.documents.map((d) => `${d.file_name}${d.page_count ? ` (${d.page_count}p)` : ""}`).join(", ")}`);
   }
+  const q6 = groundTruth.demo_beats.q6;
   console.log("Demo beats:", JSON.stringify({ d_l1: groundTruth.demo_beats.d_nominal_l1_lines, basket: groundTruth.demo_beats.common_basket_totals_inr }));
+  console.log("Q6 before clarification:", JSON.stringify(q6.before_clarification.summary));
+  console.log("Q6 after clarification: ", JSON.stringify(q6.after_clarification.summary));
 }
 
 main().catch((error) => {

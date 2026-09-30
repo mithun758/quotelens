@@ -164,11 +164,11 @@
         {
           "line_no": 14,
           "quoted": true,
-          "raw_value": "45,000",
+          "raw_value": "44,550",
           "raw_unit": "per piece",
           "raw_currency": "INR",
           "expected_confidence": "extracted",
-          "expected_normalised_inr": 45000,
+          "expected_normalised_inr": 44550,
           "normalisation": []
         },
         {
@@ -1433,7 +1433,8 @@
         "Prior-pricing reference (Medium)",
         "FX movement: USD/INR +1.8% since 14 Sep (Medium)",
         "Freight extra",
-        "India warranty not confirmed"
+        "India warranty not confirmed until clarification",
+        "Questionnaire unanswered until clarification"
       ],
       "quote_ref": null,
       "received_at": "2026-09-14T09:30:00+05:30",
@@ -1822,6 +1823,212 @@
       ]
     }
   },
+  "questionnaire": {
+    "A": {
+      "iso_9001": {
+        "result": "pass",
+        "evidence": "ISO certificate attached, valid until 9 May 2027"
+      },
+      "oem_authorisation": {
+        "result": "pass",
+        "evidence": "Lenovo authorisation letter attached"
+      },
+      "india_warranty_onsite": {
+        "result": "pass",
+        "evidence": "3 years OEM onsite, Bengaluru, Chennai and Hyderabad"
+      },
+      "delivery_21_days": {
+        "result": "pass",
+        "evidence": "14 days"
+      },
+      "gst_registration": {
+        "result": "pass",
+        "evidence": "GSTIN 29AAKCP4821M1ZV"
+      },
+      "ewaste_takeback": {
+        "result": "pass",
+        "evidence": "Through authorised recycler"
+      },
+      "escalation_contact": {
+        "result": "pass",
+        "evidence": "Ramesh Prakash, Director"
+      },
+      "healthcare_references": {
+        "result": "pass",
+        "evidence": "Two references given"
+      }
+    },
+    "B": {
+      "iso_9001": {
+        "result": "pass",
+        "evidence": "ISO certificate attached, valid until 19 Nov 2026"
+      },
+      "oem_authorisation": {
+        "result": "pass",
+        "evidence": "Dell authorisation letter attached"
+      },
+      "india_warranty_onsite": {
+        "result": "pass",
+        "evidence": "Warranty letter: ProSupport onsite in all three cities"
+      },
+      "delivery_21_days": {
+        "result": "pass",
+        "evidence": "10 days"
+      },
+      "gst_registration": {
+        "result": "pass",
+        "evidence": "GSTIN 29AADCV7390R1Z8"
+      },
+      "ewaste_takeback": {
+        "result": "pass",
+        "evidence": "Dell Asset Recovery"
+      },
+      "escalation_contact": {
+        "result": "pass",
+        "evidence": "Kavitha Rao, Sales Director"
+      },
+      "healthcare_references": {
+        "result": "pass",
+        "evidence": "Two references given"
+      }
+    },
+    "C": {
+      "iso_9001": {
+        "result": "fail",
+        "evidence": "Attached ISO certificate expired on 14 Mar 2026"
+      },
+      "oem_authorisation": {
+        "result": "fail",
+        "evidence": "Claims HP and Aruba partnership but attaches no authorisation letter"
+      },
+      "india_warranty_onsite": {
+        "result": "pass",
+        "evidence": "3 years onsite across all three cities"
+      },
+      "delivery_21_days": {
+        "result": "pass",
+        "evidence": "21 days"
+      },
+      "gst_registration": {
+        "result": "pass",
+        "evidence": "GSTIN 29AAFCN5563K1ZX"
+      },
+      "ewaste_takeback": {
+        "result": "pass",
+        "evidence": "Through a registered recycler"
+      },
+      "escalation_contact": {
+        "result": "pass",
+        "evidence": "Deepak Iyer, Head of Sales"
+      },
+      "healthcare_references": {
+        "result": "pass",
+        "evidence": "Two references given"
+      }
+    },
+    "D": {
+      "iso_9001": {
+        "result": "fail",
+        "evidence": "Not answered"
+      },
+      "oem_authorisation": {
+        "result": "fail",
+        "evidence": "Not answered"
+      },
+      "india_warranty_onsite": {
+        "result": "fail",
+        "evidence": "Rate card says 'As per OEM' only"
+      },
+      "delivery_21_days": {
+        "result": "fail",
+        "evidence": "Not answered"
+      },
+      "gst_registration": {
+        "result": "fail",
+        "evidence": "Not answered"
+      },
+      "ewaste_takeback": {
+        "result": "fail",
+        "evidence": "Not answered"
+      },
+      "escalation_contact": {
+        "result": "fail",
+        "evidence": "Not answered"
+      },
+      "healthcare_references": {
+        "result": "fail",
+        "evidence": "Not answered"
+      }
+    },
+    "E_before_clarification": {
+      "iso_9001": {
+        "result": "fail",
+        "evidence": "Not answered"
+      },
+      "oem_authorisation": {
+        "result": "fail",
+        "evidence": "Not answered"
+      },
+      "india_warranty_onsite": {
+        "result": "fail",
+        "evidence": "No India warranty mentioned"
+      },
+      "delivery_21_days": {
+        "result": "fail",
+        "evidence": "Not answered"
+      },
+      "gst_registration": {
+        "result": "pass",
+        "evidence": "GSTIN 33AAGCL8104H1ZP in email signature"
+      },
+      "ewaste_takeback": {
+        "result": "fail",
+        "evidence": "Not answered"
+      },
+      "escalation_contact": {
+        "result": "fail",
+        "evidence": "Not answered"
+      },
+      "healthcare_references": {
+        "result": "fail",
+        "evidence": "Not answered"
+      }
+    },
+    "E_after_clarification": {
+      "iso_9001": {
+        "result": "pass",
+        "evidence": "ISO certificate attached to clarification reply, valid until 11 Feb 2028"
+      },
+      "oem_authorisation": {
+        "result": "pass",
+        "evidence": "HP authorisation letter attached to clarification reply"
+      },
+      "india_warranty_onsite": {
+        "result": "pass",
+        "evidence": "Reply confirms 3 years onsite in Bengaluru, Chennai and Hyderabad"
+      },
+      "delivery_21_days": {
+        "result": "pass",
+        "evidence": "18 days"
+      },
+      "gst_registration": {
+        "result": "pass",
+        "evidence": "GSTIN 33AAGCL8104H1ZP"
+      },
+      "ewaste_takeback": {
+        "result": "pass",
+        "evidence": "Authorised recycler in Chennai"
+      },
+      "escalation_contact": {
+        "result": "pass",
+        "evidence": "Mei Ling Goh, Country Manager India"
+      },
+      "healthcare_references": {
+        "result": "pass",
+        "evidence": "Two references given"
+      }
+    }
+  },
   "demo_beats": {
     "l1_by_line": {
       "1": "E",
@@ -1925,6 +2132,434 @@
       27,
       28,
       30
-    ]
+    ],
+    "q6": {
+      "question": "Split it: cheapest per line among qualified suppliers, excluding stale quotes. What's the total and the saving against last cycle?",
+      "before_clarification": {
+        "eligible_suppliers": [
+          "A"
+        ],
+        "excluded": {
+          "not_qualified": [
+            "C",
+            "D",
+            "E"
+          ],
+          "stale": [
+            "B",
+            "D"
+          ]
+        },
+        "allocation": {
+          "1": {
+            "supplier": "A",
+            "unit_inr": 71400,
+            "total_inr": 4284000
+          },
+          "2": {
+            "supplier": "A",
+            "unit_inr": 111300,
+            "total_inr": 1113000
+          },
+          "3": {
+            "supplier": "A",
+            "unit_inr": 1250,
+            "total_inr": 87500
+          },
+          "4": {
+            "supplier": "A",
+            "unit_inr": 14300,
+            "total_inr": 572000
+          },
+          "5": {
+            "supplier": "A",
+            "unit_inr": 54100,
+            "total_inr": 2164000
+          },
+          "6": {
+            "supplier": "A",
+            "unit_inr": 39150,
+            "total_inr": 783000
+          },
+          "7": {
+            "supplier": "A",
+            "unit_inr": 9500,
+            "total_inr": 570000
+          },
+          "8": {
+            "supplier": "A",
+            "unit_inr": 21400,
+            "total_inr": 214000
+          },
+          "9": {
+            "supplier": "A",
+            "unit_inr": 1160,
+            "total_inr": 69600
+          },
+          "10": {
+            "supplier": "A",
+            "unit_inr": 2270,
+            "total_inr": 158900
+          },
+          "11": {
+            "supplier": "A",
+            "unit_inr": 2550,
+            "total_inr": 127500
+          },
+          "12": {
+            "supplier": "A",
+            "unit_inr": 4550,
+            "total_inr": 91000
+          },
+          "13": {
+            "supplier": "A",
+            "unit_inr": 17800,
+            "total_inr": 267000
+          },
+          "14": {
+            "supplier": "A",
+            "unit_inr": 44550,
+            "total_inr": 222750
+          },
+          "15": {
+            "supplier": "A",
+            "unit_inr": 21550,
+            "total_inr": 431000
+          },
+          "16": {
+            "supplier": "A",
+            "unit_inr": 6630,
+            "total_inr": 265200
+          },
+          "17": {
+            "supplier": "A",
+            "unit_inr": 15500,
+            "total_inr": 620000
+          },
+          "18": {
+            "supplier": "A",
+            "unit_inr": 53900,
+            "total_inr": 323400
+          },
+          "19": {
+            "supplier": "A",
+            "unit_inr": 954,
+            "total_inr": 57240
+          },
+          "20": {
+            "supplier": "A",
+            "unit_inr": 66950,
+            "total_inr": 535600
+          },
+          "21": {
+            "supplier": "A",
+            "unit_inr": 3640,
+            "total_inr": 72800
+          },
+          "22": {
+            "supplier": "A",
+            "unit_inr": 14150,
+            "total_inr": 353750
+          },
+          "23": {
+            "supplier": "A",
+            "unit_inr": 88200,
+            "total_inr": 352800
+          },
+          "24": {
+            "supplier": "A",
+            "unit_inr": 130,
+            "total_inr": 52000
+          },
+          "25": {
+            "supplier": "A",
+            "unit_inr": 9690,
+            "total_inr": 96900
+          },
+          "26": {
+            "supplier": "A",
+            "unit_inr": 371,
+            "total_inr": 37100
+          },
+          "27": {
+            "supplier": "A",
+            "unit_inr": 1550,
+            "total_inr": 77500
+          },
+          "28": {
+            "supplier": "A",
+            "unit_inr": 9350,
+            "total_inr": 187000
+          },
+          "29": {
+            "supplier": "A",
+            "unit_inr": 59400,
+            "total_inr": 178200
+          },
+          "30": {
+            "supplier": "A",
+            "unit_inr": 12250,
+            "total_inr": 98000
+          }
+        },
+        "unallocated_lines": [],
+        "summary": {
+          "suppliers": [
+            "A"
+          ],
+          "lines_by_supplier": {
+            "A": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30
+            ]
+          },
+          "total_inr": 14462740,
+          "last_cycle_inr": 14047000,
+          "saving_vs_last_cycle_inr": -415740
+        }
+      },
+      "after_clarification": {
+        "eligible_suppliers": [
+          "A",
+          "E"
+        ],
+        "excluded": {
+          "not_qualified": [
+            "C",
+            "D"
+          ],
+          "stale": [
+            "B",
+            "D"
+          ]
+        },
+        "allocation": {
+          "1": {
+            "supplier": "E",
+            "unit_inr": 62604,
+            "total_inr": 3756240
+          },
+          "2": {
+            "supplier": "E",
+            "unit_inr": 98136,
+            "total_inr": 981360
+          },
+          "3": {
+            "supplier": "E",
+            "unit_inr": 1200,
+            "total_inr": 84000
+          },
+          "4": {
+            "supplier": "E",
+            "unit_inr": 13705.2,
+            "total_inr": 548208
+          },
+          "5": {
+            "supplier": "E",
+            "unit_inr": 52000,
+            "total_inr": 2080000
+          },
+          "6": {
+            "supplier": "E",
+            "unit_inr": 38000,
+            "total_inr": 760000
+          },
+          "7": {
+            "supplier": "E",
+            "unit_inr": 9390.6,
+            "total_inr": 563436
+          },
+          "8": {
+            "supplier": "E",
+            "unit_inr": 20557.8,
+            "total_inr": 205578
+          },
+          "9": {
+            "supplier": "E",
+            "unit_inr": 1100,
+            "total_inr": 66000
+          },
+          "10": {
+            "supplier": "E",
+            "unit_inr": 2200,
+            "total_inr": 154000
+          },
+          "11": {
+            "supplier": "E",
+            "unit_inr": 2500,
+            "total_inr": 125000
+          },
+          "12": {
+            "supplier": "E",
+            "unit_inr": 4356.9,
+            "total_inr": 87138
+          },
+          "13": {
+            "supplier": "A",
+            "unit_inr": 17800,
+            "total_inr": 267000
+          },
+          "14": {
+            "supplier": "A",
+            "unit_inr": 44550,
+            "total_inr": 222750
+          },
+          "15": {
+            "supplier": "A",
+            "unit_inr": 21550,
+            "total_inr": 431000
+          },
+          "16": {
+            "supplier": "E",
+            "unit_inr": 6500,
+            "total_inr": 260000
+          },
+          "17": {
+            "supplier": "A",
+            "unit_inr": 15500,
+            "total_inr": 620000
+          },
+          "18": {
+            "supplier": "A",
+            "unit_inr": 53900,
+            "total_inr": 323400
+          },
+          "19": {
+            "supplier": "E",
+            "unit_inr": 900,
+            "total_inr": 54000
+          },
+          "20": {
+            "supplier": "E",
+            "unit_inr": 65000,
+            "total_inr": 520000
+          },
+          "21": {
+            "supplier": "E",
+            "unit_inr": 3500,
+            "total_inr": 70000
+          },
+          "22": {
+            "supplier": "E",
+            "unit_inr": 14000,
+            "total_inr": 350000
+          },
+          "23": {
+            "supplier": "A",
+            "unit_inr": 88200,
+            "total_inr": 352800
+          },
+          "24": {
+            "supplier": "E",
+            "unit_inr": 120,
+            "total_inr": 48000
+          },
+          "25": {
+            "supplier": "E",
+            "unit_inr": 9500,
+            "total_inr": 95000
+          },
+          "26": {
+            "supplier": "E",
+            "unit_inr": 350,
+            "total_inr": 35000
+          },
+          "27": {
+            "supplier": "E",
+            "unit_inr": 1500,
+            "total_inr": 75000
+          },
+          "28": {
+            "supplier": "E",
+            "unit_inr": 8500,
+            "total_inr": 170000
+          },
+          "29": {
+            "supplier": "A",
+            "unit_inr": 59400,
+            "total_inr": 178200
+          },
+          "30": {
+            "supplier": "E",
+            "unit_inr": 12000,
+            "total_inr": 96000
+          }
+        },
+        "unallocated_lines": [],
+        "summary": {
+          "suppliers": [
+            "A",
+            "E"
+          ],
+          "lines_by_supplier": {
+            "E": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              16,
+              19,
+              20,
+              21,
+              22,
+              24,
+              25,
+              26,
+              27,
+              28,
+              30
+            ],
+            "A": [
+              13,
+              14,
+              15,
+              17,
+              18,
+              23,
+              29
+            ]
+          },
+          "total_inr": 13579110,
+          "last_cycle_inr": 14047000,
+          "saving_vs_last_cycle_inr": 467890
+        }
+      }
+    }
   }
 }

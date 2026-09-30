@@ -1,7 +1,7 @@
 // Builds seed/ground_truth.json from the price design and checks the demo beats.
 // Evaluation only: extraction and analyst code must never read the output.
 
-import { LINE_ITEMS } from "../data";
+import { LINE_ITEMS, QUESTIONNAIRE } from "../data";
 import {
   AS_OF_DATE,
   A_NETWORKING_LINES,
@@ -161,9 +161,120 @@ const EXPECTED = {
   },
   E: {
     name: "Lionbridge Tech Trading", format: "txt (email body)", coverage: 27, freshness: "Reconfirm",
-    flags: ["Prior-pricing reference (Medium)", "FX movement: USD/INR +1.8% since 14 Sep (Medium)", "Freight extra", "India warranty not confirmed"],
+    flags: ["Prior-pricing reference (Medium)", "FX movement: USD/INR +1.8% since 14 Sep (Medium)", "Freight extra", "India warranty not confirmed until clarification", "Questionnaire unanswered until clarification"],
   },
 } as const;
+
+// ---------------------------------------------------------------------------
+// Questionnaire: expected pass or fail per question, from each supplier's documents.
+// E fails before its clarification reply and passes after it is re-extracted.
+// ---------------------------------------------------------------------------
+
+type QResult = { result: "pass" | "fail"; evidence: string };
+type QKey = (typeof QUESTIONNAIRE)[number]["key"];
+type QAnswers = Record<QKey, QResult>;
+
+const pass = (evidence: string): QResult => ({ result: "pass", evidence });
+const fail = (evidence: string): QResult => ({ result: "fail", evidence });
+const notAnswered = fail("Not answered");
+
+function allNotAnswered(overrides: Partial<QAnswers> = {}): QAnswers {
+  return Object.fromEntries(QUESTIONNAIRE.map((q) => [q.key, overrides[q.key] ?? notAnswered])) as QAnswers;
+}
+
+export const QUESTIONNAIRE_EXPECTED: Record<"A" | "B" | "C" | "D" | "E_before_clarification" | "E_after_clarification", QAnswers> = {
+  A: {
+    iso_9001: pass("ISO certificate attached, valid until 9 May 2027"),
+    oem_authorisation: pass("Lenovo authorisation letter attached"),
+    india_warranty_onsite: pass("3 years OEM onsite, Bengaluru, Chennai and Hyderabad"),
+    delivery_21_days: pass("14 days"),
+    gst_registration: pass("GSTIN 29AAKCP4821M1ZV"),
+    ewaste_takeback: pass("Through authorised recycler"),
+    escalation_contact: pass("Ramesh Prakash, Director"),
+    healthcare_references: pass("Two references given"),
+  },
+  B: {
+    iso_9001: pass("ISO certificate attached, valid until 19 Nov 2026"),
+    oem_authorisation: pass("Dell authorisation letter attached"),
+    india_warranty_onsite: pass("Warranty letter: ProSupport onsite in all three cities"),
+    delivery_21_days: pass("10 days"),
+    gst_registration: pass("GSTIN 29AADCV7390R1Z8"),
+    ewaste_takeback: pass("Dell Asset Recovery"),
+    escalation_contact: pass("Kavitha Rao, Sales Director"),
+    healthcare_references: pass("Two references given"),
+  },
+  C: {
+    iso_9001: fail("Attached ISO certificate expired on 14 Mar 2026"),
+    oem_authorisation: fail("Claims HP and Aruba partnership but attaches no authorisation letter"),
+    india_warranty_onsite: pass("3 years onsite across all three cities"),
+    delivery_21_days: pass("21 days"),
+    gst_registration: pass("GSTIN 29AAFCN5563K1ZX"),
+    ewaste_takeback: pass("Through a registered recycler"),
+    escalation_contact: pass("Deepak Iyer, Head of Sales"),
+    healthcare_references: pass("Two references given"),
+  },
+  D: allNotAnswered({ india_warranty_onsite: fail("Rate card says 'As per OEM' only") }),
+  E_before_clarification: allNotAnswered({
+    gst_registration: pass("GSTIN 33AAGCL8104H1ZP in email signature"),
+    india_warranty_onsite: fail("No India warranty mentioned"),
+  }),
+  E_after_clarification: {
+    iso_9001: pass("ISO certificate attached to clarification reply, valid until 11 Feb 2028"),
+    oem_authorisation: pass("HP authorisation letter attached to clarification reply"),
+    india_warranty_onsite: pass("Reply confirms 3 years onsite in Bengaluru, Chennai and Hyderabad"),
+    delivery_21_days: pass("18 days"),
+    gst_registration: pass("GSTIN 33AAGCL8104H1ZP"),
+    ewaste_takeback: pass("Authorised recycler in Chennai"),
+    escalation_contact: pass("Mei Ling Goh, Country Manager India"),
+    healthcare_references: pass("Two references given"),
+  },
+};
+
+const qualifies = (answers: QAnswers) => Object.values(answers).every((a) => a.result === "pass");
+
+// Demo question 6: cheapest per line among qualified suppliers, excluding stale quotes.
+function q6(lines: Record<SupplierCode, GroundTruthLine[]>, eKey: "E_before_clarification" | "E_after_clarification") {
+  const qualified: Record<SupplierCode, boolean> = {
+    A: qualifies(QUESTIONNAIRE_EXPECTED.A),
+    B: qualifies(QUESTIONNAIRE_EXPECTED.B),
+    C: qualifies(QUESTIONNAIRE_EXPECTED.C),
+    D: qualifies(QUESTIONNAIRE_EXPECTED.D),
+    E: qualifies(QUESTIONNAIRE_EXPECTED[eKey]),
+  };
+  const eligible = (Object.keys(lines) as SupplierCode[]).filter((c) => qualified[c] && EXPECTED[c].freshness !== "Stale");
+  const allocation: Record<number, { supplier: SupplierCode; unit_inr: number; total_inr: number }> = {};
+  const unallocated: number[] = [];
+  for (const n of LINES) {
+    const offers = eligible
+      .map((c) => ({ c, v: lines[c][n - 1].expected_normalised_inr }))
+      .filter((o): o is { c: SupplierCode; v: number } => o.v !== null)
+      .sort((a, b) => a.v - b.v);
+    if (!offers.length) { unallocated.push(n); continue; }
+    if (offers.length > 1 && offers[0].v === offers[1].v) throw new Error(`Q6 tie on line ${n}`);
+    allocation[n] = { supplier: offers[0].c, unit_inr: offers[0].v, total_inr: round2(offers[0].v * QUANTITY[n]) };
+  }
+  const allocated = Object.keys(allocation).map(Number);
+  const total = round2(allocated.reduce((s, n) => s + allocation[n].total_inr, 0));
+  const lastCycle = allocated.reduce((s, n) => s + LAST_CYCLE[n] * QUANTITY[n], 0);
+  const linesBySupplier: Record<string, number[]> = {};
+  for (const n of allocated) (linesBySupplier[allocation[n].supplier] ??= []).push(n);
+  return {
+    eligible_suppliers: eligible,
+    excluded: {
+      not_qualified: (Object.keys(qualified) as SupplierCode[]).filter((c) => !qualified[c]),
+      stale: (Object.keys(lines) as SupplierCode[]).filter((c) => EXPECTED[c].freshness === "Stale"),
+    },
+    allocation,
+    unallocated_lines: unallocated,
+    summary: {
+      suppliers: Object.keys(linesBySupplier).sort(),
+      lines_by_supplier: linesBySupplier,
+      total_inr: total,
+      last_cycle_inr: lastCycle,
+      saving_vs_last_cycle_inr: round2(lastCycle - total),
+    },
+  };
+}
 
 export function buildGroundTruth() {
   const lines: Record<SupplierCode, GroundTruthLine[]> = {
@@ -181,6 +292,7 @@ export function buildGroundTruth() {
     as_of_date: AS_OF_DATE,
     fx: { pair: "USD/INR", rate: USD_INR_AS_OF, date: AS_OF_DATE, note: "Illustrative; USD lines normalise at the as-of rate" },
     suppliers,
+    questionnaire: QUESTIONNAIRE_EXPECTED,
     demo_beats: beats,
   };
 }
@@ -223,6 +335,13 @@ function checkBeats(lines: Record<SupplierCode, GroundTruthLine[]>) {
   const rising = LINES.filter((n) => codes.some((c) => (value(c, n) ?? 0) > LAST_CYCLE[n]));
   if (rising.length < 4) failures.push(`only ${rising.length} lines rise against last cycle`);
 
+  const q6Before = q6(lines, "E_before_clarification");
+  const q6After = q6(lines, "E_after_clarification");
+  if (q6Before.summary.suppliers.join() !== "A") failures.push(`Q6 before clarification awards to ${q6Before.summary.suppliers.join(", ")}, want A only`);
+  if (q6After.summary.suppliers.join() !== "A,E") failures.push(`Q6 after clarification awards to ${q6After.summary.suppliers.join(", ")}, want A and E`);
+  if (q6After.allocation[1]?.supplier !== "E" || q6After.allocation[2]?.supplier !== "E") failures.push("Q6 after clarification: E does not win both laptop lines");
+  if (q6Before.unallocated_lines.length || q6After.unallocated_lines.length) failures.push("Q6 leaves lines unallocated");
+
   if (failures.length) throw new Error(`Demo beats not met:\n- ${failures.join("\n- ")}`);
 
   return {
@@ -233,5 +352,10 @@ function checkBeats(lines: Record<SupplierCode, GroundTruthLine[]>) {
     cheapest_on_common_basket: cheapest,
     e_l1_laptop_lines: [1, 2],
     lines_with_a_price_rise: rising,
+    q6: {
+      question: "Split it: cheapest per line among qualified suppliers, excluding stale quotes. What's the total and the saving against last cycle?",
+      before_clarification: q6Before,
+      after_clarification: q6After,
+    },
   };
 }

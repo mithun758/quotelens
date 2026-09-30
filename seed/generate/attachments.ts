@@ -91,6 +91,29 @@ export const ATTACHMENTS = {
       scope: "System integration, supply and maintenance of IT and networking equipment",
       address: "No. 88, 5th Main, HSR Layout Sector 6, Bengaluru 560102, Karnataka",
     }),
+  E_ISO: () =>
+    isoCertificateHtml({
+      supplierIndex: 4,
+      certNo: "DQC/QMS/25/0142",
+      issued: "12 February 2025",
+      validUntil: "11 February 2028",
+      scope: "Trading, supply and after-sales coordination of IT hardware, including its India branch in Chennai",
+      address: "Singapore, with India branch at Anna Salai, Chennai 600002, Tamil Nadu",
+    }),
+  E_OEM: () =>
+    letterHtml({
+      from: "HP India Partner Programme (South)",
+      fromAddress: "Chennai, Tamil Nadu",
+      date: "15 June 2026",
+      title: "Manufacturer Authorisation Letter",
+      paragraphs: [
+        `We confirm that <b>${SUPPLIERS[4].name} Pte Ltd</b>, through its India branch in Chennai (GSTIN ${SUPPLIERS[4].gstin}), is an authorised partner for HP notebooks, desktops, monitors and accessories supplied in India.`,
+        "Products supplied through this partner carry the standard HP India warranty, with onsite service available in Bengaluru, Chennai and Hyderabad.",
+        "This authorisation is valid until 30 June 2027.",
+      ],
+      signatory: "Partner Business Manager",
+      role: "South India",
+    }),
   A_OEM: () =>
     letterHtml({
       from: "Lenovo India Channel Programme (South)",

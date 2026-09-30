@@ -309,11 +309,13 @@ The seeded dataset is one RFx of 30 lines, five supplier responses in five forma
 | D. Sri Ganesh Computers, Bengaluru | Angled phone photo of a printed rate card | 20/30 | Patch cables priced per pack of 10; one handwritten price correction; no validity stated; no GST mention | Stale (rate card dated 4 Jun 2026; memory benchmark +11% since) |
 | E. Lionbridge Tech Trading, Singapore | One short email | 27/30 (no UPS lines 17 and 18, no firewall) | USD prices for 6 lines in the body; "all other items same as last year's rates"; "freight extra"; no India warranty confirmation | Reconfirm (quote 14 Sep; INR moved 1.8% since; prior-pricing reference) |
 
-**Questionnaire** (pass or fail per supplier): valid ISO 9001 certificate; OEM authorisation letter; India warranty with onsite support in all 3 cities; delivery within 21 days; GST registration; e-waste take-back; named escalation contact; two healthcare references. C fails on the expired ISO certificate; D fails because it sends no certificate or OEM authorisation; E fails on India warranty until clarified.
+**Questionnaire** (pass or fail per supplier): valid ISO 9001 certificate; OEM authorisation letter; India warranty with onsite support in all 3 cities; delivery within 21 days; GST registration; e-waste take-back; named escalation contact; two healthcare references. A and B pass. C fails on the expired ISO certificate and the missing OEM authorisation letter. D fails because it sends no certificate or OEM authorisation and answers nothing. E fails until clarified (no evidence, no India warranty, questionnaire unanswered) and passes once its clarification reply is re-extracted.
 
-**Attachments:** ISO certificates (A, B, C expired), OEM authorisation letters (A, B), warranty letter (B). D and E send none.
+**Attachments:** ISO certificates (A, B, C expired), OEM authorisation letters (A, B), warranty letter (B). D sends none. E sends none with its quote; its clarification reply attaches a valid ISO 9001 certificate and an HP authorisation letter.
 
-**Seeded clarification:** Priya asks E to confirm India warranty and quote lines 17, 18 and 23. E replies confirming India warranty on laptops and declining the UPS and firewall lines. The reply is re-extracted by the model.
+**Seeded clarification:** Priya asks E to confirm India warranty and quote lines 17, 18 and 23. E replies confirming a 3-year onsite India warranty on everything quoted, serviced in all three cities, declines the UPS and firewall lines, answers the rest of the questionnaire, and attaches its ISO 9001 certificate and HP authorisation letter. The reply and attachments are re-extracted by the model.
+
+**Demo question 6 outcome** (checked by the seed generator): before E's clarification, the only qualified supplier that is not Stale is A, so the split awards everything to A, above last cycle. After the clarification, E qualifies and the split is A plus E, with E winning both laptop lines.
 
 **Benchmarks (illustrative):** a weekly memory price index from June to September 2026 rising about 11% overall, and USD/INR moving from 83.10 on 14 Sep to 84.60 on 30 Sep.
 
@@ -342,7 +344,7 @@ The Loom runs about 6 minutes and follows the five acts. The analyst questions b
 3. Are any of those quotes stale or at risk before approval?
 4. If I exclude quotes that need reconfirmation, who becomes L1 per line? Show it as a chart.
 5. Which suppliers raised prices against last cycle, and on which lines?
-6. Split it: cheapest per line among qualified, fresh suppliers. What's the total and the saving against last cycle?
+6. Split it: cheapest per line among qualified suppliers, excluding stale quotes. What's the total and the saving against last cycle?
 7. What must I resolve before I can send this award to Meera?
 
 The live demo Aerchain drives will go off-script, so every tool must work on any reasonable question, not just these seven.
@@ -391,6 +393,8 @@ Newest first. Add a row for every change to this document.
 
 | Date | Decision | Why |
 | --- | --- | --- |
+| 30 Sep 2026 | E's clarification reply attaches a valid ISO 9001 certificate and an HP authorisation letter and answers the questionnaire, so E fails before clarification and passes after. C keeps failing (expired ISO, no OEM letter). Demo question 6 reworded to "qualified suppliers, excluding stale quotes". Expected Q6: all to A before clarification; A plus E after, with E on both laptop lines. Both states are in ground\_truth.json and checked by the generator. | Without evidence E could never qualify, so Q6 always collapsed to A alone; the clarification loop now visibly changes the award |
+| 30 Sep 2026 | docs/SOURCE\_OF\_TRUTH.md in the repo is the master copy; changes are made there directly | Ends re-exporting and keeps one authoritative version |
 | 30 Sep 2026 | Supplier E invoices through its Indian branch in Chennai: Tamil Nadu GSTIN (state code 33). Quotes stay in USD. Supply to the Bengaluru and Hyderabad hubs is inter-state (IGST); Chennai is intra-state (CGST and SGST). Customs and importer of record are out of scope. | Gives E a real GST registration for the questionnaire while keeping its USD quote as the FX case; the comparison is ex-GST, so the tax split does not change prices |
 | 30 Sep 2026 | Schema adds fields the logic needs beyond the Data model table: Rfx.sent\_at (12 Sep 2026) and Rfx.questionnaire (question definitions); LineItem.category and LineItem.memory\_exposed (lines 1, 2, 5, 6, 28); Supplier.code (A to E); Response.rfx\_id; ExtractedValue.match\_reason, substitute\_check and substitute\_status (Arjun's sign-off). Unmatched quoted items are ExtractedValues with no line. | The analyst filters by category, freshness needs the memory tag, substitutes need a sign-off state, and unmatched items must be listed, never dropped |
 | 30 Sep 2026 | Prior-pricing rule set to Medium; D fails the questionnaire; RFx sent 12 Sep 2026; supplier prices designed to hit demo beats and logged in ground truth | Resolves Claude Code's pre-build questions: keeps E at Reconfirm as the dataset intends, and makes the timeline consistent |

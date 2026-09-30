@@ -3,7 +3,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Db } from "@/lib/db/client";
-import { SUPPLIER_DOCUMENTS_BUCKET, SUPPLIER_RESPONSES } from "./suppliers";
+import { CLARIFICATION_REPLIES, SUPPLIER_DOCUMENTS_BUCKET, SUPPLIER_RESPONSES } from "./suppliers";
 
 const SUPPLIERS_DIR = path.join(process.cwd(), "seed", "suppliers");
 
@@ -15,7 +15,7 @@ export async function uploadSupplierFiles(client: Db): Promise<number> {
   }
 
   let uploaded = 0;
-  for (const response of SUPPLIER_RESPONSES) {
+  for (const response of [...SUPPLIER_RESPONSES, ...CLARIFICATION_REPLIES]) {
     for (const doc of response.documents) {
       const body = await readFile(path.join(SUPPLIERS_DIR, doc.local_path));
       const { error } = await client.storage
