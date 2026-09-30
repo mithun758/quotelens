@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RFX_TITLE, asOfDate, formatDisplayDate } from "@/lib/config";
+import { ResetDemoButton } from "./ResetDemoButton";
 
 // /eval is deliberately not linked: it is a hidden page.
 const NAV = [
@@ -27,6 +28,7 @@ export function Header() {
           <span className="rounded-full border border-zinc-300 px-3 py-1 text-zinc-700">
             Open blockers: <span className="font-semibold">{openBlockers ?? "–"}</span>
           </span>
+          <ResetDemoButton />
         </div>
       </div>
       <nav className="flex gap-1 px-4">
