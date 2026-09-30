@@ -204,7 +204,7 @@ The as-of date is configurable and seeded as 30 September 2026. Approval is assu
 | Validity vs approval | valid\_until falls before as-of date plus approval days | High | Reconfirm or extend validity before award |
 | Validity missing | No validity stated anywhere in the quote | Medium | Ask supplier for validity |
 | Old price basis | Document or price list dated more than 30 days before the as-of date (High above 90 days) | Medium or High | Request a current quote |
-| Prior-pricing reference | Quote says prices are "same as last year" or similar | High | Show Meridian's last-cycle price as Inferred, and flag that market prices have moved since |
+| Prior-pricing reference | Quote says prices are "same as last year" or similar | Medium | Show Meridian's last-cycle price as Inferred, and flag that market prices have moved since |
 | Market movement | Line is tagged memory-exposed (laptops, desktops) and the illustrative memory benchmark moved more than 5% since the quote date (High above 10%) | Medium or High | Reconfirm pricing for those lines |
 | FX movement | Quote is in a foreign currency and INR moved more than 1.5% since the quote date | Medium | Reconfirm rate or ask for an INR quote |
 
@@ -309,7 +309,7 @@ The seeded dataset is one RFx of 30 lines, five supplier responses in five forma
 | D. Sri Ganesh Computers, Bengaluru | Angled phone photo of a printed rate card | 20/30 | Patch cables priced per pack of 10; one handwritten price correction; no validity stated; no GST mention | Stale (rate card dated 4 Jun 2026; memory benchmark +11% since) |
 | E. Lionbridge Tech Trading, Singapore | One short email | 27/30 (no UPS lines 17 and 18, no firewall) | USD prices for 6 lines in the body; "all other items same as last year's rates"; "freight extra"; no India warranty confirmation | Reconfirm (quote 14 Sep; INR moved 1.8% since; prior-pricing reference) |
 
-**Questionnaire** (pass or fail per supplier): valid ISO 9001 certificate; OEM authorisation letter; India warranty with onsite support in all 3 cities; delivery within 21 days; GST registration; e-waste take-back; named escalation contact; two healthcare references. C fails on the expired ISO certificate; E fails on India warranty until clarified.
+**Questionnaire** (pass or fail per supplier): valid ISO 9001 certificate; OEM authorisation letter; India warranty with onsite support in all 3 cities; delivery within 21 days; GST registration; e-waste take-back; named escalation contact; two healthcare references. C fails on the expired ISO certificate; D fails because it sends no certificate or OEM authorisation; E fails on India warranty until clarified.
 
 **Attachments:** ISO certificates (A, B, C expired), OEM authorisation letters (A, B), warranty letter (B). D and E send none.
 
@@ -323,7 +323,7 @@ One Next.js app in TypeScript, deployed on Vercel, with Supabase for Postgres an
 
 &#91;embedded content: QuoteLens architecture · AI loops, deterministic code, services\]
 
-Development is on a Mac (zsh). Secrets live in environment variables: ANTHROPIC\_API\_KEY, SUPABASE\_URL and SUPABASE\_KEY. Charts render with Recharts; PDF export uses a server-side renderer.
+Development is on a Mac (zsh). Secrets live in environment variables: ANTHROPIC\_API\_KEY, ANTHROPIC\_MODEL, NEXT\_PUBLIC\_SUPABASE\_URL, SUPABASE\_SERVICE\_ROLE\_KEY, DEMO\_PASSCODE and AS\_OF\_DATE (names as in CLAUDE.md). Charts render with Recharts; PDF export uses a server-side renderer.
 
 ## Demo script
 
@@ -391,6 +391,7 @@ Newest first. Add a row for every change to this document.
 
 | Date | Decision | Why |
 | --- | --- | --- |
+| 30 Sep 2026 | Prior-pricing rule set to Medium; D fails the questionnaire; RFx sent 12 Sep 2026; supplier prices designed to hit demo beats and logged in ground truth | Resolves Claude Code's pre-build questions: keeps E at Reconfirm as the dataset intends, and makes the timeline consistent |
 | 30 Sep 2026 | Added Evidence base section linking each decision to research | Every choice should be defensible with a source, the same standard the product holds itself to |
 | 30 Sep 2026 | Added Quote Freshness between comparison and analysis | A correctly normalised quote can still be unsafe to act on; 2026 laptop prices are rising sharply and quotes expire quickly |
 | 30 Sep 2026 | Kept IT hardware, rejected steel | Domain credibility in a live demo; the 2026 memory price shock gives freshness a real basis |
