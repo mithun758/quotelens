@@ -1,0 +1,1930 @@
+{
+  "_readme": "Evaluation only. Expected extraction and normalisation for every supplier and line. Extraction, normalisation and analyst code must never read this file. Normalised values are INR per piece, ex-GST, before conditional discounts; unknown freight is not added.",
+  "as_of_date": "2026-09-30",
+  "fx": {
+    "pair": "USD/INR",
+    "rate": 84.6,
+    "date": "2026-09-30",
+    "note": "Illustrative; USD lines normalise at the as-of rate"
+  },
+  "suppliers": {
+    "A": {
+      "name": "Prakash Distributors",
+      "format": "xlsx",
+      "coverage": 30,
+      "freshness": "Fresh",
+      "flags": [
+        "Lines 1 and 3 quoted as a bundle",
+        "Networking sheet GST-inclusive"
+      ],
+      "quote_ref": "PD/BLR/Q-2026-0412",
+      "received_at": "2026-09-22T11:40:00+05:30",
+      "terms": {
+        "quote_date": "2026-09-22",
+        "valid_until": "2026-10-22",
+        "gst_treatment": "Extra at applicable rates, except the Networking sheet, which is GST-inclusive at 18%",
+        "freight_terms": "Free delivery to Bengaluru, Chennai and Hyderabad hubs",
+        "warranty": "3 years OEM onsite warranty, serviced in Bengaluru, Chennai and Hyderabad",
+        "payment_terms": "45 days from invoice",
+        "delivery_days": 14
+      },
+      "lines": [
+        {
+          "line_no": 1,
+          "quoted": true,
+          "raw_value": "72,650",
+          "raw_unit": "per bundle (laptop + backpack), qty 60",
+          "raw_currency": "INR",
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 71400,
+          "normalisation": [],
+          "notes": "Quoted only as a laptop + backpack bundle at 72,650. Laptop price inferred as bundle minus A's standalone backpack price 1,250."
+        },
+        {
+          "line_no": 2,
+          "quoted": true,
+          "raw_value": "1,11,300",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 111300,
+          "normalisation": []
+        },
+        {
+          "line_no": 3,
+          "quoted": true,
+          "raw_value": "1,250",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1250,
+          "normalisation": [],
+          "notes": "Standalone row for 10 additional backpacks; the other 60 are inside the line 1 bundle."
+        },
+        {
+          "line_no": 4,
+          "quoted": true,
+          "raw_value": "14,300",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 14300,
+          "normalisation": []
+        },
+        {
+          "line_no": 5,
+          "quoted": true,
+          "raw_value": "54,100",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 54100,
+          "normalisation": []
+        },
+        {
+          "line_no": 6,
+          "quoted": true,
+          "raw_value": "39,150",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 39150,
+          "normalisation": []
+        },
+        {
+          "line_no": 7,
+          "quoted": true,
+          "raw_value": "9,500",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 9500,
+          "normalisation": []
+        },
+        {
+          "line_no": 8,
+          "quoted": true,
+          "raw_value": "21,400",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 21400,
+          "normalisation": []
+        },
+        {
+          "line_no": 9,
+          "quoted": true,
+          "raw_value": "1,160",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1160,
+          "normalisation": []
+        },
+        {
+          "line_no": 10,
+          "quoted": true,
+          "raw_value": "2,270",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 2270,
+          "normalisation": []
+        },
+        {
+          "line_no": 11,
+          "quoted": true,
+          "raw_value": "2,550",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 2550,
+          "normalisation": []
+        },
+        {
+          "line_no": 12,
+          "quoted": true,
+          "raw_value": "4,550",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 4550,
+          "normalisation": []
+        },
+        {
+          "line_no": 13,
+          "quoted": true,
+          "raw_value": "17,800",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 17800,
+          "normalisation": []
+        },
+        {
+          "line_no": 14,
+          "quoted": true,
+          "raw_value": "45,000",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 45000,
+          "normalisation": []
+        },
+        {
+          "line_no": 15,
+          "quoted": true,
+          "raw_value": "21,550",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 21550,
+          "normalisation": []
+        },
+        {
+          "line_no": 16,
+          "quoted": true,
+          "raw_value": "6,630",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 6630,
+          "normalisation": []
+        },
+        {
+          "line_no": 17,
+          "quoted": true,
+          "raw_value": "15,500",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 15500,
+          "normalisation": []
+        },
+        {
+          "line_no": 18,
+          "quoted": true,
+          "raw_value": "53,900",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 53900,
+          "normalisation": []
+        },
+        {
+          "line_no": 19,
+          "quoted": true,
+          "raw_value": "954",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 954,
+          "normalisation": []
+        },
+        {
+          "line_no": 20,
+          "quoted": true,
+          "raw_value": "79,001.00",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 66950,
+          "normalisation": [
+            {
+              "kind": "gst",
+              "input": 79001,
+              "output": 66950,
+              "rate": 1.18,
+              "note": "Networking sheet is GST-inclusive at 18%; divided out"
+            }
+          ],
+          "notes": "Networking sheet header states prices include 18% GST, unlike A's other sheets."
+        },
+        {
+          "line_no": 21,
+          "quoted": true,
+          "raw_value": "4,295.20",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 3640,
+          "normalisation": [
+            {
+              "kind": "gst",
+              "input": 4295.2,
+              "output": 3640,
+              "rate": 1.18,
+              "note": "Networking sheet is GST-inclusive at 18%; divided out"
+            }
+          ],
+          "notes": "Networking sheet header states prices include 18% GST, unlike A's other sheets."
+        },
+        {
+          "line_no": 22,
+          "quoted": true,
+          "raw_value": "16,697.00",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 14150,
+          "normalisation": [
+            {
+              "kind": "gst",
+              "input": 16697,
+              "output": 14150,
+              "rate": 1.18,
+              "note": "Networking sheet is GST-inclusive at 18%; divided out"
+            }
+          ],
+          "notes": "Networking sheet header states prices include 18% GST, unlike A's other sheets."
+        },
+        {
+          "line_no": 23,
+          "quoted": true,
+          "raw_value": "1,04,076.00",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 88200,
+          "normalisation": [
+            {
+              "kind": "gst",
+              "input": 104076,
+              "output": 88200,
+              "rate": 1.18,
+              "note": "Networking sheet is GST-inclusive at 18%; divided out"
+            }
+          ],
+          "notes": "Networking sheet header states prices include 18% GST, unlike A's other sheets."
+        },
+        {
+          "line_no": 24,
+          "quoted": true,
+          "raw_value": "153.40",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 130,
+          "normalisation": [
+            {
+              "kind": "gst",
+              "input": 153.4,
+              "output": 130,
+              "rate": 1.18,
+              "note": "Networking sheet is GST-inclusive at 18%; divided out"
+            }
+          ],
+          "notes": "Networking sheet header states prices include 18% GST, unlike A's other sheets."
+        },
+        {
+          "line_no": 25,
+          "quoted": true,
+          "raw_value": "11,434.20",
+          "raw_unit": "per box",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 9690,
+          "normalisation": [
+            {
+              "kind": "gst",
+              "input": 11434.2,
+              "output": 9690,
+              "rate": 1.18,
+              "note": "Networking sheet is GST-inclusive at 18%; divided out"
+            }
+          ],
+          "notes": "Networking sheet header states prices include 18% GST, unlike A's other sheets."
+        },
+        {
+          "line_no": 26,
+          "quoted": true,
+          "raw_value": "371",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 371,
+          "normalisation": []
+        },
+        {
+          "line_no": 27,
+          "quoted": true,
+          "raw_value": "1,550",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1550,
+          "normalisation": []
+        },
+        {
+          "line_no": 28,
+          "quoted": true,
+          "raw_value": "9,350",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 9350,
+          "normalisation": []
+        },
+        {
+          "line_no": 29,
+          "quoted": true,
+          "raw_value": "59,400",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 59400,
+          "normalisation": []
+        },
+        {
+          "line_no": 30,
+          "quoted": true,
+          "raw_value": "14,455.00",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 12250,
+          "normalisation": [
+            {
+              "kind": "gst",
+              "input": 14455,
+              "output": 12250,
+              "rate": 1.18,
+              "note": "Networking sheet is GST-inclusive at 18%; divided out"
+            }
+          ],
+          "notes": "Networking sheet header states prices include 18% GST, unlike A's other sheets."
+        }
+      ]
+    },
+    "B": {
+      "name": "Vertex Systems",
+      "format": "pdf",
+      "coverage": 28,
+      "freshness": "Stale",
+      "flags": [
+        "Validity vs approval (High): valid until 1 Oct, approval completes 10 Oct",
+        "GST rate 28% on UPS lines 17 and 18 (18% expected)",
+        "Conditional 4% discount above ₹25 lakh"
+      ],
+      "quote_ref": "VS/Q/2026/0917",
+      "received_at": "2026-09-24T16:05:00+05:30",
+      "terms": {
+        "quote_date": "2026-09-24",
+        "valid_until": "2026-10-01",
+        "gst_treatment": "Extra, at the rate shown per line",
+        "freight_terms": "Delivered to all three hubs, freight included",
+        "warranty": "3 years Dell ProSupport onsite, India (see warranty letter)",
+        "payment_terms": "30 days from invoice",
+        "delivery_days": 10
+      },
+      "lines": [
+        {
+          "line_no": 1,
+          "quoted": true,
+          "raw_value": "63,900",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 63900,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 61,344.00."
+        },
+        {
+          "line_no": 2,
+          "quoted": true,
+          "raw_value": "1,00,800",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 100800,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 96,768.00."
+        },
+        {
+          "line_no": 3,
+          "quoted": true,
+          "raw_value": "1,160",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1160,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 1,113.60."
+        },
+        {
+          "line_no": 4,
+          "quoted": true,
+          "raw_value": "13,000",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 13000,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 12,480.00."
+        },
+        {
+          "line_no": 5,
+          "quoted": true,
+          "raw_value": "49,900",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 49900,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 47,904.00."
+        },
+        {
+          "line_no": 6,
+          "quoted": true,
+          "raw_value": "36,850",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 36850,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 35,376.00."
+        },
+        {
+          "line_no": 7,
+          "quoted": true,
+          "raw_value": "8,930",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 8930,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 8,572.80."
+        },
+        {
+          "line_no": 8,
+          "quoted": true,
+          "raw_value": "19,950",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 19950,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 19,152.00."
+        },
+        {
+          "line_no": 9,
+          "quoted": true,
+          "raw_value": "1,080",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1080,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 1,036.80."
+        },
+        {
+          "line_no": 10,
+          "quoted": true,
+          "raw_value": "2,130",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 2130,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 2,044.80."
+        },
+        {
+          "line_no": 11,
+          "quoted": true,
+          "raw_value": "2,380",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 2380,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 2,284.80."
+        },
+        {
+          "line_no": 12,
+          "quoted": true,
+          "raw_value": "4,230",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 4230,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 4,060.80."
+        },
+        {
+          "line_no": 13,
+          "quoted": true,
+          "raw_value": "17,100",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 17100,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 16,416.00."
+        },
+        {
+          "line_no": 14,
+          "quoted": true,
+          "raw_value": "43,200",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 43200,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 41,472.00."
+        },
+        {
+          "line_no": 15,
+          "quoted": true,
+          "raw_value": "21,350",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 21350,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 20,496.00."
+        },
+        {
+          "line_no": 16,
+          "quoted": true,
+          "raw_value": "6,110",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 6110,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 5,865.60."
+        },
+        {
+          "line_no": 17,
+          "quoted": true,
+          "raw_value": "15,350",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 15350,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 14,736.00. GST printed at 28% where 18% is expected: flag, price unaffected ex-GST."
+        },
+        {
+          "line_no": 18,
+          "quoted": true,
+          "raw_value": "52,250",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 52250,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 50,160.00. GST printed at 28% where 18% is expected: flag, price unaffected ex-GST."
+        },
+        {
+          "line_no": 19,
+          "quoted": true,
+          "raw_value": "882",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 882,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 846.72."
+        },
+        {
+          "line_no": 20,
+          "quoted": true,
+          "raw_value": "61,750",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 61750,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 59,280.00."
+        },
+        {
+          "line_no": 21,
+          "quoted": true,
+          "raw_value": "3,400",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 3400,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 3,264.00."
+        },
+        {
+          "line_no": 22,
+          "quoted": true,
+          "raw_value": "13,450",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 13450,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 12,912.00."
+        },
+        {
+          "line_no": 23,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "No firewall quoted"
+        },
+        {
+          "line_no": 24,
+          "quoted": true,
+          "raw_value": "118",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 118,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 113.28."
+        },
+        {
+          "line_no": 25,
+          "quoted": true,
+          "raw_value": "9,030",
+          "raw_unit": "per box",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 9030,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 8,668.80."
+        },
+        {
+          "line_no": 26,
+          "quoted": true,
+          "raw_value": "343",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 343,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 329.28."
+        },
+        {
+          "line_no": 27,
+          "quoted": true,
+          "raw_value": "1,410",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1410,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 1,353.60."
+        },
+        {
+          "line_no": 28,
+          "quoted": true,
+          "raw_value": "8,330",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 8330,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 7,996.80."
+        },
+        {
+          "line_no": 29,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "No NAS quoted"
+        },
+        {
+          "line_no": 30,
+          "quoted": true,
+          "raw_value": "11,500",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 11500,
+          "normalisation": [],
+          "notes": "Footnote: additional 4% off orders above ₹25 lakh; if the condition is met the price is 11,040.00."
+        }
+      ]
+    },
+    "C": {
+      "name": "Nexa Integrators",
+      "format": "docx",
+      "coverage": 30,
+      "freshness": "Fresh",
+      "flags": [
+        "Substitute on line 1 (13th-gen i5)",
+        "Substitute on line 22 (Wi-Fi 5) deviates",
+        "Freight at actuals for Chennai and Hyderabad",
+        "ISO 9001 certificate expired March 2026"
+      ],
+      "quote_ref": "NXI/MER/2609",
+      "received_at": "2026-09-26T10:20:00+05:30",
+      "terms": {
+        "quote_date": "2026-09-26",
+        "valid_until": "2026-10-11",
+        "gst_treatment": "Extra at 18%",
+        "freight_terms": "Included for Bengaluru; at actuals for Chennai and Hyderabad",
+        "warranty": "3 years onsite warranty across all three cities",
+        "payment_terms": "45 days from invoice",
+        "delivery_days": 21
+      },
+      "lines": [
+        {
+          "line_no": 1,
+          "quoted": true,
+          "raw_value": "63,250",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 63250,
+          "normalisation": [],
+          "notes": "Substitute: HP ProBook 440 G10, Intel Core i5-1335U (13th Gen), 16 GB, 512 GB SSD, 14-inch. Deviates on cpu_generation_min (required 14, offered 13). Needs Arjun's sign-off."
+        },
+        {
+          "line_no": 2,
+          "quoted": true,
+          "raw_value": "1,07,100",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 107100,
+          "normalisation": []
+        },
+        {
+          "line_no": 3,
+          "quoted": true,
+          "raw_value": "1,200",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1200,
+          "normalisation": []
+        },
+        {
+          "line_no": 4,
+          "quoted": true,
+          "raw_value": "13,600",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 13600,
+          "normalisation": []
+        },
+        {
+          "line_no": 5,
+          "quoted": true,
+          "raw_value": "52,500",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 52500,
+          "normalisation": []
+        },
+        {
+          "line_no": 6,
+          "quoted": true,
+          "raw_value": "38,750",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 38750,
+          "normalisation": []
+        },
+        {
+          "line_no": 7,
+          "quoted": true,
+          "raw_value": "9,310",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 9310,
+          "normalisation": []
+        },
+        {
+          "line_no": 8,
+          "quoted": true,
+          "raw_value": "20,350",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 20350,
+          "normalisation": []
+        },
+        {
+          "line_no": 9,
+          "quoted": true,
+          "raw_value": "1,140",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1140,
+          "normalisation": []
+        },
+        {
+          "line_no": 10,
+          "quoted": true,
+          "raw_value": "2,220",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 2220,
+          "normalisation": []
+        },
+        {
+          "line_no": 11,
+          "quoted": true,
+          "raw_value": "2,480",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 2480,
+          "normalisation": []
+        },
+        {
+          "line_no": 12,
+          "quoted": true,
+          "raw_value": "4,370",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 4370,
+          "normalisation": []
+        },
+        {
+          "line_no": 13,
+          "quoted": true,
+          "raw_value": "16,900",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 16900,
+          "normalisation": []
+        },
+        {
+          "line_no": 14,
+          "quoted": true,
+          "raw_value": "41,850",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 41850,
+          "normalisation": []
+        },
+        {
+          "line_no": 15,
+          "quoted": true,
+          "raw_value": "20,700",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 20700,
+          "normalisation": []
+        },
+        {
+          "line_no": 16,
+          "quoted": true,
+          "raw_value": "6,370",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 6370,
+          "normalisation": []
+        },
+        {
+          "line_no": 17,
+          "quoted": true,
+          "raw_value": "15,050",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 15050,
+          "normalisation": []
+        },
+        {
+          "line_no": 18,
+          "quoted": true,
+          "raw_value": "51,150",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 51150,
+          "normalisation": []
+        },
+        {
+          "line_no": 19,
+          "quoted": true,
+          "raw_value": "927",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 927,
+          "normalisation": []
+        },
+        {
+          "line_no": 20,
+          "quoted": true,
+          "raw_value": "61,100",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 61100,
+          "normalisation": []
+        },
+        {
+          "line_no": 21,
+          "quoted": true,
+          "raw_value": "3,570",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 3570,
+          "normalisation": []
+        },
+        {
+          "line_no": 22,
+          "quoted": true,
+          "raw_value": "12,900",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 12900,
+          "normalisation": [],
+          "notes": "Substitute: Aruba Instant On AP12 (Wi-Fi 5, 802.11ac Wave 2), ceiling mount. Deviates on wifi_standard (required Wi-Fi 6 (802.11ax), offered Wi-Fi 5 (802.11ac)). Needs Arjun's sign-off."
+        },
+        {
+          "line_no": 23,
+          "quoted": true,
+          "raw_value": "85,500",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 85500,
+          "normalisation": []
+        },
+        {
+          "line_no": 24,
+          "quoted": true,
+          "raw_value": "126",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 126,
+          "normalisation": []
+        },
+        {
+          "line_no": 25,
+          "quoted": true,
+          "raw_value": "9,220",
+          "raw_unit": "per box",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 9220,
+          "normalisation": []
+        },
+        {
+          "line_no": 26,
+          "quoted": true,
+          "raw_value": "361",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 361,
+          "normalisation": []
+        },
+        {
+          "line_no": 27,
+          "quoted": true,
+          "raw_value": "1,470",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1470,
+          "normalisation": []
+        },
+        {
+          "line_no": 28,
+          "quoted": true,
+          "raw_value": "8,930",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 8930,
+          "normalisation": []
+        },
+        {
+          "line_no": 29,
+          "quoted": true,
+          "raw_value": "57,600",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 57600,
+          "normalisation": []
+        },
+        {
+          "line_no": 30,
+          "quoted": true,
+          "raw_value": "11,300",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 11300,
+          "normalisation": []
+        }
+      ]
+    },
+    "D": {
+      "name": "Sri Ganesh Computers",
+      "format": "jpg",
+      "coverage": 20,
+      "freshness": "Stale",
+      "flags": [
+        "Validity missing (Medium)",
+        "Old price basis: rate card 4 Jun 2026, 118 days old (High)",
+        "Market movement: memory index +11.2% since 4 Jun on lines 1, 5, 6, 28 (High)",
+        "Patch cables per packet of 10",
+        "Handwritten correction on line 10",
+        "GST not stated"
+      ],
+      "quote_ref": null,
+      "received_at": "2026-09-18T13:15:00+05:30",
+      "terms": {
+        "quote_date": "2026-06-04",
+        "valid_until": null,
+        "gst_treatment": null,
+        "freight_terms": null,
+        "warranty": "As per OEM",
+        "payment_terms": null,
+        "delivery_days": null
+      },
+      "lines": [
+        {
+          "line_no": 1,
+          "quoted": true,
+          "raw_value": "73,450",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 73450,
+          "normalisation": []
+        },
+        {
+          "line_no": 2,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "Not on D's rate card"
+        },
+        {
+          "line_no": 3,
+          "quoted": true,
+          "raw_value": "1,260",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1260,
+          "normalisation": []
+        },
+        {
+          "line_no": 4,
+          "quoted": true,
+          "raw_value": "14,850",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 14850,
+          "normalisation": []
+        },
+        {
+          "line_no": 5,
+          "quoted": true,
+          "raw_value": "48,350",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 48350,
+          "normalisation": []
+        },
+        {
+          "line_no": 6,
+          "quoted": true,
+          "raw_value": "35,700",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 35700,
+          "normalisation": []
+        },
+        {
+          "line_no": 7,
+          "quoted": true,
+          "raw_value": "9,790",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 9790,
+          "normalisation": []
+        },
+        {
+          "line_no": 8,
+          "quoted": true,
+          "raw_value": "21,850",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 21850,
+          "normalisation": []
+        },
+        {
+          "line_no": 9,
+          "quoted": true,
+          "raw_value": "1,030",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1030,
+          "normalisation": []
+        },
+        {
+          "line_no": 10,
+          "quoted": true,
+          "raw_value": "2,040",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 2040,
+          "normalisation": [],
+          "notes": "Printed 2,190 is struck through; handwritten correction 2,040 is the true price."
+        },
+        {
+          "line_no": 11,
+          "quoted": true,
+          "raw_value": "2,650",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 2650,
+          "normalisation": []
+        },
+        {
+          "line_no": 12,
+          "quoted": true,
+          "raw_value": "4,860",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 4860,
+          "normalisation": []
+        },
+        {
+          "line_no": 13,
+          "quoted": true,
+          "raw_value": "18,900",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 18900,
+          "normalisation": []
+        },
+        {
+          "line_no": 14,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "Not on D's rate card"
+        },
+        {
+          "line_no": 15,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "Not on D's rate card"
+        },
+        {
+          "line_no": 16,
+          "quoted": true,
+          "raw_value": "6,960",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 6960,
+          "normalisation": []
+        },
+        {
+          "line_no": 17,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "Not on D's rate card"
+        },
+        {
+          "line_no": 18,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "Not on D's rate card"
+        },
+        {
+          "line_no": 19,
+          "quoted": true,
+          "raw_value": "837",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 837,
+          "normalisation": []
+        },
+        {
+          "line_no": 20,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "Not on D's rate card"
+        },
+        {
+          "line_no": 21,
+          "quoted": true,
+          "raw_value": "3,260",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 3260,
+          "normalisation": []
+        },
+        {
+          "line_no": 22,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "Not on D's rate card"
+        },
+        {
+          "line_no": 23,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "Not on D's rate card"
+        },
+        {
+          "line_no": 24,
+          "quoted": true,
+          "raw_value": "1,120",
+          "raw_unit": "per pkt (10 pcs)",
+          "raw_currency": "INR",
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 112,
+          "normalisation": [
+            {
+              "kind": "pack_size",
+              "input": 1120,
+              "output": 112,
+              "rate": 10,
+              "note": "Priced per packet of 10"
+            }
+          ],
+          "notes": "Rate card prices patch cords per packet; pack size appears only in the item text."
+        },
+        {
+          "line_no": 25,
+          "quoted": true,
+          "raw_value": "10,050",
+          "raw_unit": "per box",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 10050,
+          "normalisation": []
+        },
+        {
+          "line_no": 26,
+          "quoted": true,
+          "raw_value": "326",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 326,
+          "normalisation": []
+        },
+        {
+          "line_no": 27,
+          "quoted": true,
+          "raw_value": "1,620",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 1620,
+          "normalisation": []
+        },
+        {
+          "line_no": 28,
+          "quoted": true,
+          "raw_value": "7,820",
+          "raw_unit": "per piece",
+          "raw_currency": "INR",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 7820,
+          "normalisation": []
+        },
+        {
+          "line_no": 29,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "Not on D's rate card"
+        },
+        {
+          "line_no": 30,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "Not on D's rate card"
+        }
+      ]
+    },
+    "E": {
+      "name": "Lionbridge Tech Trading",
+      "format": "txt (email body)",
+      "coverage": 27,
+      "freshness": "Reconfirm",
+      "flags": [
+        "Prior-pricing reference (Medium)",
+        "FX movement: USD/INR +1.8% since 14 Sep (Medium)",
+        "Freight extra",
+        "India warranty not confirmed"
+      ],
+      "quote_ref": null,
+      "received_at": "2026-09-14T09:30:00+05:30",
+      "terms": {
+        "quote_date": "2026-09-14",
+        "valid_until": "2026-10-14",
+        "gst_treatment": "Exclusive of GST",
+        "freight_terms": "Freight extra",
+        "warranty": null,
+        "payment_terms": null,
+        "delivery_days": null
+      },
+      "lines": [
+        {
+          "line_no": 1,
+          "quoted": true,
+          "raw_value": "740.00",
+          "raw_unit": "per piece",
+          "raw_currency": "USD",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 62604,
+          "normalisation": [
+            {
+              "kind": "fx",
+              "input": 740,
+              "output": 62604,
+              "rate": 84.6,
+              "note": "Illustrative USD/INR on 2026-09-30"
+            }
+          ]
+        },
+        {
+          "line_no": 2,
+          "quoted": true,
+          "raw_value": "1160.00",
+          "raw_unit": "per piece",
+          "raw_currency": "USD",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 98136,
+          "normalisation": [
+            {
+              "kind": "fx",
+              "input": 1160,
+              "output": 98136,
+              "rate": 84.6,
+              "note": "Illustrative USD/INR on 2026-09-30"
+            }
+          ]
+        },
+        {
+          "line_no": 3,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 1200,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 4,
+          "quoted": true,
+          "raw_value": "162.00",
+          "raw_unit": "per piece",
+          "raw_currency": "USD",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 13705.2,
+          "normalisation": [
+            {
+              "kind": "fx",
+              "input": 162,
+              "output": 13705.2,
+              "rate": 84.6,
+              "note": "Illustrative USD/INR on 2026-09-30"
+            }
+          ]
+        },
+        {
+          "line_no": 5,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 52000,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 6,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 38000,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 7,
+          "quoted": true,
+          "raw_value": "111.00",
+          "raw_unit": "per piece",
+          "raw_currency": "USD",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 9390.6,
+          "normalisation": [
+            {
+              "kind": "fx",
+              "input": 111,
+              "output": 9390.6,
+              "rate": 84.6,
+              "note": "Illustrative USD/INR on 2026-09-30"
+            }
+          ]
+        },
+        {
+          "line_no": 8,
+          "quoted": true,
+          "raw_value": "243.00",
+          "raw_unit": "per piece",
+          "raw_currency": "USD",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 20557.8,
+          "normalisation": [
+            {
+              "kind": "fx",
+              "input": 243,
+              "output": 20557.8,
+              "rate": 84.6,
+              "note": "Illustrative USD/INR on 2026-09-30"
+            }
+          ]
+        },
+        {
+          "line_no": 9,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 1100,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 10,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 2200,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 11,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 2500,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 12,
+          "quoted": true,
+          "raw_value": "51.50",
+          "raw_unit": "per piece",
+          "raw_currency": "USD",
+          "expected_confidence": "extracted",
+          "expected_normalised_inr": 4356.9,
+          "normalisation": [
+            {
+              "kind": "fx",
+              "input": 51.5,
+              "output": 4356.9,
+              "rate": 84.6,
+              "note": "Illustrative USD/INR on 2026-09-30"
+            }
+          ]
+        },
+        {
+          "line_no": 13,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 18000,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 14,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 45000,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 15,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 22000,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 16,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 6500,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 17,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "E declines UPS lines 17 and 18 and firewall line 23"
+        },
+        {
+          "line_no": 18,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "E declines UPS lines 17 and 18 and firewall line 23"
+        },
+        {
+          "line_no": 19,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 900,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 20,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 65000,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 21,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 3500,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 22,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 14000,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 23,
+          "quoted": false,
+          "raw_value": null,
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "missing",
+          "expected_normalised_inr": null,
+          "normalisation": [],
+          "notes": "E declines UPS lines 17 and 18 and firewall line 23"
+        },
+        {
+          "line_no": 24,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 120,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 25,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 9500,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 26,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 350,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 27,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 1500,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 28,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 8500,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 29,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 60000,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        },
+        {
+          "line_no": 30,
+          "quoted": true,
+          "raw_value": "same as last year's rates",
+          "raw_unit": null,
+          "raw_currency": null,
+          "expected_confidence": "inferred",
+          "expected_normalised_inr": 12000,
+          "normalisation": [],
+          "notes": "Prior-pricing reference: shown as Meridian's last-cycle price, Inferred."
+        }
+      ]
+    }
+  },
+  "demo_beats": {
+    "l1_by_line": {
+      "1": "E",
+      "2": "E",
+      "3": "B",
+      "4": "B",
+      "5": "D",
+      "6": "D",
+      "7": "B",
+      "8": "B",
+      "9": "D",
+      "10": "D",
+      "11": "B",
+      "12": "B",
+      "13": "C",
+      "14": "C",
+      "15": "C",
+      "16": "B",
+      "17": "C",
+      "18": "C",
+      "19": "D",
+      "20": "C",
+      "21": "D",
+      "22": "C",
+      "23": "C",
+      "24": "D",
+      "25": "B",
+      "26": "D",
+      "27": "B",
+      "28": "D",
+      "29": "C",
+      "30": "C"
+    },
+    "d_nominal_l1_lines": [
+      5,
+      6,
+      9,
+      10,
+      19,
+      21,
+      24,
+      26,
+      28
+    ],
+    "common_basket_lines": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      16,
+      19,
+      21,
+      24,
+      25,
+      26,
+      27,
+      28
+    ],
+    "common_basket_totals_inr": {
+      "A": 10234240,
+      "B": 9351720,
+      "C": 9561420,
+      "D": 10070020,
+      "E": 9506600
+    },
+    "cheapest_on_common_basket": "B",
+    "e_l1_laptop_lines": [
+      1,
+      2
+    ],
+    "lines_with_a_price_rise": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      16,
+      19,
+      20,
+      21,
+      22,
+      24,
+      25,
+      26,
+      27,
+      28,
+      30
+    ]
+  }
+}

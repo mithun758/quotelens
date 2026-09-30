@@ -1,0 +1,24 @@
+From: Daniel Tan <daniel.tan@lionbridgetech.example>
+To: Priya <priya@meridiandiagnostics.example>
+Date: Mon, 14 Sep 2026 12:00 +0800
+Subject: RE: RFx IT Refresh 2026 - Meridian Diagnostics
+
+Hi Priya,
+
+Thanks for the RFQ. Our prices for this round:
+
+- Business laptop i5 14th gen, 16GB/512GB, 14": USD 740.00
+- Management laptop i7, 32GB/1TB, 14": USD 1160.00
+- USB-C dock: USD 162.00
+- 24" FHD monitor: USD 111.00
+- 27" QHD monitor: USD 243.00
+- 1080p webcam: USD 51.50
+
+All other items same as last year's rates. We can't quote the UPS units (1 kVA and 3 kVA) or the branch firewall this time.
+
+Prices per unit, exclusive of GST, valid 30 days. Freight extra.
+
+Best regards,
+Daniel Tan
+Regional Sales, Lionbridge Tech Trading Pte Ltd, Singapore
+India branch: Chennai | GSTIN 33AAGCL8104H1ZP

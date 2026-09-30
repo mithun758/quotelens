@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
-    "seed": "tsx --env-file=.env.local seed/seed.ts"
+    "seed": "tsx --env-file=.env.local seed/seed.ts",
+    "seed:generate": "tsx seed/generate/generate.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
@@ -28,6 +29,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "docx": "^9.8.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "postgres": "^3.4.9",
