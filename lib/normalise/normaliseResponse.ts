@@ -11,6 +11,9 @@ import { rateOn } from "./fx";
 
 export const EXPECTED_GST_PERCENT = 18;
 
+// Shown on every line priced from a "same as last year" reference; Quote Freshness keys on it.
+export const PRIOR_PRICING_REASON = "Supplier said same as last year; shown at Meridian's last-cycle price, which predates this year's market moves.";
+
 export type SourcedItem = ExtractedItem & { documentId: string | null };
 
 export type LedgerStep = {
@@ -123,7 +126,7 @@ function normaliseItem(item: SourcedItem, line: LineItemRow, ctx: Context): Norm
       raw_currency: "INR",
       normalised_value_inr: lastCycle,
       confidence_state: "inferred",
-      reason: joinReasons("Supplier refers to last year's rates; shown at Meridian's last-cycle price.", subNote),
+      reason: joinReasons(PRIOR_PRICING_REASON, subNote),
       steps: [],
       flags,
     };

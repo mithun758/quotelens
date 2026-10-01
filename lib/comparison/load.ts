@@ -3,6 +3,8 @@
 import type { Db } from "@/lib/db/client";
 import type { LineItemRow, QuestionnaireAnswerRow, QuestionnaireQuestion, SupplierRow } from "@/lib/db/types";
 import { formatLabel, loadAllDetails, type ValueWithLine } from "@/lib/quotes/load";
+import { loadFreshness } from "@/lib/freshness/load";
+import type { FreshnessResult } from "@/lib/freshness/rules";
 import { buildComparison, type ComparisonCellInput, type ComparisonResult } from "./build";
 
 export type ComparisonCell = ValueWithLine & {
@@ -17,10 +19,13 @@ export type ComparisonView = {
   result: ComparisonResult;
   questions: QuestionnaireQuestion[];
   answers: Record<string, Record<string, QuestionnaireAnswerRow>>;
+  freshness: Record<string, FreshnessResult>;
+  terms: Record<string, { quoteDate: string | null; validUntil: string | null; freight: string | null; payment: string | null; warranty: string | null }>;
+  approvalDays: number;
 };
 
 export async function loadComparison(client: Db): Promise<ComparisonView> {
-  const { rfx, lines, details } = await loadAllDetails(client);
+  const [{ rfx, lines, details }, freshness] = await Promise.all([loadAllDetails(client), loadFreshness(client)]);
   const cells: ComparisonView["cells"] = {};
   const inputs: Record<string, Record<number, ComparisonCellInput>> = {};
 
@@ -64,5 +69,13 @@ export async function loadComparison(client: Db): Promise<ComparisonView> {
     result,
     questions: rfx.questionnaire,
     answers: Object.fromEntries(details.map((d) => [d.supplier.code, Object.fromEntries(d.questionnaire.map((q) => [q.question_key, q]))])),
+    freshness,
+    terms: Object.fromEntries(
+      details.map((d) => [
+        d.supplier.code,
+        { quoteDate: d.terms?.quote_date ?? null, validUntil: d.terms?.valid_until ?? null, freight: d.terms?.freight_terms ?? null, payment: d.terms?.payment_terms ?? null, warranty: d.terms?.warranty ?? null },
+      ]),
+    ),
+    approvalDays: rfx.approval_days,
   };
 }

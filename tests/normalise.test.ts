@@ -118,6 +118,7 @@ describe("normaliseResponse ledger", () => {
     const v = valueFor([item({ rfx_line_no: 3, price_status: "same_as_previous", raw_price: null, source: { locator: { page: null, sheet: null, cell: null, paragraph: null, line: 16, bbox: null }, snippet: "All other items same as last year's rates." } })], 3);
     expect(v.normalised_value_inr).toBe(1200);
     expect(v.confidence_state).toBe("inferred");
+    expect(v.reason).toMatch(/^Supplier said same as last year/);
   });
 
   it("declined and unquoted lines are Missing with no value", () => {

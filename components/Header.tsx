@@ -28,7 +28,7 @@ export async function Header() {
           </span>
           <span
             className={`rounded-full border px-3 py-1 ${openBlockers ? "border-amber-300 bg-amber-50 text-amber-900" : "border-zinc-300 text-zinc-700"}`}
-            title="Inferred values not yet accepted or corrected, plus open flags and clarifications"
+            title="Inferred values not yet accepted or corrected, open flags and clarifications, and Stale suppliers"
           >
             Open blockers: <span className="font-semibold">{openBlockers ?? "–"}</span>
           </span>

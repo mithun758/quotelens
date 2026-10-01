@@ -7,6 +7,7 @@ import type { ComparisonView } from "@/lib/comparison/load";
 import { formatInr, formatInrCompact } from "@/lib/format/inr";
 import { FormatIcon } from "../quotes/FormatIcon";
 import { CellCard } from "./CellCard";
+import { FreshnessBadge, SupplierDrawer } from "./SupplierDrawer";
 
 type Tab = "matrix" | "questionnaire" | "documents";
 
@@ -16,7 +17,7 @@ const BADGE = {
   missing: { label: "M", style: "bg-red-100 text-red-800", title: "Missing" },
 } as const;
 
-function Matrix({ view, mode }: { view: ComparisonView; mode: BasketMode }) {
+function Matrix({ view, mode, onOpenSupplier }: { view: ComparisonView; mode: BasketMode; onOpenSupplier: (code: string) => void }) {
   const { lines, suppliers, cells, result } = view;
   const [hover, setHover] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
@@ -42,9 +43,14 @@ function Matrix({ view, mode }: { view: ComparisonView; mode: BasketMode }) {
             <th className="px-2 py-2 text-right font-medium">Last cycle</th>
             {suppliers.map((s) => (
               <th key={s.code} className="px-2 py-2 text-right align-bottom">
-                <span className="block font-semibold text-zinc-900">
+                <button
+                  type="button"
+                  onClick={() => onOpenSupplier(s.code)}
+                  className="block w-full text-right font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900"
+                  title="Open supplier details and Quote Freshness"
+                >
                   {s.code}. {s.name}
-                </span>
+                </button>
                 <span className="flex justify-end gap-1">
                   {s.formats.map((f) => (
                     <FormatIcon key={f} format={f} />
@@ -92,7 +98,20 @@ function Matrix({ view, mode }: { view: ComparisonView; mode: BasketMode }) {
             }}
           </SummaryRow>
           <SummaryRow label="Freshness" view={view}>
-            {() => <span className="text-zinc-400">Not assessed yet</span>}
+            {(code) => {
+              const f = view.freshness[code];
+              if (!f) return <span className="text-zinc-400">Not extracted yet</span>;
+              return (
+                <button type="button" onClick={() => onOpenSupplier(code)} className="inline-flex flex-col items-end gap-0.5" title="Open the freshness rules">
+                  <FreshnessBadge status={f.status} />
+                  {f.fired.map((r) => (
+                    <span key={r.key} className={`text-[11px] ${r.severity === "high" ? "text-red-700" : "text-amber-800"}`}>
+                      {r.label}
+                    </span>
+                  ))}
+                </button>
+              );
+            }}
           </SummaryRow>
         </thead>
         <tbody>
@@ -274,6 +293,7 @@ function DocumentsTab({ view }: { view: ComparisonView }) {
 export function ComparisonScreen({ view }: { view: ComparisonView }) {
   const [tab, setTab] = useState<Tab>("matrix");
   const [mode, setMode] = useState<BasketMode>("common");
+  const [drawer, setDrawer] = useState<string | null>(null);
   const tabs: [Tab, string][] = [
     ["matrix", "Quote Comparison"],
     ["questionnaire", "Questionnaire answers"],
@@ -342,11 +362,12 @@ export function ComparisonScreen({ view }: { view: ComparisonView }) {
               not quotes; they are labelled in each cell.
             </p>
           )}
-          <Matrix view={view} mode={mode} />
+          <Matrix view={view} mode={mode} onOpenSupplier={setDrawer} />
         </>
       )}
       {tab === "questionnaire" && <QuestionnaireTab view={view} />}
       {tab === "documents" && <DocumentsTab view={view} />}
+      {drawer && <SupplierDrawer view={view} code={drawer} mode={mode} onClose={() => setDrawer(null)} />}
     </section>
   );
 }

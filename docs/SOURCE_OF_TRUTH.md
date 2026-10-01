@@ -397,6 +397,7 @@ Newest first. Add a row for every change to this document.
 
 | Date | Decision | Why |
 | --- | --- | --- |
+| 1 Oct 2026 | Quote Freshness is computed on demand from AS_OF_DATE, Rfx.approval_days, extracted terms and the seeded series, never stored; Stale suppliers count toward the header's open blockers. Validity exactly on the approval date passes; thresholds are strict (above 30 / 90 days, above 5% / 10%, above 1.5%) | Changing the as-of date or approval days re-evaluates everything with no stale state to clear |
 | 1 Oct 2026 | Only an offer that deviates on at least one spec attribute is a substitute needing Arjun's sign-off. Offers that meet or exceed every attribute are acceptable equivalents under the RFx and count at once; their attribute check is still shown | The RFx accepts any OEM meeting or exceeding the spec; a 15" backpack for 14" laptops should not wait for the Head of IT |
 | 1 Oct 2026 | In the Quote Comparison, substitutes awaiting or refused sign-off are shown but not counted toward L1, spread, coverage or totals, so a line with one drops out of the common basket until Arjun approves. Arjun is an audit actor | "Need Arjun's sign-off before they count"; approving C's laptop visibly brings line 1 back into the basket |
 | 1 Oct 2026 | Header open-blocker counter = Inferred values not yet accepted or corrected + open flags (including awaiting clarifications). Stale suppliers join it with Quote Freshness | Matches the analyst's list_blockers definition |
