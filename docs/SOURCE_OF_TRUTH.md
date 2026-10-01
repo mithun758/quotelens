@@ -132,10 +132,10 @@ The app has five screens for one seeded RFx. There is no RFx list and no separat
 
 | # | Screen | What it must do |
 | --- | --- | --- |
-| 1 | RFx co-pilot | Chat on the left, live RFx draft on the right (lines, specs, questionnaire, terms). Every field editable, laid out as a printed RFx document. "Send RFx" button. |
+| 1 | RFx workspace | Lens on the left, live RFx draft on the right (lines, specs, questionnaire, terms). Every field editable, laid out as a printed RFx document. "Send RFx" button. |
 | 2 | Quotes | Left rail: the five supplier emails with format, status and coverage (for example 27/30). Main pane: original document beside extracted values. Clicking a value highlights its source. Review queue shows only Inferred, Missing and flagged items ("7 to review"), grouped by reason, with Accept value, Accept all similar, Correct and Ask supplier actions. |
 | 3 | Comparison | 30 lines by 5 suppliers in INR, per piece, ex-GST delivered. L1 per line, coverage per supplier, confidence state per cell, flags, and a Freshness column per supplier. Hover any cell for its source and normalisation ledger. Tabs for questionnaire answers and attached documents. |
-| 4 | Analyst | A right-hand drawer that pushes the comparison narrower; Esc closes it. A cited unit price scrolls to its cell and highlights it for 2 seconds. Answers as text, tables or charts, with cited cells, the basis used (basket and scenario) and the tools that ran. Excel and PDF export. |
+| 4 | Lens | A right-hand drawer that pushes the comparison narrower; Esc closes it. Lens briefs Priya when she first opens it. A cell citation scrolls to its cell and highlights it for 2 seconds; a source citation opens the document at the cited place. Answers as text, tables or charts, with cited cells, the basis used (basket and scenario) and the tools that ran. Excel and PDF export. |
 | 5 | Award | Scenario comparison, the chosen award, savings versus L1 and last cycle, blockers still open, override log, and the exportable award memo for Meera. Stubbed buttons: "Send to negotiation" and "Convert to PO". |
 
 A persistent header shows the RFx name, the as-of date, and the award blockers for the chosen scenario. A left rail shows the sequence (1 RFx, 2 Quotes, 3 Comparison, 4 Award) with each step done, current, or a count needing attention, all read from the database.
@@ -218,9 +218,9 @@ Example of what Priya sees:
 
 > Supplier D is nominally L1 on 9 lines, but its rate card is dated 4 June 2026 and the memory benchmark has moved +11% since. Status: Stale. Request a current quote before treating it as L1.
 
-## Analyst agent
+## Lens (the agent)
 
-The analyst is a Claude tool-use loop over the database. It plans which tools to call, reads their results, and explains them. Every number in its answer must come from a tool result.
+Lens is the one agent in QuoteLens: a Claude tool-use loop over the database with one system prompt, `lib/ai/lens/system-prompt.md`, on every screen. It drafts the RFx with Priya, reviews quotes, analyses the comparison and prepares the award. The prompt's placeholders (as-of date, event, RFx dates, screen, selection, an event-state summary with the supplier roster, briefing trigger) are filled from the database and the UI state on every turn; an unfilled placeholder is an error. Tool names in the prompt match the code exactly, and a test enforces it. Every number in an answer must come from a tool result; citations ([[cell:X:N]], [[doc:id:locator]]) must point at a real cell or document, and a cell citation must sit beside that cell's own figure.
 
 | Tool | What it returns |
 | --- | --- |
@@ -235,10 +235,12 @@ The analyst is a Claude tool-use loop over the database. It plans which tools to
 | list\_blockers | Open flags, Inferred values and clarifications that block the award |
 | get\_source | Source document, locator, snippet and normalisation ledger for a cell |
 | draft\_clarification | A specific question to a supplier for a given flag |
+| get\_purchase\_history, get\_meridian\_standards, get\_suppliers | RFx drafting lookups: last IT refresh, Meridian's standard questionnaire and terms, onboarded suppliers |
+| update\_rfx\_draft | Structured changes to the RFx draft (header, lines, terms, questionnaire); a branded line needs Priya's stated reason |
 | make\_chart | Chart spec (bar or line) rendered by the UI |
 | export | Excel or PDF of the current table or answer |
 | accept\_values | Action, preview only: a supplier's Inferred values that share a reason, each with its reason. Confirm runs the Quotes accept action per value |
-| send\_clarification | Action, preview only: the drafted question for chosen review items. Send question runs the Quotes send action |
+| send\_clarification | Action, preview only: the drafted question for chosen review items, or a price reconfirmation for a Stale or Reconfirm supplier. Send question runs the Quotes send action |
 | set\_view | Switches the comparison view, Quoted or Decision-ready, and basket. Applies at once; no data changes |
 | choose\_scenario\_and\_draft\_memo | Action, preview only: scenario totals and open blockers. Confirm saves the scenario and, when nothing blocks, generates the memo |
 
@@ -404,6 +406,7 @@ Newest first. Add a row for every change to this document.
 
 | Date | Decision | Why |
 | --- | --- | --- |
+| 1 Oct 2026 | One agent, Lens, replaces the separate analyst and co-pilot prompts: lib/ai/lens/system-prompt.md is the single system prompt, with the Quote Freshness signature behaviour, filled per turn from the database and UI state. The co-pilot's five drafting writers became one update\_rfx\_draft tool; its three lookups are named in the prompt. send\_clarification gained a price reconfirmation. Citations are parsed into chips: a cell chip highlights the cell, a source chip opens the document at the cited place; invalid or mismatched citations are removed with a warning. Earlier answers carry the tools they used, and the event state carries the supplier roster, after the first test run mixed up supplier letters | One voice and one set of rules from RFx to memo, with freshness as the thread through every stage |
 | 1 Oct 2026 | Co-pilot: vendor-neutral specs for any category. Code refuses a line that names a brand or model unless it carries Priya's stated reason, which is then recorded in the spec ("Brand required", "Reason for brand"); vague requests become measurable attributes with a one-line reason (wider competition, comparable quotes). Before drafting it asks only for missing essentials (quantity, delivery locations, need-by date, warranty, quote validity, GST basis), computed from the draft each turn, never re-asks what was said, and asks at most two questions per turn. Non-IT categories get category-appropriate attributes and an adapted questionnaire. Transcripts in docs/copilot-transcripts.md | Brand-locked specs narrow competition and make quotes hard to compare; the buyer can still keep a brand, on the record |
 | 1 Oct 2026 | Add a response (Phase 11): on the Quotes inbox Priya picks a supplier or names a new one and uploads one file (PDF, xlsx, docx, JPG, PNG or UTF-8 text, at most 10 MB; the extension must match the file's first bytes). The file is stored under uploads/, logged as an AuditEvent and read by the same extraction pipeline. Unknown documents degrade safely: items that match no line are listed as unmatched, nothing is imputed, and lines not found are Missing. A new supplier has no GSTIN on file and is never the incumbent; up to eight suppliers. Reset removes uploaded files with the rows | Lets an evaluator try a quote of their own without weakening any rule |
 | 1 Oct 2026 | Chat can act, Priya confirms (Phase 10): four action tools return preview cards and never write; Confirm calls the existing server actions, so audit entries match the screens. set\_view applies at once because it only changes the display. There is no override tool: overrides need Priya's own typed reason on the Award screen. A test runs every action tool against a recording client and fails on any write | Lets Priya act from the conversation without giving the model authority to change data |

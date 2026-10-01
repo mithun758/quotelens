@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { docCite } from "@/lib/ai/lens/citations";
+import type { SourceLocator } from "@/lib/db/types";
 import { defineTool } from "./define";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -25,7 +27,10 @@ export const getSource = defineTool({
     review_status: z.string(),
     reason: z.string().nullable(),
     document: z.string().nullable(),
+    document_id: z.string().nullable(),
     location: z.record(z.string(), z.unknown()).nullable(),
+    cite_cell: z.string().describe("Copy this after the price to cite the comparison cell"),
+    cite_source: z.string().nullable().describe("Copy this after a figure or quote to cite the source document"),
     snippet: z.string().nullable(),
     ledger: z.array(z.object({ step: z.number(), kind: z.string(), input: z.number(), output: z.number(), rate: z.number().nullable(), rate_source: z.string().nullable(), rate_date: z.string().nullable() })),
     substitute_check: z.array(z.object({ attribute: z.string(), required: z.string(), offered: z.string(), result: z.string() })).nullable(),
@@ -51,7 +56,10 @@ export const getSource = defineTool({
       review_status: c.status,
       reason: c.reason,
       document: c.source_document_id ? (info.documents[c.source_document_id] ?? null) : null,
+      document_id: c.source_document_id,
       location: (c.source_locator as Record<string, unknown> | null) ?? null,
+      cite_cell: `[[cell:${code}:${input.line}]]`,
+      cite_source: c.source_document_id ? docCite(c.source_document_id, c.source_locator as SourceLocator | null) : null,
       snippet: c.source_snippet,
       ledger: c.steps.map((s) => ({ step: s.step_order, kind: s.kind, input: Number(s.input), output: Number(s.output), rate: s.rate === null ? null : Number(s.rate), rate_source: s.rate_source, rate_date: s.rate_date ? date(s.rate_date) : null })),
       substitute_check: c.substitute_check?.map((x) => ({ attribute: x.attribute, required: String(x.required), offered: String(x.offered), result: x.result })) ?? null,

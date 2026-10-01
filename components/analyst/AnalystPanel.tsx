@@ -6,11 +6,12 @@ import { ErrorNote } from "../ErrorNote";
 import { SidePanel } from "../ui/SidePanel";
 import { btn, input } from "../ui/styles";
 import { AnswerCard } from "./AnswerCard";
-import { ViewControlContext } from "./viewControl";
+import { LensUiContext, ViewControlContext } from "./viewControl";
 
-type Exchange = { question: string; reply: AnalystReply | null; error: string | null };
+// A briefing is Lens speaking first when Priya opens the panel; it has no question bubble.
+type Exchange = { question: string; reply: AnalystReply | null; error: string | null; briefing?: boolean };
 
-const STORAGE_KEY = "quotelens.analyst.v2";
+const STORAGE_KEY = "quotelens.analyst.v3";
 const SUGGESTIONS = [
   "Who is cheapest overall on a like-for-like basis?",
   "Only among suppliers who passed the quality questionnaire?",
@@ -37,6 +38,16 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
   const [pending, startTransition] = useTransition();
   const endRef = useRef<HTMLDivElement>(null);
   const viewControl = useContext(ViewControlContext);
+  const lensUi = useContext(LensUiContext);
+
+  // Lens briefs Priya once, the first time she opens the panel in this session.
+  const briefed = useRef(false);
+  useEffect(() => {
+    if (briefed.current || history.length) return;
+    briefed.current = true;
+    ask(`Priya has just opened the ${lensUi.screen === "comparison" ? "Quote Comparison" : lensUi.screen} screen. Brief her: under 60 words, then two or three suggested next steps.`, false, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on first open
+  }, []);
 
   useEffect(() => {
     try {
@@ -47,15 +58,15 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [history]);
 
-  function ask(q: string, replaceLast = false) {
+  function ask(q: string, replaceLast = false, briefing = false) {
     const text = q.trim();
     if (!text || pending) return;
     const base = replaceLast ? history.slice(0, -1) : history;
-    const turns = base.flatMap((e) => (e.reply ? [{ role: "user" as const, content: e.question }, { role: "assistant" as const, content: e.reply.answer }] : []));
-    setHistory([...base, { question: text, reply: null, error: null }]);
+    const turns = base.flatMap((e) => (e.reply ? [{ role: "user" as const, content: e.question }, { role: "assistant" as const, content: e.reply.answer, tools: e.reply.tools.map((t) => t.name) }] : []));
+    setHistory([...base, { question: text, reply: null, error: null, briefing }]);
     setQuestion("");
     startTransition(async () => {
-      const r = await askAnalystAction(text, turns);
+      const r = await askAnalystAction(text, turns, { screen: lensUi.screen, selection: lensUi.selection, briefing });
       // set_view changes only what the comparison shows, so it applies as the answer arrives.
       const reply = r.ok
         ? { ...r.reply, actions: r.reply.actions.map((a) => (a.kind === "set_view" && viewControl ? { ...a, status: "done" as const, done_note: `Comparison switched to ${viewControl.apply(a)}.` } : a)) }
@@ -66,7 +77,7 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <SidePanel
-      title="Analyst"
+      title="Lens"
       subtitle="Every number comes from a tool result and is checked."
       onClose={onClose}
       footer={
@@ -77,7 +88,7 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
           }}
         >
           <label htmlFor="analyst-question" className="sr-only">
-            Ask the analyst
+            Ask Lens
           </label>
           <textarea
             id="analyst-question"
@@ -125,7 +136,7 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
         )}
         {history.map((e, i) => (
           <article key={i} className="space-y-2">
-            <p className="border-l-[3px] border-ink pl-2 text-sm font-semibold">{e.question}</p>
+            {e.briefing ? <p className="text-xs font-semibold text-slate">Briefing</p> : <p className="border-l-[3px] border-ink pl-2 text-sm font-semibold">{e.question}</p>}
             {e.reply && (
               <AnswerCard
                 question={e.question}
@@ -135,7 +146,7 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
                 }
               />
             )}
-            {e.error && <ErrorNote message={e.error} busy={pending} onRetry={i === history.length - 1 ? () => ask(e.question, true) : undefined} />}
+            {e.error && <ErrorNote message={e.error} busy={pending} onRetry={i === history.length - 1 ? () => ask(e.question, true, !!e.briefing) : undefined} />}
             {!e.reply && !e.error && (
               <p role="status" className="text-sm text-slate">
                 Working through the tools. Most answers take 10 to 20 seconds.

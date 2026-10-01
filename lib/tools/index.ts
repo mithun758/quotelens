@@ -1,4 +1,4 @@
-// The analyst tools from the source of truth, as one registry.
+// Every Lens tool, as one registry: read tools, RFx drafting tools and action tools.
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { acceptValuesTool, chooseScenarioTool, sendClarificationTool, setViewTool } from "./actions";
@@ -7,6 +7,7 @@ import { compareScenarios } from "./compare_scenarios";
 import { computeScenarioTool } from "./compute_scenario";
 import type { AnalystTool, ToolContext } from "./define";
 import { draftClarificationTool } from "./draft_clarification";
+import { getMeridianStandards, getPurchaseHistory, getSuppliers, updateRfxDraft } from "./drafting";
 import { exportTool } from "./export";
 import { filterSuppliers } from "./filter_suppliers";
 import { getComparison } from "./get_comparison";
@@ -35,6 +36,10 @@ export const ANALYST_TOOLS: AnalystTool[] = [
   sendClarificationTool,
   setViewTool,
   chooseScenarioTool,
+  getPurchaseHistory,
+  getMeridianStandards,
+  getSuppliers,
+  updateRfxDraft,
 ] as AnalystTool[];
 
 export function anthropicToolDefinitions(): Anthropic.Beta.BetaTool[] {

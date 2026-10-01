@@ -1,6 +1,6 @@
 "use server";
 
-import { runCopilot } from "@/lib/ai/copilot";
+import { runLens } from "@/lib/ai/lens/agent";
 import { hasValidSession } from "@/lib/auth/gate";
 import { asOfDate } from "@/lib/config";
 import { db } from "@/lib/db/client";
@@ -31,13 +31,14 @@ export async function chatAction(message: string) {
     const state = await getDraft(client);
     if (state.status === "sent") throw new Error("This RFx has been sent. Start a new draft to change it.");
     await enforceRateLimit(client, "copilot");
-    const turn = await runCopilot(client, state.draft, state.conversation.slice(-20), message.trim());
-    const conversation = [...state.conversation, { role: "user" as const, content: message.trim() }, { role: "assistant" as const, content: turn.reply }];
-    await saveDraft(client, turn.draft, conversation);
-    if (turn.toolCalls.some((t) => !t.error && !t.name.startsWith("get_"))) {
-      await recordAuditEvent({ actor: "model", action: "update_rfx_draft", target: turn.draft.title || "rfx draft", after: { tools: turn.toolCalls.map((t) => t.name), lines: turn.draft.lines.length } }, client);
+    const turn = await runLens(client, { ui: { screen: "rfx", selection: "none", briefing: false }, message: message.trim(), history: state.conversation.slice(-20), draft: state.draft });
+    const draft = turn.draft ?? state.draft;
+    const conversation = [...state.conversation, { role: "user" as const, content: message.trim() }, { role: "assistant" as const, content: turn.answer }];
+    await saveDraft(client, draft, conversation);
+    if (turn.toolRuns.some((t) => !t.error && t.name === "update_rfx_draft")) {
+      await recordAuditEvent({ actor: "model", action: "update_rfx_draft", target: draft.title || "rfx draft", after: { tools: turn.toolRuns.map((t) => t.name), lines: draft.lines.length } }, client);
     }
-    return { reply: turn.reply, draft: turn.draft, conversation };
+    return { reply: turn.answer, draft, conversation };
   });
 }
 

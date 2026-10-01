@@ -8,7 +8,18 @@ import { recordAuditEvent } from "@/lib/db/queries";
 import type { Insert, Json } from "@/lib/db/types";
 import { loadQuotes } from "@/lib/quotes/load";
 import { inboxReplyFor } from "@/lib/stub/inbox";
-import { QUESTIONNAIRE_TARGET, type QueueItem } from "./queue";
+import { QUESTIONNAIRE_TARGET, RECONFIRM_KEY, RECONFIRM_TARGET, type QueueItem } from "./queue";
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dateText = (iso: string | null | undefined) => {
+  if (!iso) return null;
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return `${d} ${MONTHS[m - 1]} ${y}`;
+};
+const reconfirmIssue = (quoteDate: string | null | undefined) => ({
+  label: "Price reconfirmation",
+  detail: `Please confirm your prices${dateText(quoteDate) ? ` dated ${dateText(quoteDate)}` : ""} still hold, and state your validity.`,
+});
 
 async function queueFor(client: Db, supplierCode: string) {
   const { detail, rfx } = await loadQuotes(client, supplierCode);
@@ -85,16 +96,19 @@ function issueFor(item: QueueItem) {
 export async function draftQuestion(client: Db, supplierCode: string, keys: string[]): Promise<{ subject: string; body: string }> {
   if (!keys.length) throw new Error("Select at least one item to ask about.");
   const { detail, rfx } = await queueFor(client, supplierCode);
-  const items = keys.map((k) => findItem(detail.queue, k));
+  const items = keys.filter((k) => k !== RECONFIRM_KEY).map((k) => findItem(detail.queue, k));
   if (items.some((i) => !i.actions.includes("ask"))) throw new Error("One of these items cannot be sent to the supplier.");
-  return draftClarification(client, { supplierName: detail.supplier.name, supplierCode, rfxTitle: rfx.title, issues: items.map(issueFor) });
+  const issues = [...items.map(issueFor), ...(keys.includes(RECONFIRM_KEY) ? [reconfirmIssue(detail.terms?.quote_date)] : [])];
+  return draftClarification(client, { supplierName: detail.supplier.name, supplierCode, rfxTitle: rfx.title, issues });
 }
 
 // Sending is stubbed: the clarification is recorded and the items show Awaiting supplier.
 export async function sendClarification(client: Db, supplierCode: string, keys: string[], subject: string, body: string): Promise<void> {
   if (!body.trim()) throw new Error("The question is empty.");
   const { detail } = await queueFor(client, supplierCode);
-  const items = keys.map((k) => findItem(detail.queue, k));
+  const items = keys.filter((k) => k !== RECONFIRM_KEY).map((k) => findItem(detail.queue, k));
+  const reconfirm = keys.includes(RECONFIRM_KEY);
+  if (!items.length && !reconfirm) throw new Error("Select at least one item to ask about.");
   if (!detail.response) throw new Error("This supplier has no response yet.");
 
   const flag = await client
@@ -103,7 +117,7 @@ export async function sendClarification(client: Db, supplierCode: string, keys: 
       response_id: detail.response.id,
       type: CLARIFICATION_FLAG,
       severity: "medium",
-      message: `Awaiting supplier: ${subject.trim() || "clarification"} (${items.length} item${items.length === 1 ? "" : "s"})`,
+      message: `Awaiting supplier: ${subject.trim() || "clarification"} (${items.length + (reconfirm ? 1 : 0)} item${items.length + (reconfirm ? 1 : 0) === 1 ? "" : "s"})`,
     })
     .select("id")
     .single();
@@ -122,10 +136,13 @@ export async function sendClarification(client: Db, supplierCode: string, keys: 
       target_flag_type: i.kind === "response_flag" ? i.field : i.kind === "questionnaire" ? QUESTIONNAIRE_TARGET : null,
     };
   });
+  if (reconfirm) {
+    rows.push({ flag_id: flag.data.id, supplier_id: detail.supplier.id, question: body.trim(), subject: subject.trim() || "Price reconfirmation", status: "awaiting", line_item_id: null, field: null, target_flag_type: RECONFIRM_TARGET });
+  }
   const inserted = await client.from("clarification").insert(rows, { defaultToNull: false });
   if (inserted.error) throw new Error(`record clarification: ${inserted.error.message}`);
   await recordAuditEvent(
-    { actor: "priya", action: "ask_supplier", target: `${supplierCode}`, after: { subject, items: items.map((i) => i.headline) } as unknown as Json, reason: "Email sending is stubbed" },
+    { actor: "priya", action: "ask_supplier", target: `${supplierCode}`, after: { subject, items: [...items.map((i) => i.headline), ...(reconfirm ? ["Price reconfirmation"] : [])] } as unknown as Json, reason: "Email sending is stubbed" },
     client,
   );
 }

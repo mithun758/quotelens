@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import Link from "next/link";
+import { useContext, useState, useTransition } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { exportAnswerAction, type AnalystReply } from "@/app/(app)/comparison/analyst-actions";
 import { btn } from "../ui/styles";
 import { ActionCard } from "./ActionCards";
 import { AnalystChart } from "./AnalystChart";
-import { Cited, LineScopeFor, firstCellText, textOf } from "./cite";
+import { CiteContext, citationsToLinks, parseDocHref } from "./cite";
 
 function download(fileName: string, base64: string, mime: string) {
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -39,50 +40,54 @@ export function Markdown({ text, size = "sm" }: { text: string; size?: "sm" | "d
           ),
           td: ({ children, style }) => (
             <td style={style} className="h-8 border-b border-rule px-2 py-1 align-top">
-              <Cited>{children}</Cited>
+              {children}
             </td>
-          ),
-          tr: ({ children }) => (
-            <tr>
-              <LineScopeFor text={textOf(children)} firstCell={firstCellText(children)}>
-                {children}
-              </LineScopeFor>
-            </tr>
-          ),
-          p: ({ children }) => (
-            <p>
-              <LineScopeFor text={textOf(children)}>
-                <Cited>{children}</Cited>
-              </LineScopeFor>
-            </p>
-          ),
-          li: ({ children }) => (
-            <li>
-              <LineScopeFor text={textOf(children)}>
-                <Cited>{children}</Cited>
-              </LineScopeFor>
-            </li>
-          ),
-          strong: ({ children }) => (
-            <strong>
-              <Cited>{children}</Cited>
-            </strong>
           ),
           ul: ({ children }) => <ul className="list-disc space-y-1 pl-5">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal space-y-1 pl-5">{children}</ol>,
-          a: ({ children, href }) => (
-            <a href={href} target="_blank" rel="noreferrer" className="underline decoration-slate underline-offset-[3px] hover:decoration-ink">
-              {children}
-            </a>
-          ),
+          a: ({ children, href }) => <CitationOrLink href={href ?? ""}>{children}</CitationOrLink>,
           h1: ({ children }) => <p className="pt-1 text-sm font-semibold">{children}</p>,
           h2: ({ children }) => <p className="border-b border-rule pb-1 pt-2 text-sm font-semibold">{children}</p>,
           h3: ({ children }) => <p className="pt-1 font-semibold">{children}</p>,
         }}
       >
-        {text}
+        {citationsToLinks(text)}
       </ReactMarkdown>
     </div>
+  );
+}
+
+const chip = "mx-0.5 inline-block rounded-xs border border-field px-1 align-[1px] text-[11px] font-semibold leading-4 text-slate hover:border-ink hover:text-ink";
+
+// Lens citations: a cell chip highlights the comparison cell; a source chip opens the
+// document at the cited place. Other links open normally.
+function CitationOrLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const citer = useContext(CiteContext);
+  const cell = href.match(/^#cite-cell-([A-Z])-(\d+)$/);
+  if (cell) {
+    const label = `Supplier ${cell[1]}, line ${cell[2]}: show the cell`;
+    return citer ? (
+      <button type="button" onClick={() => citer.cite(`${cell[1]}:${cell[2]}`)} title={label} aria-label={label} className={chip}>
+        {children}
+      </button>
+    ) : (
+      <Link href={`/comparison?cell=${cell[1]}-${cell[2]}`} title={label} aria-label={label} className={chip}>
+        {children}
+      </Link>
+    );
+  }
+  const doc = parseDocHref(href);
+  if (doc) {
+    return (
+      <Link href={`/quotes?doc=${doc.id}&loc=${encodeURIComponent(doc.loc)}#exceptions`} title="Open the source document at this place" className={chip}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className="underline decoration-slate underline-offset-[3px] hover:decoration-ink">
+      {children}
+    </a>
   );
 }
 

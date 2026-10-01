@@ -1,9 +1,11 @@
 // A typed analyst tool: zod input and output, backed by /lib functions.
 import { z } from "zod";
 import type { Db } from "@/lib/db/client";
+import type { RfxDraft } from "@/lib/rfx/draft";
 import type { AnalystData } from "./data";
 
-export type ToolContext = { data: AnalystData; client: Db };
+// draft is present on the RFx screen: update_rfx_draft edits it, and the caller saves it.
+export type ToolContext = { data: AnalystData; client: Db; draft?: { current: RfxDraft } };
 
 export type AnalystTool<I extends z.ZodType = z.ZodType, O extends z.ZodType = z.ZodType> = {
   name: string;

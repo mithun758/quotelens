@@ -1,7 +1,8 @@
 // Business logic reads the as-of date from here, never from new Date().
 const DEFAULT_AS_OF_DATE = "2026-09-30";
 
-export const RFX_TITLE = "Meridian Diagnostics · IT Refresh 2026";
+// The customer this prototype is configured for (fictional).
+export const CUSTOMER_NAME = "Meridian Diagnostics";
 
 export function asOfDate(): string {
   const value = process.env.AS_OF_DATE ?? DEFAULT_AS_OF_DATE;

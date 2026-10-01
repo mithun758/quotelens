@@ -6,6 +6,7 @@ import { scenarioBlockers } from "@/lib/blockers/scenario";
 import { getAward } from "@/lib/award/store";
 import { AwardSpec, SCENARIO_LABEL, toScenarioSpec } from "@/lib/award/spec";
 import { describeDelta, formatInr } from "@/lib/format/inr";
+import { RECONFIRM_KEY, RECONFIRM_TARGET } from "@/lib/review/queue";
 import { inferredGroup } from "@/lib/review/groups";
 import { computeScenario } from "@/lib/scenarios/compute";
 import type { AnalystData } from "./data";
@@ -82,12 +83,13 @@ export const sendClarificationTool = defineTool({
   name: "send_clarification",
   action: true,
   description:
-    "Prepares, for Priya to confirm, a question to a supplier about its open review items: chosen lines, its questionnaire failures, or its quote-level flags. Changes nothing: the question is drafted and shown on a card with a Send question button.",
+    "Prepares, for Priya to confirm, a question to a supplier about its open review items (chosen lines, questionnaire failures, quote-level flags) and, with reconfirm_prices, a request to confirm its prices still hold and state its validity. Changes nothing: the question is drafted and shown on a card with a Send question button.",
   input: z.object({
     supplier: z.string(),
     lines: z.array(z.number().int()).optional(),
     include_questionnaire: z.boolean().optional(),
     flag_types: z.array(z.string()).optional().describe("Quote-level flag types, e.g. freight_not_included"),
+    reconfirm_prices: z.boolean().optional().describe("Ask the supplier to confirm its prices still hold and state its validity; for Stale or Reconfirm quotes"),
   }),
   output: z.object({
     kind: z.literal("send_clarification"),
@@ -117,6 +119,10 @@ export const sendClarificationTool = defineTool({
     if (input.include_questionnaire && s.questionnaireFailures.length && !awaiting(data, s.code, null, "questionnaire")) {
       keys.push("questionnaire");
       labels.push(`Questionnaire: fails ${s.questionnaireFailures.length} of ${s.questionnaireTotal}`);
+    }
+    if (input.reconfirm_prices && !awaiting(data, s.code, null, RECONFIRM_TARGET)) {
+      keys.push(RECONFIRM_KEY);
+      labels.push(`Reconfirm prices${s.quoteDate ? ` dated ${s.quoteDate}` : ""} and state validity`);
     }
     if (!keys.length) throw new Error(`Nothing open to ask ${s.name} about with those choices (items already awaiting a reply are skipped).`);
     return { kind: "send_clarification" as const, supplier: s.code, supplier_name: s.name, keys, count: keys.length, items: labels, requires_confirmation: true as const };

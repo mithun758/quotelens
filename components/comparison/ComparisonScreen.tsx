@@ -7,7 +7,7 @@ import type { BasketMode } from "@/lib/comparison/build";
 import { decisionReady } from "@/lib/comparison/decisionReady";
 import type { ComparisonView } from "@/lib/comparison/load";
 import { CiteContext, type Citer } from "../analyst/cite";
-import { ViewControlContext, type ViewControl } from "../analyst/viewControl";
+import { LensUiContext, ViewControlContext, type ViewControl } from "../analyst/viewControl";
 import { displayDate } from "../quotes/format";
 import { Stamp } from "../ui/Stamp";
 import { btn } from "../ui/styles";
@@ -266,27 +266,16 @@ export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonV
     setParams({ analyst: "1" });
   };
 
-  // A unit price cited by the analyst links to its cell (see analyst/cite).
-  const citer = useMemo<Citer>(() => {
-    const index = new Map<number, string[]>();
-    for (const [code, byLine] of Object.entries(view.cells)) {
-      for (const [line, c] of Object.entries(byLine)) {
-        if (c.normalised_value_inr === null) continue;
-        const k = Math.round(c.normalised_value_inr * 100);
-        index.set(k, [...(index.get(k) ?? []), `${code}:${line}`]);
-      }
-    }
-    return {
-      keyFor: (v, lines) => {
-        const keys = (index.get(Math.round(v * 100)) ?? []).filter((k) => lines.includes(Number(k.split(":")[1])));
-        return keys.length === 1 ? keys[0] : null;
-      },
+  // Lens cites a cell as [[cell:B:17]]; clicking it scrolls to the cell and highlights it.
+  const citer = useMemo<Citer>(
+    () => ({
       cite: (key) => {
         setParams({ view: decision ? "decision" : "prices" });
         setHighlight((h) => ({ key, n: (h?.n ?? 0) + 1 }));
       },
-    };
-  }, [view.cells, decision]);
+    }),
+    [decision],
+  );
 
   // set_view from the analyst: change the view, Quoted or Decision-ready, and the basket.
   const viewControl = useMemo<ViewControl>(
@@ -319,6 +308,16 @@ export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonV
       : null;
   const panelOpen = analystOpen || !!side;
 
+  // What Lens is told Priya is looking at.
+  const selection = [
+    `view ${tab === "prices" ? `Prices, ${decision ? "Decision-ready" : "Quoted"}, ${mode === "common" ? "common basket" : "all lines"}` : tab === "compliance" ? "Compliance" : "Quote Freshness"}`,
+    side?.kind === "supplier" && `supplier panel open for ${side.code}`,
+    side?.kind === "substitute" && `substitute sign-off open for supplier ${side.key.split(":")[0]}, line ${side.key.split(":")[1]}`,
+    highlight && `highlighted cell supplier ${highlight.key.split(":")[0]}, line ${highlight.key.split(":")[1]}`,
+  ]
+    .filter(Boolean)
+    .join("; ");
+
   const tabs: [View, string][] = [
     ["prices", "Prices"],
     ["compliance", "Compliance"],
@@ -329,6 +328,7 @@ export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonV
   return (
     <CiteContext.Provider value={citer}>
       <ViewControlContext.Provider value={viewControl}>
+      <LensUiContext.Provider value={{ screen: "comparison", selection }}>
       <div className={`grid gap-5 ${panelOpen ? "grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_460px]" : "grid-cols-1"}`}>
         <section className="min-w-0 space-y-3">
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -338,7 +338,7 @@ export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonV
             </div>
             {!analystOpen && (
               <button type="button" onClick={openAnalyst} className={btn.primary}>
-                Ask the analyst
+                Ask Lens
               </button>
             )}
           </div>
@@ -427,6 +427,7 @@ export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonV
         {side?.kind === "supplier" && <SupplierPanel view={view} code={side.code} mode={mode} onClose={closeAll} />}
         {side?.kind === "substitute" && subCell && <SubstitutePanel cell={subCell.cell} supplierName={subCell.name} lineLabel={subCell.label} onClose={closeAll} />}
       </div>
+      </LensUiContext.Provider>
       </ViewControlContext.Provider>
     </CiteContext.Provider>
   );

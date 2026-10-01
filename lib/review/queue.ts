@@ -30,6 +30,11 @@ type Inputs = {
 // Clarification target for the questionnaire as a whole.
 export const QUESTIONNAIRE_TARGET = "questionnaire";
 
+// A price reconfirmation is not a review-queue item: it asks a Stale or Reconfirm
+// supplier whether its prices still hold and for its validity.
+export const RECONFIRM_KEY = "reconfirm";
+export const RECONFIRM_TARGET = "reconfirmation";
+
 const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 } as const;
 
 export function buildReviewQueue({ values, flags, clarifications, questionnaire, questions }: Inputs): QueueItem[] {

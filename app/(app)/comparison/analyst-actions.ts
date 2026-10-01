@@ -1,6 +1,7 @@
 "use server";
 
-import { askAnalyst, type AnalystTurn } from "@/lib/ai/analyst";
+import { runLens, type LensTurn } from "@/lib/ai/lens/agent";
+import { LENS_SCREENS, type LensUi } from "@/lib/ai/lens/context";
 import { basisNotes } from "@/lib/ai/basis";
 import { hasValidSession } from "@/lib/auth/gate";
 import { asOfDate, formatDisplayDate } from "@/lib/config";
@@ -28,14 +29,17 @@ export type AnalystReply = {
   seconds: number;
 };
 
-export async function askAnalystAction(question: string, history: AnalystTurn[]): Promise<{ ok: true; reply: AnalystReply } | { ok: false; error: string }> {
+// Lens in the chat drawer. ui says which screen Priya is on, what is selected, and
+// whether this is a briefing (she has just arrived and not typed).
+export async function askAnalystAction(question: string, history: LensTurn[], ui: LensUi = { screen: "comparison", selection: "none", briefing: false }): Promise<{ ok: true; reply: AnalystReply } | { ok: false; error: string }> {
   if (!(await hasValidSession())) return { ok: false, error: "Passcode required" };
   if (!question.trim()) return { ok: false, error: "Ask a question." };
+  if (!LENS_SCREENS.includes(ui.screen)) return { ok: false, error: "Unknown screen." };
   const started = Date.now();
   try {
     const client = db();
     await enforceRateLimit(client, "analyst");
-    const r = await askAnalyst(client, question.trim(), history.slice(-12));
+    const r = await runLens(client, { ui: { screen: ui.screen, selection: String(ui.selection ?? "none").slice(0, 200), briefing: !!ui.briefing }, message: question.trim(), history: history.slice(-12).map((t) => ({ role: t.role, content: String(t.content), tools: Array.isArray(t.tools) ? t.tools.map(String).slice(0, 20) : undefined })) });
     await recordAuditEvent({ actor: "priya", action: "ask_analyst", target: "analyst", after: { question, tools: r.toolRuns.map((t) => t.name), warnings: r.warnings.length } }, client);
     // A question card shows its drafted text before Priya sends it. Drafting changes no data.
     const actions = await Promise.all(

@@ -15,7 +15,7 @@ export type ChartSpec = z.infer<typeof ChartSpec>;
 export const makeChart = defineTool({
   name: "make_chart",
   description:
-    "Shows a bar or line chart next to the answer. Values must be copied from earlier tool results, never computed by you; the post-check verifies them.",
+    "Shows a bar or line chart below your text answer (refer to it as the chart below). Your text still needs the answer itself and its basis. Values must be copied from earlier tool results, never computed by you; the post-check verifies them.",
   input: ChartSpec,
   output: z.object({ chart_id: z.string(), rendered: z.boolean() }),
   modelSuppliedNumbers: true,

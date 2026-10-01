@@ -12,9 +12,8 @@
     "seed": "tsx --env-file=.env.local seed/seed.ts",
     "seed:generate": "tsx seed/generate/generate.ts",
     "extract": "tsx --env-file=.env.local scripts/extract.ts",
-    "analyst:demo": "tsx --env-file=.env.local scripts/analyst-demo.ts",
     "smoke": "node --env-file=.env.local scripts/smoke.mjs",
-    "copilot:demo": "tsx --env-file=.env.local scripts/copilot-demo.ts"
+    "lens:demo": "tsx --env-file=.env.local scripts/lens-demo.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { SupplierDetail } from "@/lib/quotes/load";
+import { decodeLocator, encodeLocator } from "@/lib/ai/lens/citations";
 import type { QueueItem } from "@/lib/review/queue";
 import { Stamp } from "../ui/Stamp";
 import { DocumentViewer, type SourceHighlight, type ViewerDocument } from "./DocumentViewer";
@@ -10,10 +11,22 @@ import { ReviewQueue } from "./ReviewQueue";
 import { SentEmails } from "./SentEmails";
 import { ValuesTable } from "./ValuesTable";
 
-export function QuotesWorkspace({ detail, documents, freshness }: { detail: SupplierDetail; documents: ViewerDocument[]; freshness: string | null }) {
+export function QuotesWorkspace({
+  detail,
+  documents,
+  freshness,
+  cited = null,
+}: {
+  detail: SupplierDetail;
+  documents: ViewerDocument[];
+  freshness: string | null;
+  // Opened from a Lens citation: show this document at this place.
+  cited?: { documentId: string; locator: string } | null;
+}) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Open on the document most values were read from (the quotation, not a certificate).
   const [activeDocId, setActiveDocId] = useState<string | null>(() => {
+    if (cited) return cited.documentId;
     const counts = new Map<string, number>();
     for (const v of detail.values) if (v.source_document_id) counts.set(v.source_document_id, (counts.get(v.source_document_id) ?? 0) + 1);
     return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? documents[0]?.id ?? null;
@@ -21,7 +34,14 @@ export function QuotesWorkspace({ detail, documents, freshness }: { detail: Supp
   const [settled, setSettled] = useState<{ ids: string[]; n: number }>({ ids: [], n: 0 });
 
   const selected = detail.values.find((v) => v.id === selectedId) ?? null;
-  const highlight: SourceHighlight = useMemo(() => (selected ? { locator: selected.source_locator, snippet: selected.source_snippet } : null), [selected]);
+  // A cited place shows until Priya selects a value; the value matching it supplies the snippet.
+  const citedHighlight: SourceHighlight = useMemo(() => {
+    if (!cited) return null;
+    const locator = decodeLocator(cited.locator);
+    const match = detail.values.find((v) => v.source_document_id === cited.documentId && encodeLocator(v.source_locator) === cited.locator);
+    return { locator, snippet: match?.source_snippet ?? null };
+  }, [cited, detail.values]);
+  const highlight: SourceHighlight = useMemo(() => (selected ? { locator: selected.source_locator, snippet: selected.source_snippet } : citedHighlight), [selected, citedHighlight]);
 
   function selectValue(id: string) {
     const v = detail.values.find((x) => x.id === id);

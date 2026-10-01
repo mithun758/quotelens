@@ -14,7 +14,7 @@ export const SupplierFilter = z
       .describe('Leave out suppliers with these Quote Freshness statuses. "Quotes that need reconfirmation" means ["Stale", "Reconfirm"]; "excluding stale quotes" means ["Stale"]'),
     exclude_incumbent: z.boolean().optional(),
   })
-  .describe("Which suppliers to consider");
+  .describe('Which suppliers to consider. The Decision-ready view is questionnaire_passed_only true with exclude_freshness ["Stale"]: only qualified suppliers whose quote is not Stale.');
 export type SupplierFilter = z.infer<typeof SupplierFilter>;
 
 export const LineFilter = z.object({

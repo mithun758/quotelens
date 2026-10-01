@@ -103,10 +103,10 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
   const th = "border-b border-ink py-1 pr-2 text-left text-xs font-semibold text-slate";
   return (
     <div className="grid grid-cols-[22rem_minmax(0,1fr)] gap-6 2xl:grid-cols-[26rem_minmax(0,1fr)]">
-      <aside aria-label="RFx co-pilot" className="sticky top-[4.75rem] flex h-[calc(100vh-6rem)] min-h-0 flex-col border border-rule bg-sheet">
+      <aside aria-label="Lens" className="sticky top-[4.75rem] flex h-[calc(100vh-6rem)] min-h-0 flex-col border border-rule bg-sheet">
         <div className="flex items-start justify-between gap-2 border-b border-rule px-4 py-3">
           <div>
-            <h2 className="text-base font-semibold">RFx co-pilot</h2>
+            <h2 className="text-base font-semibold">Lens</h2>
             <p className="text-xs text-slate">Describe what you need; the document fills in on the right.</p>
           </div>
           <button

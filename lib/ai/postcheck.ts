@@ -46,8 +46,11 @@ export function matches(token: NumberToken, pool: number[]): boolean {
 // Links are not claims: drop URLs (bare or inside markdown links) before checking.
 const URL = /https?:\/\/\S+/g;
 
+// Numbered-list markers ("2. Line 1") are structure, not figures.
+const LIST_MARKER = /^(\s*)\d+\.\s/gm;
+
 export function postCheck(answer: string, pool: number[], where = "answer"): PostCheckWarning[] {
-  return extractNumbers(answer.replace(URL, ""))
+  return extractNumbers(answer.replace(URL, "").replace(LIST_MARKER, "$1"))
     .filter((t) => !matches(t, pool))
     .map((t) => ({ text: t.text, where, reason: "Not found in any tool result" }));
 }

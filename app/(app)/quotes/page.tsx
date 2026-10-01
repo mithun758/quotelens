@@ -12,11 +12,15 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 export default async function QuotesPage({ searchParams }: PageProps<"/quotes">) {
-  const { supplier } = await searchParams;
+  const { supplier, doc, loc } = await searchParams;
   const client = db();
   const [{ lines, details }, freshness] = await Promise.all([loadAllDetails(client), loadFreshness(client)]);
   const code = typeof supplier === "string" ? supplier.toUpperCase() : null;
-  const detail = details.find((d) => d.supplier.code === code) ?? details[0] ?? null;
+  // A Lens citation ([[doc:id:locator]]) opens the supplier that owns the document.
+  const citedDoc = typeof doc === "string" ? doc : null;
+  const owner = citedDoc ? details.find((d) => d.documents.some((x) => x.id === citedDoc)) : undefined;
+  const detail = owner ?? details.find((d) => d.supplier.code === code) ?? details[0] ?? null;
+  const cited = owner && citedDoc ? { documentId: citedDoc, locator: typeof loc === "string" ? loc : "" } : null;
   const documents = detail
     ? await Promise.all(detail.documents.map(async (d) => ({ id: d.id, file_name: d.file_name, mime_type: d.mime_type, model: await renderDocument(client, d) })))
     : [];
@@ -43,7 +47,7 @@ export default async function QuotesPage({ searchParams }: PageProps<"/quotes">)
         <SupplierTabs details={details} selected={detail?.supplier.code ?? null} />
         {detail ? (
           extracted ? (
-            <QuotesWorkspace key={detail.supplier.code} detail={detail} documents={documents} freshness={freshness[detail.supplier.code]?.status ?? null} />
+            <QuotesWorkspace key={`${detail.supplier.code}-${cited?.documentId ?? ""}-${cited?.locator ?? ""}`} detail={detail} documents={documents} freshness={freshness[detail.supplier.code]?.status ?? null} cited={cited} />
           ) : (
             <p className="text-sm text-slate">This quote has not been read yet. Extract the quotes above first; it takes about a minute.</p>
           )

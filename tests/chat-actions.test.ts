@@ -62,9 +62,10 @@ describe("chat actions", () => {
     expect(out.memo_blocked).toBe(out.open_blockers.length > 0);
   });
 
-  it("the system prompt forbids acting without a confirmed preview and sends overrides to the Award screen", () => {
-    const prompt = fs.readFileSync("lib/ai/analyst.ts", "utf8");
-    expect(prompt).toMatch(/never perform an action without a preview that Priya confirms/);
-    expect(prompt).toMatch(/You cannot override blockers/);
+  it("the Lens system prompt forbids acting without a confirmed preview and sends overrides to the Award screen", () => {
+    const prompt = fs.readFileSync("lib/ai/lens/system-prompt.md", "utf8");
+    expect(prompt).toMatch(/No action without a confirmed preview/);
+    expect(prompt).toMatch(/You cannot override a blocker/);
+    expect(prompt).toMatch(/Point her there/);
   });
 });
