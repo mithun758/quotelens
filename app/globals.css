@@ -225,3 +225,9 @@ body {
 .no-focus-ring:focus-visible {
   outline: none;
 }
+
+/* A date input takes focus in its inner segments, which :focus-visible misses. */
+input[type="date"]:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
