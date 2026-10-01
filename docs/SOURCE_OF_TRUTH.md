@@ -226,11 +226,12 @@ The analyst is a Claude tool-use loop over the database. It plans which tools to
 | --- | --- |
 | get\_comparison | Normalised matrix, filtered by lines, suppliers or category |
 | filter\_suppliers | Suppliers matching criteria: questionnaire pass, freshness status, coverage, incumbent |
-| rank\_lines | L1, L2 and spread per line on a chosen basis |
+| rank\_lines | L1 and L2 with their suppliers, the L1-to-L2 gap, the highest price and spread, and the incumbent's premium over L1, per line on a chosen basis |
 | supplier\_totals | Totals per supplier on the common basket or all-lines basis |
 | compute\_scenario | Best Quote, Best Supplier, Incumbent, Best Quote Without Incumbent, or a custom allocation, with totals and savings |
+| compare\_scenarios | Two scenarios and the saving of one against the other, overall and like-for-like on the lines both allocate |
 | compare\_last\_cycle | Price change per line and supplier against Meridian's last-cycle prices |
-| get\_freshness | Freshness status and fired rules per supplier |
+| get\_freshness | Freshness status and fired rules per supplier, and the rupee FX exposure on lines quoted in a foreign currency |
 | list\_blockers | Open flags, Inferred values and clarifications that block the award |
 | get\_source | Source document, locator, snippet and normalisation ledger for a cell |
 | draft\_clarification | A specific question to a supplier for a given flag |
@@ -245,6 +246,7 @@ The analyst is a Claude tool-use loop over the database. It plans which tools to
 - Show a collapsible "How I got this" list of tools called.
 - A post-check compares every number in the answer text with the tool results. Any number not found is flagged in the UI.
 - If a question cannot be answered from the data, say what is missing. Never estimate.
+- The analyst does not forecast prices, markets or exchange rates. "Buy now or wait" is answered with what the data shows: freshness, movement since the quote date, and validity against approval.
 
 ## Award scenarios, gating and memo
 
@@ -397,6 +399,7 @@ Newest first. Add a row for every change to this document.
 
 | Date | Decision | Why |
 | --- | --- | --- |
+| 1 Oct 2026 | Sceptical walkthrough (Phase 8b): every planted anomaly checked end to end, and ten unscripted VP questions asked. Fixes: a quote that states no freight or delivery terms now gets a low-severity "freight terms not stated" flag (treated as delivered, listed as a memo risk); rank\_lines separates the L1-to-L2 gap from the spread and returns the incumbent's premium over L1; a thirteenth tool, compare\_scenarios, returns the saving of one award against another, overall and like-for-like; get\_freshness returns rupee FX exposure and the change per 1% rate move; scenario totals carry exact Indian-grouped displays. The analyst declines forecasts, may repeat the as-of date and approval days it is given, and makes "none", "every" or "only" claims only from a tool result covering every line or supplier | The VP questions exposed tool gaps where the honest answer was "no tool returns that", one misread field, and a post-check false alarm on the as-of date |
 | 1 Oct 2026 | Live-demo hardening: every model call has a bounded timeout and one retry, and Supabase requests time out at 30 s; errors are translated to plain messages with a Retry button. AI calls are rate-limited per browser session (a random session cookie, counted in Postgres) plus a global hourly cap. Reset demo re-seeds in about 2 seconds and returns quotes to received; extraction runs live from the Quotes screen (about 50 seconds, five suppliers in parallel through a route handler, since server actions run one at a time). A cached copy of extraction output is not used for reset, because seed data is inputs only | Strangers can drive the demo without breaking it or draining API credit, and Act 3 shows extraction happening for real |
 | 1 Oct 2026 | RFx co-pilot: the draft is its own record (rfx_draft), never the seeded RFx the rest of the app uses; Reset demo clears it. The co-pilot asks at most three focused follow-ups when key facts are missing, then writes the draft only through zod-validated update tools (header, lines, terms, questionnaire) that code applies; it reads Meridian's purchase history, standard questionnaire and terms, and the onboarded suppliers. Specs are vendor-neutral but keep every requirement (processor tier and generation, capacities, standards). Priya's edits are kept unless she asks to change them. Send validates the draft, shows a simulated send to the five suppliers, logs it and goes to Quotes | Describing the Meridian refresh produces a comparable 30-line draft from data, not a canned answer |
 | 1 Oct 2026 | Award: eligibility toggles (questionnaire passed, substitutes approved: both on by default) and freshness toggles (exclude Stale, exclude Reconfirm: off by default, so Stale quotes show as blockers). Savings vs L1 compares with the lowest counted price on each awarded line across all suppliers; a conditional discount can make a scenario cheaper than that. Blockers have stable keys; inferred values and flags can be resolved inline, everything else is overridden with a typed reason (at least a few words), logged and printed in the memo. Changing the scenario, toggles or overrides clears the memo | The memo always matches the award on screen |

@@ -22,6 +22,8 @@ export function dataFromGroundTruth({ eQualified = false, substitutesApproved = 
         status: "needs_review",
         substitute_status: sub ? (substitutesApproved ? "approved" : "pending") : null,
         id: `${code}-${l.line_no}`,
+        line_no: l.line_no,
+        steps: [],
         reason: l.raw_value === "same as last year's rates" ? PRIOR_PRICING_REASON : null,
         openFlags: [],
       } as unknown as Cell;

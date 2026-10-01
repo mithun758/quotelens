@@ -32,14 +32,15 @@ function systemPrompt(data: AnalystData): string {
 All prices are normalised to INR per piece, ex-GST, delivered to hub. A value is Extracted (read directly), Inferred (a judgement or code-derived conversion) or Missing (never imputed). Substitutes awaiting Arjun's sign-off are not counted. Quote Freshness is Fresh, Reconfirm or Stale. "Qualified" means passing every questionnaire question. "Like-for-like" means the common basket of lines every chosen supplier can be counted on. Benchmarks and FX rates are illustrative.
 
 Rules:
-1. Every number in your answer must come from a tool result. Copy numbers and totals exactly as tools return them, preferring the *_display strings for totals (lakh or crore). Never add, subtract, average, multiply, count or estimate numbers yourself, and never work out date differences. If you need a figure no tool returned, call a tool that computes it; if none can, say so.
+1. Every number in your answer must come from a tool result. Copy numbers and totals exactly as tools return them, preferring the *_display strings for totals (lakh or crore). Never print a raw *_inr figure above ₹1 lakh without Indian grouping (₹1,41,78,970, not ₹14,178,970). Never add, subtract, average, multiply, count or estimate numbers yourself, and never work out date differences. If you need a figure no tool returned, call a tool that computes it (compare_scenarios for the difference between two awards, rank_lines for gaps and the incumbent's premium per line, get_freshness for FX exposure); if none can, say so. Read each field's description and use it only for what it says. When a saving is negative, say the award costs that much more than last cycle, without a minus sign.
 2. If the answer depends on Inferred values or on Stale or Reconfirm quotes, say so in your first sentence.
 3. Then lead with the answer itself in one or two sentences.
 4. State the basis: which basket, which scenario, which suppliers were included, and which were excluded and why.
-5. If the data cannot answer the question, say exactly what is missing. Never guess. Describe statuses, reasons and failures only in the words tools return; do not add detail they did not give. Never explain why a result came out as it did unless a tool states the reason; if you have not checked, do not speculate.
+5. If the data cannot answer the question, say exactly what is missing. Never guess. Describe statuses, reasons and failures only in the words tools return; do not add detail they did not give. Never explain why a result came out as it did unless a tool states the reason; if you have not checked, do not speculate. Claims with "none", "every", "only", "any" or "not on any line" need a tool result that covers every line or supplier in question (for per-line claims, rank_lines or get_comparison); otherwise do not make them.
 6. Use a short markdown table when listing several lines or suppliers. Use make_chart when asked for a chart or when a comparison is clearer as one. Use export only when asked for a file.
-7. Earlier turns of this conversation are context: "this award" or "it" refers to what was last discussed.
-8. UK English, plain and brief. INR with Indian grouping (₹1,05,000). No em dashes.`;
+7. You cannot forecast prices, markets or exchange rates. For "buy now or wait" style questions, say so and offer what the data does show: freshness, movement since the quote date, and validity against approval.
+8. Earlier turns of this conversation are context: "this award" or "it" refers to what was last discussed.
+9. UK English, plain and brief. INR with Indian grouping (₹1,05,000). No em dashes.`;
 }
 
 function toolResultContent(run: ToolRun): string {
@@ -110,6 +111,8 @@ export async function askAnalyst(client: Db, question: string, history: AnalystT
   // Post-check: the answer, charts and exports against numbers from data tools and the question.
   const pool = collectNumbers(toolRuns.filter((r) => !r.modelSuppliedNumbers && !r.error).map((r) => r.output));
   collectNumbers(question, pool);
+  // The system prompt states these, so the answer may repeat them.
+  collectNumbers([data.asOfDate, data.rfx.approval_days, data.lines.length], pool);
   const charts = toolRuns.filter((r) => r.name === "make_chart" && !r.error).map((r) => r.input as ChartSpec);
   const exportRuns = toolRuns.filter((r) => r.name === "export" && !r.error);
   const warnings = [

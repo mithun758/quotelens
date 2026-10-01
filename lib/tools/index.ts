@@ -1,7 +1,8 @@
-// The twelve analyst tools from the source of truth, as one registry.
+// The analyst tools from the source of truth, as one registry.
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { compareLastCycle } from "./compare_last_cycle";
+import { compareScenarios } from "./compare_scenarios";
 import { computeScenarioTool } from "./compute_scenario";
 import type { AnalystTool, ToolContext } from "./define";
 import { draftClarificationTool } from "./draft_clarification";
@@ -21,6 +22,7 @@ export const ANALYST_TOOLS: AnalystTool[] = [
   rankLines,
   supplierTotals,
   computeScenarioTool,
+  compareScenarios,
   compareLastCycle,
   getFreshness,
   listBlockers,

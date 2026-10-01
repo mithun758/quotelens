@@ -287,6 +287,7 @@ async function replaceResponseData(
       });
     }
   }
+  const priced = result.normalised.filter((v) => v.raw_currency !== null && v.confidence_state !== "missing");
   const freightBasis = result.docs.map((d) => d.extraction.terms.freight_basis).find((b) => b !== "not_stated");
   if (freightBasis === "extra" || freightBasis === "partly_extra") {
     flags.push({
@@ -296,7 +297,14 @@ async function replaceResponseData(
       message: `Freight is not fully included (${result.terms.freight_terms?.value ?? "freight extra"}). Prices are compared ex-freight; unknown freight is never added.`,
     });
   }
-  const priced = result.normalised.filter((v) => v.raw_currency !== null && v.confidence_state !== "missing");
+  if (!freightBasis && !result.terms.freight_terms && priced.length && data.documents.length) {
+    flags.push({
+      response_id: responseId,
+      type: "freight_terms_not_stated",
+      severity: "low",
+      message: "The quote does not state freight or delivery terms. Treated as delivered to hub; confirm before award.",
+    });
+  }
   const anyGstStatement = !!result.terms.gst_treatment;
   if (!anyGstStatement && priced.length && data.documents.length) {
     const allNotStated = result.docs.every((d) => d.extraction.items.every((i) => i.gst === "not_stated"));

@@ -73,7 +73,7 @@ export async function buildMemoFacts(client: Db, view: AwardView & { data: impor
   for (const s of chosen.reconfirm_suppliers_used) risks.push(`${name(s)} needs reconfirmation: ${data.suppliers.find((x) => x.code === s)!.freshness!.fired.map((r) => r.label).join(", ")}.`);
   for (const d of chosen.discounts) risks.push(d.applied ? `${name(d.supplier)}'s ${d.percent}% conditional discount is applied (${d.reason}); it depends on the order meeting the condition.` : `${name(d.supplier)}'s ${d.percent}% conditional discount is not applied: ${d.reason}.`);
   for (const s of chosen.by_supplier) {
-    for (const f of data.suppliers.find((x) => x.code === s.supplier)!.responseFlags.filter((x) => x.type === "freight_not_included")) risks.push(`${name(s.supplier)}: ${f.message}`);
+    for (const f of data.suppliers.find((x) => x.code === s.supplier)!.responseFlags.filter((x) => ["freight_not_included", "freight_terms_not_stated"].includes(x.type))) risks.push(`${name(s.supplier)}: ${f.message}`);
   }
   if (usdLinesAwarded.length) risks.push(`Lines ${usdLinesAwarded.join(", ")} are quoted in USD and converted at the illustrative rate; the rupee cost moves with the exchange rate.`);
   if (chosen.unallocated.length) risks.push(`${chosen.unallocated.length} line${chosen.unallocated.length === 1 ? "" : "s"} not covered by this award: ${chosen.unallocated.map((u) => `line ${u.line} (${u.reason})`).join("; ")}.`);

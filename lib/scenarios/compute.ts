@@ -3,7 +3,7 @@
 // Only countable cells are awarded (priced, and substitutes approved by Arjun).
 // A conditional discount applies only when the award meets its condition.
 import { counts } from "@/lib/comparison/build";
-import { formatInrCompact } from "@/lib/format/inr";
+import { formatInr, formatInrCompact } from "@/lib/format/inr";
 import { PRIOR_PRICING_REASON } from "@/lib/normalise/normaliseResponse";
 import type { AnalystData } from "@/lib/tools/data";
 import { applySupplierFilter, type Basis, type SupplierFilter } from "@/lib/tools/filters";
@@ -45,13 +45,16 @@ export type ScenarioResult = {
   discounts: { supplier: string; percent: number; condition: string | null; applied: boolean; reason: string; amount_inr: number }[];
   total_inr: number;
   total_display: string;
+  total_exact_display: string;
   last_cycle_inr: number;
   last_cycle_display: string;
   saving_vs_last_cycle_inr: number;
   saving_vs_last_cycle_display: string;
   saving_vs_last_cycle_pct: number | null;
   nominal_l1_inr: number;
+  nominal_l1_display: string;
   premium_vs_nominal_l1_inr: number;
+  premium_vs_nominal_l1_display: string;
   inferred_lines: number[];
   prior_pricing_lines: number[];
   stale_suppliers_used: string[];
@@ -196,13 +199,16 @@ export function computeScenario(data: AnalystData, spec: ScenarioSpec): Scenario
     discounts,
     total_inr: total,
     total_display: formatInrCompact(total),
+    total_exact_display: formatInr(total, 0),
     last_cycle_inr: lastCycle,
     last_cycle_display: formatInrCompact(lastCycle),
     saving_vs_last_cycle_inr: round2(lastCycle - total),
     saving_vs_last_cycle_display: formatInrCompact(round2(lastCycle - total)),
     saving_vs_last_cycle_pct: lastCycle ? round2(((lastCycle - total) / lastCycle) * 100) : null,
     nominal_l1_inr: nominalL1,
+    nominal_l1_display: formatInrCompact(nominalL1),
     premium_vs_nominal_l1_inr: round2(total - nominalL1),
+    premium_vs_nominal_l1_display: formatInrCompact(round2(total - nominalL1)),
     inferred_lines: allocation.filter((a) => a.confidence === "inferred").map((a) => a.line),
     prior_pricing_lines: allocation.filter((a) => a.on_prior_pricing).map((a) => a.line),
     stale_suppliers_used: used.filter((s) => fresh(s) === "Stale").sort(),
