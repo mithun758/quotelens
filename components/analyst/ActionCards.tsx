@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { generateMemoAction, saveSpecAction } from "@/app/(app)/award/actions";
@@ -11,13 +12,23 @@ import { btn, input } from "../ui/styles";
 type Props<T> = { action: T; onDone: (note: string) => void };
 
 // Every card states that nothing has changed yet; the button names exactly what happens.
-function Frame({ title, children, done }: { title: string; children: React.ReactNode; done?: string }) {
+// "14:32" in IST, when Priya confirmed.
+const at = (iso?: string) => (iso ? new Date(iso).toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" }) : null);
+
+function Frame({ title, children, done, doneAt }: { title: string; children: React.ReactNode; done?: string; doneAt?: string }) {
   return (
-    <section aria-label={title} className={`border border-rule border-l-[3px] bg-sheet p-3 text-[13px] ${done ? "border-l-ledger" : "border-l-ink"}`}>
-      <p className="text-xs font-semibold text-slate">{done ? "Confirmed" : "Preview: nothing changes until you confirm"}</p>
-      <h4 className="mt-0.5 text-sm font-semibold">{title}</h4>
+    <section aria-label={title} className="rounded-panel border border-rule-strong bg-sheet p-3 text-table">
+      {done ? (
+        <p className="flex items-center gap-1.5 text-meta font-semibold text-ledger">
+          <Check aria-hidden className="size-3.5 stroke-2" />
+          {at(doneAt) ? `Confirmed at ${at(doneAt)}` : "Confirmed"}
+        </p>
+      ) : (
+        <p className="text-meta text-slate">Preview: nothing changes until you confirm</p>
+      )}
+      <h4 className="mt-1 text-body font-semibold">{title}</h4>
       <div className="mt-2 space-y-2">{children}</div>
-      {done && <p className="settle mt-2 text-xs text-ledger">{done}</p>}
+      {done && <p className="settle mt-2 text-meta text-ledger">{done}</p>}
     </section>
   );
 }
@@ -41,13 +52,13 @@ function AcceptCard({ action, onDone }: Props<AcceptPreview & { status?: "done";
       onDone(`${action.items.length} accepted. Each is logged separately, as on the Quotes screen.`);
     });
   return (
-    <Frame title={`Accept ${action.items.length} Inferred value${action.items.length === 1 ? "" : "s"} from ${action.supplier}. ${action.supplier_name}: ${action.reason_title}`} done={action.done_note}>
-      <table className="w-full border-collapse text-xs">
+    <Frame title={`Accept ${action.items.length} Inferred value${action.items.length === 1 ? "" : "s"} from ${action.supplier}. ${action.supplier_name}: ${action.reason_title}`} done={action.done_note} doneAt={(action as { done_at?: string }).done_at}>
+      <table className="w-full border-collapse text-meta">
         <thead>
           <tr className="text-slate">
-            <th className="border-b border-ink py-1 pr-2 text-left font-semibold">Line</th>
-            <th className="border-b border-ink py-1 pr-2 text-right font-semibold">Value</th>
-            <th className="border-b border-ink py-1 text-left font-semibold">Reason</th>
+            <th className="border-b-2 border-rule-strong py-1 pr-2 text-left font-semibold">Line</th>
+            <th className="border-b-2 border-rule-strong py-1 pr-2 text-right font-semibold">Value</th>
+            <th className="border-b-2 border-rule-strong py-1 text-left font-semibold">Reason</th>
           </tr>
         </thead>
         <tbody>
@@ -91,14 +102,14 @@ function SendCard({ action, onDone }: Props<SendPreview & { status?: "done"; don
       else setError(r.error);
     });
   return (
-    <Frame title={`Question to ${action.supplier}. ${action.supplier_name}`} done={action.done_note}>
-      <ul className="list-disc pl-4 text-xs text-slate">
+    <Frame title={`Question to ${action.supplier}. ${action.supplier_name}`} done={action.done_note} doneAt={(action as { done_at?: string }).done_at}>
+      <ul className="list-disc pl-4 text-meta text-slate">
         {action.items.map((i) => (
           <li key={i}>{i}</li>
         ))}
       </ul>
       {action.draft_error ? (
-        <p className="text-xs text-oxblood">
+        <p className="text-meta text-oxblood">
           {action.draft_error} You can ask the supplier from the{" "}
           <Link href={`/quotes?supplier=${action.supplier}#exceptions`} className="underline">
             Quotes screen
@@ -106,16 +117,16 @@ function SendCard({ action, onDone }: Props<SendPreview & { status?: "done"; don
           .
         </p>
       ) : action.status ? (
-        <p className="whitespace-pre-wrap border-l-[3px] border-rule pl-2 text-xs">{body}</p>
+        <p className="whitespace-pre-wrap border-l-[3px] border-rule pl-2 text-meta">{body}</p>
       ) : (
         <>
-          <label className="block text-xs text-slate">
+          <label className="block text-meta text-slate">
             Subject
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} className={`${input} mt-1 w-full py-1 text-[13px]`} />
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} className={`${input} mt-1 w-full py-1 text-table`} />
           </label>
-          <label className="block text-xs text-slate">
+          <label className="block text-meta text-slate">
             Message
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={7} className={`${input} mt-1 w-full py-1 text-[13px]`} />
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={7} className={`${input} mt-1 w-full py-1 text-table`} />
           </label>
           {error && <ErrorNote message={error} busy={pending} onRetry={send} />}
           <button type="button" disabled={pending || !body.trim()} onClick={send} className={btn.smallPrimary}>
@@ -143,8 +154,8 @@ function ScenarioCard({ action, onDone }: Props<ScenarioPreview & { status?: "do
     });
   const shown = action.open_blockers.slice(0, 6);
   return (
-    <Frame title={blocked ? `Choose ${action.scenario_label}` : `Choose ${action.scenario_label} and generate the memo`} done={action.done_note}>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+    <Frame title={blocked ? `Choose ${action.scenario_label}` : `Choose ${action.scenario_label} and generate the memo`} done={action.done_note} doneAt={(action as { done_at?: string }).done_at}>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-meta">
         <div>
           <dt className="text-slate">Total</dt>
           <dd className="text-sm font-semibold">{action.total_display}</dd>
@@ -170,7 +181,7 @@ function ScenarioCard({ action, onDone }: Props<ScenarioPreview & { status?: "do
         </div>
       </dl>
       {blocked ? (
-        <div className="border-l-[3px] border-oxblood bg-oxblood-tint px-2 py-1.5 text-xs">
+        <div className="border-l-[3px] border-oxblood bg-oxblood-tint px-2 py-1.5 text-meta">
           <p className="font-semibold text-oxblood">
             {action.open_blockers.length} open blocker{action.open_blockers.length === 1 ? "" : "s"}: the memo is blocked
           </p>
@@ -192,7 +203,7 @@ function ScenarioCard({ action, onDone }: Props<ScenarioPreview & { status?: "do
           </p>
         </div>
       ) : (
-        <p className="text-xs text-ledger">No open blockers: the memo can be written.</p>
+        <p className="text-meta text-ledger">No open blockers: the memo can be written.</p>
       )}
       {!action.status && (
         <>
@@ -203,7 +214,7 @@ function ScenarioCard({ action, onDone }: Props<ScenarioPreview & { status?: "do
         </>
       )}
       {action.status && (
-        <Link href="/award" className="inline-block text-xs font-semibold underline decoration-field underline-offset-2">
+        <Link href="/award" className="inline-block text-meta font-semibold underline decoration-field underline-offset-2">
           Open the Award screen
         </Link>
       )}
@@ -212,7 +223,7 @@ function ScenarioCard({ action, onDone }: Props<ScenarioPreview & { status?: "do
 }
 
 function ViewCard({ action }: { action: ViewPreview & { done_note?: string } }) {
-  return <p className="border-l-[3px] border-rule pl-2 text-xs text-slate">{action.done_note ?? "View change for the Quote Comparison."} No data changed.</p>;
+  return <p className="border-l-[3px] border-rule pl-2 text-meta text-slate">{action.done_note ?? "View change for the Quote Comparison."} No data changed.</p>;
 }
 
 export function ActionCard({ action, onDone }: { action: ChatAction; onDone: (note: string) => void }) {

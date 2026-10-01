@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Header } from "@/components/Header";
 import { LensDock } from "@/components/lens/LensDock";
 import { LensProvider } from "@/components/lens/LensProvider";
+import { LENS_OPEN_COOKIE } from "@/lib/ui/lensCookie";
 import { ContentFrame } from "@/components/ContentFrame";
 import { StepRail } from "@/components/StepRail";
 import { Toaster } from "@/components/ui/sonner";
@@ -23,7 +24,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   // Lens docks on the right of every screen; it pushes the content, never covers it.
   return (
-    <LensProvider attentionByScreen={progress?.attention ?? {}}>
+    <LensProvider attentionByScreen={progress?.attention ?? {}} initialOpen={cookieStore.get(LENS_OPEN_COOKIE)?.value !== "0"}>
       <Header progress={progress} />
       <div className="flex flex-1">
         <Suspense fallback={<div className="w-16 shrink-0 border-r border-rule bg-sheet" />}>

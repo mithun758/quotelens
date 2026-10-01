@@ -220,3 +220,8 @@ body {
 [cmdk-input]:focus-visible {
   outline: none;
 }
+
+/* A field whose frame shows focus instead (the Lens prompt input). */
+.no-focus-ring:focus-visible {
+  outline: none;
+}

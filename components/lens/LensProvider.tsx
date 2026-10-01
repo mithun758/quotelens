@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { AnalystReply } from "@/app/(app)/comparison/analyst-actions";
 import type { LensScreen } from "@/lib/ai/lens/context";
 import type { ViewPreview } from "@/lib/tools/actions";
+import { LENS_OPEN_COOKIE } from "@/lib/ui/lensCookie";
 
 // One Lens conversation across every screen, kept for the browser session. Each
 // message carries the screen and what is selected on it.
@@ -16,7 +17,9 @@ export type Exchange = {
   reply: AnalystReply | null;
   error: string | null;
   // While streaming: the text so far, finished steps and what Lens is doing now.
-  live?: { text: string; steps: { name: string; input: unknown }[]; now: string | null };
+  live?: { text: string; steps: { name: string; input: unknown; ms: number }[]; now: string | null; nowAt?: number };
+  // How long each step took, in the order of reply.tools; measured in the browser.
+  stepMs?: number[];
 };
 
 // What the current screen tells Lens, and what Lens can do on it.
@@ -78,6 +81,7 @@ export function useLensScreen(api: ScreenApi) {
 
 export const LENS_KEYS = { conversation: "quotelens.lens.v1", briefed: "quotelens.lens.briefed.v1", open: "quotelens.lens.open" };
 
+
 const screenOf = (path: string): LensScreen =>
   path.startsWith("/rfx") ? "rfx" : path.startsWith("/quotes") ? "quotes" : path.startsWith("/award") ? "award" : path.startsWith("/eval") ? "eval" : "comparison";
 
@@ -100,10 +104,10 @@ function write(storage: () => Storage, key: string, value: unknown) {
 const BRIEFING = (screen: LensScreen) =>
   `Priya has just arrived on the ${{ rfx: "RFx", quotes: "Quotes", comparison: "Quote Comparison", award: "Award", eval: "Eval" }[screen]} screen and has not typed anything. Brief her: under 60 words, then two or three suggested next steps.`;
 
-export function LensProvider({ attentionByScreen, children }: { attentionByScreen: Partial<Record<LensScreen, number>>; children: ReactNode }) {
+export function LensProvider({ attentionByScreen, initialOpen = true, children }: { attentionByScreen: Partial<Record<LensScreen, number>>; initialOpen?: boolean; children: ReactNode }) {
   const router = useRouter();
   const screen = screenOf(usePathname());
-  const [open, setOpenState] = useState(true);
+  const [open, setOpenState] = useState(initialOpen);
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [briefed, setBriefed] = useState<LensScreen[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -117,8 +121,13 @@ export function LensProvider({ attentionByScreen, children }: { attentionByScree
   // Restore after mount, so the server render and the first client render match.
   useEffect(() => {
     // Saved state lives in browser storage, which the server render cannot read.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- restore once after mount
-    setOpenState(read(() => localStorage, LENS_KEYS.open, true));
+    // Without the cookie (an older session), fall back to the saved value once.
+    if (!document.cookie.includes(`${LENS_OPEN_COOKIE}=`)) {
+      const saved = read(() => localStorage, LENS_KEYS.open, true);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- restore once after mount
+      setOpenState(saved);
+      document.cookie = `${LENS_OPEN_COOKIE}=${saved ? 1 : 0}; path=/; max-age=31536000; samesite=lax`;
+    }
     setExchanges(read<Exchange[]>(() => sessionStorage, LENS_KEYS.conversation, []).filter((e) => e.reply || e.error));
     setBriefed(read<LensScreen[]>(() => sessionStorage, LENS_KEYS.briefed, []));
     setHydrated(true);
@@ -144,6 +153,7 @@ export function LensProvider({ attentionByScreen, children }: { attentionByScree
   const setOpen = useCallback((v: boolean) => {
     setOpenState(v);
     write(() => localStorage, LENS_KEYS.open, v);
+    document.cookie = `${LENS_OPEN_COOKIE}=${v ? 1 : 0}; path=/; max-age=31536000; samesite=lax`;
   }, []);
 
   const patch = (id: string, fn: (e: Exchange) => Exchange) => setExchanges((xs) => xs.map((e) => (e.id === id ? fn(e) : e)));
@@ -188,14 +198,15 @@ export function LensProvider({ attentionByScreen, children }: { attentionByScree
               if (!line) continue;
               const ev = JSON.parse(line.slice(6));
               if (ev.type === "text") patch(id, (e) => ({ ...e, live: { ...e.live!, text: e.live!.text + ev.delta } }));
-              else if (ev.type === "tool_start") patch(id, (e) => ({ ...e, live: { ...e.live!, now: ev.name } }));
-              else if (ev.type === "tool_done") patch(id, (e) => ({ ...e, live: { ...e.live!, now: null, steps: [...e.live!.steps, { name: ev.name, input: ev.input }] } }));
+              else if (ev.type === "tool_start") patch(id, (e) => ({ ...e, live: { ...e.live!, now: ev.name, nowAt: Date.now() } }));
+              else if (ev.type === "tool_done")
+                patch(id, (e) => ({ ...e, live: { ...e.live!, now: null, steps: [...e.live!.steps, { name: ev.name, input: ev.input, ms: e.live!.nowAt ? Date.now() - e.live!.nowAt : 0 }] } }));
               // A round that ends in tool calls was Lens thinking aloud; the answer comes later.
               else if (ev.type === "round_end") patch(id, (e) => ({ ...e, live: { ...e.live!, text: "" } }));
               else if (ev.type === "done") {
                 const reply = ev.reply as AnalystReply & { draftChanged?: boolean };
                 const actions = reply.actions.map((a) => (a.kind === "set_view" && screenApi?.applyView ? { ...a, status: "done" as const, done_note: `Comparison switched to ${screenApi.applyView(a)}.` } : a));
-                patch(id, (e) => ({ ...e, live: undefined, reply: { ...reply, actions } }));
+                patch(id, (e) => ({ ...e, stepMs: e.live?.steps.map((st) => st.ms), live: undefined, reply: { ...reply, actions } }));
                 if (opts.briefing) setBriefed((b) => (b.includes(ui.screen) ? b : [...b, ui.screen]));
                 if (reply.draftChanged) router.refresh();
               } else if (ev.type === "error") {
@@ -224,7 +235,10 @@ export function LensProvider({ attentionByScreen, children }: { attentionByScree
   }, [hydrated, open, pending, briefed, screen, ask]);
 
   const markActionDone = useCallback((exchangeId: string, index: number, note: string) => {
-    setExchanges((xs) => xs.map((e) => (e.id === exchangeId && e.reply ? { ...e, reply: { ...e.reply, actions: e.reply.actions.map((a, j) => (j === index ? { ...a, status: "done" as const, done_note: note } : a)) } } : e)));
+    // done_at: when Priya confirmed, for "Confirmed at 14:32" on the card.
+    setExchanges((xs) =>
+      xs.map((e) => (e.id === exchangeId && e.reply ? { ...e, reply: { ...e.reply, actions: e.reply.actions.map((a, j) => (j === index ? { ...a, status: "done" as const, done_note: note, done_at: new Date().toISOString() } : a)) } } : e)),
+    );
   }, []);
 
   const pendingCards = exchanges.reduce((n, e) => n + (e.reply?.actions.filter((a) => a.kind !== "set_view" && !a.status).length ?? 0), 0);

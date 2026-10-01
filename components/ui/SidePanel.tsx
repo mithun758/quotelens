@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowLeft } from "lucide-react";
 import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
 
 // Inside the Lens dock, a panel shows as a sheet with "Back to Lens" instead of
@@ -27,15 +28,16 @@ export function SidePanel({ title, subtitle, onClose, children, footer }: { titl
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="border-b border-rule px-4 py-3">
-          <button type="button" onClick={close} className="text-xs font-semibold text-slate underline decoration-rule underline-offset-2 hover:text-ink">
+          <button type="button" onClick={close} className="-ml-1 inline-flex items-center gap-1 rounded-xs px-1 text-meta font-semibold text-slate hover:bg-tint hover:text-ink">
+            <ArrowLeft aria-hidden className="size-3.5 stroke-[1.5]" />
             Back to Lens
           </button>
-          <h3 ref={headingRef} tabIndex={-1} className="mt-1 text-base font-semibold outline-none">
+          <h3 ref={headingRef} tabIndex={-1} className="mt-1 text-heading font-semibold outline-none">
             {title}
           </h3>
-          {subtitle && <div className="text-xs text-slate">{subtitle}</div>}
+          {subtitle && <div className="text-meta text-slate">{subtitle}</div>}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{children}</div>
         {footer && <div className="border-t border-rule px-4 py-3">{footer}</div>}
       </div>
     );
