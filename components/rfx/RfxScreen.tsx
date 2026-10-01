@@ -328,7 +328,7 @@ export function RfxScreen({ initial, suppliers, asOfDate }: { initial: DraftStat
           <div className="grid gap-10 min-[1400px]:grid-cols-2">
             <fieldset disabled={locked} className="min-w-0 space-y-3">
               <legend className="text-heading font-semibold">2. Commercial terms</legend>
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-4 pt-2">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4 pt-2">
                 <Field label="Validity required, days">
                   <NumberField label="Validity required, days" placeholder="Days" value={draft.terms.validity_days_required} onChange={(n) => update({ terms: { ...draft.terms, validity_days_required: n } })} />
                 </Field>
@@ -340,7 +340,7 @@ export function RfxScreen({ initial, suppliers, asOfDate }: { initial: DraftStat
                     <input className={field} placeholder="Not set" value={draft.terms[k]} onChange={(e) => update({ terms: { ...draft.terms, [k]: e.target.value } })} />
                   </Field>
                 ))}
-              </dl>
+              </div>
             </fieldset>
 
             <fieldset disabled={locked} className="min-w-0 space-y-2">

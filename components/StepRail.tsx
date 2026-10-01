@@ -76,14 +76,14 @@ export function StepRail({ progress }: { progress: Progress | null }) {
           {progress.steps.map((step, i) => {
             const onStep = path.startsWith(step.href);
             const count = stepCount(step);
-            const summary = `${i + 1}. ${step.label}${count ? `, ${count} need attention` : ""}`;
             return (
               <li key={step.href} className="w-full">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link href={step.href} aria-current={onStep ? "page" : undefined} aria-label={summary} className={cn("relative flex flex-col items-center gap-1 py-2 hover:bg-tint", onStep && "bg-tint")}>
+                    <Link href={step.href} aria-current={onStep ? "page" : undefined} className={cn("relative flex flex-col items-center gap-1 py-2 hover:bg-tint", onStep && "bg-tint")}>
                       {onStep && <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 bg-ink" />}
                       <StepSquare n={i + 1} state={stepState(step)} current={onStep} />
+                      <span className="sr-only">{step.label}</span>
                       {count > 0 && <CountChip count={count} tone={step.href === "/award" ? "oxblood" : "pencil"} />}
                     </Link>
                   </TooltipTrigger>
