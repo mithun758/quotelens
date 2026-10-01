@@ -7,9 +7,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
   return (
     <main className="flex flex-1 items-center justify-center p-6">
-      <div className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-        <h1 className="text-lg font-semibold">QuoteLens</h1>
-        <p className="mt-1 text-sm text-zinc-600">Enter the demo passcode to continue.</p>
+      <div className="w-full max-w-sm border-t-[3px] border-ink bg-sheet p-6">
+        <h1 className="text-xl font-semibold">QuoteLens</h1>
+        <p className="mt-1 text-sm text-slate">Quote comparison for Meridian Diagnostics. Enter the demo passcode to continue.</p>
         <LoginForm next={typeof next === "string" ? next : ""} />
       </div>
     </main>

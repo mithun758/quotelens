@@ -77,10 +77,10 @@ export function PdfPage({ url, page, bbox, snippet }: { url: string; page: numbe
 
   const shown = exact?.key === key && exact.box ? exact.box : bbox;
 
-  if (error) return <p className="p-3 text-sm text-red-700">{error}</p>;
+  if (error) return <p className="p-3 text-sm text-oxblood">{error}</p>;
   return (
     <div>
-      {pageCount && pageCount > 1 && <p className="mb-1 text-xs text-zinc-500">Page {page} of {pageCount}</p>}
+      {pageCount && pageCount > 1 && <p className="mb-1 text-xs text-slate">Page {page} of {pageCount}</p>}
       <div className="relative">
         <canvas ref={canvasRef} className="h-auto w-full" />
         {shown && <Highlight bbox={shown} />}
@@ -95,7 +95,7 @@ export function Highlight({ bbox }: { bbox: Box }) {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute rounded-sm border-2 border-amber-500 bg-amber-300/25"
+      className="pointer-events-none absolute rounded-xs border-2 border-amber bg-amber/15"
       style={{
         left: `${(x0 - pad) * 100}%`,
         top: `${(y0 - pad) * 100}%`,

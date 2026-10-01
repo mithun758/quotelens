@@ -2,394 +2,31 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { cheapest, totalFor, type BasketMode } from "@/lib/comparison/build";
+import { useCallback, useMemo, useState } from "react";
+import type { BasketMode } from "@/lib/comparison/build";
 import type { ComparisonView } from "@/lib/comparison/load";
-import { formatInr, formatInrCompact } from "@/lib/format/inr";
+import { CiteContext, type Citer } from "../analyst/cite";
 import { FormatIcon } from "../quotes/FormatIcon";
-import { CellCard } from "./CellCard";
-import { FreshnessBadge, SupplierDrawer } from "./SupplierDrawer";
+import { btn } from "../ui/styles";
+import { Matrix } from "./Matrix";
+import { SubstitutePanel } from "./SubstitutePanel";
+import { SupplierPanel } from "./SupplierDrawer";
 
 // Client-only: the conversation is restored from sessionStorage.
-const AnalystPanel = dynamic(
-  () => import("../analyst/AnalystPanel").then((m) => m.AnalystPanel),
-  { ssr: false },
-);
+const AnalystPanel = dynamic(() => import("../analyst/AnalystPanel").then((m) => m.AnalystPanel), { ssr: false });
 
 type Tab = "matrix" | "questionnaire" | "documents";
-
-const BADGE = {
-  extracted: {
-    label: "E",
-    style: "bg-zinc-100 text-zinc-600",
-    title: "Extracted",
-  },
-  inferred: {
-    label: "I",
-    style: "bg-amber-100 text-amber-900",
-    title: "Inferred",
-  },
-  missing: { label: "M", style: "bg-red-100 text-red-800", title: "Missing" },
-} as const;
-
-function Matrix({
-  view,
-  mode,
-  onOpenSupplier,
-  focusCell,
-}: {
-  view: ComparisonView;
-  mode: BasketMode;
-  onOpenSupplier: (code: string) => void;
-  focusCell: string | null;
-}) {
-  const { lines, suppliers, cells, result } = view;
-  const [hover, setHover] = useState<string | null>(null);
-  const [pinned, setPinned] = useState<string | null>(focusCell);
-  const tableRef = useRef<HTMLDivElement>(null);
-  const open = pinned ?? hover;
-  const best = cheapest(result, mode);
-  const lastCycleTotal =
-    mode === "common" ? result.lastCycleCommonBasket : result.lastCycleAllLines;
-
-  useEffect(() => {
-    if (focusCell) tableRef.current?.querySelector(`[data-cell="${focusCell}"]`)?.scrollIntoView({ block: "center", inline: "center" });
-  }, [focusCell]);
-
-  useEffect(() => {
-    const close = (e: MouseEvent) => {
-      if (
-        pinned &&
-        tableRef.current &&
-        !(e.target as Element).closest("[data-cell-card]")
-      )
-        setPinned(null);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [pinned]);
-
-  return (
-    <div
-      ref={tableRef}
-      className="overflow-x-auto rounded-md border border-zinc-200 bg-white"
-    >
-      <table className="w-full min-w-[1100px] border-collapse text-sm">
-        <thead className="text-xs">
-          <tr className="bg-zinc-50 text-zinc-500">
-            <th className="sticky left-0 z-10 bg-zinc-50 px-2 py-2 text-left font-medium">
-              Line
-            </th>
-            <th className="px-2 py-2 text-right font-medium">Last cycle</th>
-            {suppliers.map((s) => (
-              <th key={s.code} className="px-2 py-2 text-right align-bottom">
-                <button
-                  type="button"
-                  onClick={() => onOpenSupplier(s.code)}
-                  className="block w-full text-right font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900"
-                  title="Open supplier details and Quote Freshness"
-                >
-                  {s.code}. {s.name}
-                </button>
-                <span className="flex justify-end gap-1">
-                  {s.formats.map((f) => (
-                    <FormatIcon key={f} format={f} />
-                  ))}
-                </span>
-                {s.is_incumbent && (
-                  <span className="text-[10px] uppercase">Incumbent</span>
-                )}
-              </th>
-            ))}
-            <th className="px-2 py-2 text-right font-medium">L1</th>
-            <th className="px-2 py-2 text-right font-medium">Spread</th>
-          </tr>
-          <SummaryRow label="Coverage" view={view}>
-            {(s) => {
-              const r = result.suppliers.find((x) => x.code === s)!;
-              return (
-                <span
-                  title={
-                    r.quoted !== r.countable
-                      ? `${r.quoted} quoted; ${r.quoted - r.countable} not counted (substitute awaiting sign-off or not readable)`
-                      : undefined
-                  }
-                >
-                  {r.countable}/{lines.length}
-                  {r.quoted !== r.countable && (
-                    <span className="text-zinc-500"> ({r.quoted} quoted)</span>
-                  )}
-                </span>
-              );
-            }}
-          </SummaryRow>
-          <SummaryRow
-            label={
-              mode === "common"
-                ? `Common basket total (${result.commonBasket.length} lines)`
-                : "All lines total (gaps at lowest other quote)"
-            }
-            view={view}
-          >
-            {(s) => {
-              const r = result.suppliers.find((x) => x.code === s)!;
-              return (
-                <span
-                  className={
-                    s === best
-                      ? "rounded bg-emerald-100 px-1.5 py-0.5 font-semibold text-emerald-900"
-                      : "font-medium text-zinc-900"
-                  }
-                >
-                  {formatInrCompact(totalFor(r, mode))}
-                  {mode === "all" && r.gapFilledLines.length > 0 && (
-                    <span className="block text-[11px] font-normal italic text-zinc-500">
-                      {r.gapFilledLines.length} gap-priced
-                    </span>
-                  )}
-                </span>
-              );
-            }}
-          </SummaryRow>
-          <SummaryRow label="Questionnaire" view={view}>
-            {(s) => {
-              const sup = suppliers.find((x) => x.code === s)!;
-              const pass = sup.questionnairePassed === sup.questionnaireTotal;
-              return (
-                <span className={pass ? "text-emerald-700" : "text-red-700"}>
-                  {pass ? "Pass" : "Fail"} {sup.questionnairePassed}/
-                  {sup.questionnaireTotal}
-                </span>
-              );
-            }}
-          </SummaryRow>
-          <SummaryRow label="Freshness" view={view}>
-            {(code) => {
-              const f = view.freshness[code];
-              if (!f)
-                return <span className="text-zinc-400">Not extracted yet</span>;
-              return (
-                <button
-                  type="button"
-                  onClick={() => onOpenSupplier(code)}
-                  className="inline-flex flex-col items-end gap-0.5"
-                  title="Open the freshness rules"
-                >
-                  <FreshnessBadge status={f.status} />
-                  {f.fired.map((r) => (
-                    <span
-                      key={r.key}
-                      className={`text-[11px] ${r.severity === "high" ? "text-red-700" : "text-amber-800"}`}
-                    >
-                      {r.label}
-                    </span>
-                  ))}
-                </button>
-              );
-            }}
-          </SummaryRow>
-        </thead>
-        <tbody>
-          {lines.map((line) => {
-            const lr = result.lines.find((l) => l.lineNo === line.line_no)!;
-            const outside = mode === "common" && !lr.inCommonBasket;
-            return (
-              <tr
-                key={line.id}
-                className={`border-t border-zinc-100 ${outside ? "bg-zinc-50/70 text-zinc-400" : ""}`}
-              >
-                <td className="sticky left-0 z-10 max-w-[18rem] bg-inherit px-2 py-1.5">
-                  <span className="text-zinc-500">{line.line_no}.</span>{" "}
-                  <span className={outside ? "" : "text-zinc-900"}>
-                    {line.description}
-                  </span>
-                  <span className="block text-[11px] text-zinc-500">
-                    qty {line.quantity} {line.uom}
-                    {line.memory_exposed && " · memory-exposed"}
-                    {outside && " · outside common basket"}
-                  </span>
-                </td>
-                <td className="px-2 py-1.5 text-right text-zinc-500">
-                  {formatInr(line.last_cycle_price_inr)}
-                </td>
-                {suppliers.map((s) => {
-                  const cell = cells[s.code]?.[line.line_no];
-                  const key = `${s.code}:${line.line_no}`;
-                  const isL1 = lr.l1.includes(s.code);
-                  const gap =
-                    mode === "all" && !lr.countable[s.code]
-                      ? lr.gapFill[s.code]
-                      : null;
-                  const badge = cell
-                    ? BADGE[cell.confidence_state]
-                    : BADGE.missing;
-                  const pendingSub =
-                    cell?.substitute_status === "pending" ||
-                    cell?.substitute_status === "rejected";
-                  return (
-                    <td
-                      key={s.code}
-                      data-cell={key}
-                      className={`relative px-2 py-1.5 text-right ${isL1 && !outside ? "bg-emerald-50" : ""} ${focusCell === key ? "ring-2 ring-inset ring-sky-500" : ""}`}
-                      onMouseEnter={() => setHover(key)}
-                      onMouseLeave={() =>
-                        setHover((h) => (h === key ? null : h))
-                      }
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setPinned(pinned === key ? null : key)}
-                        onFocus={() => setHover(key)}
-                        onBlur={() => setHover((h) => (h === key ? null : h))}
-                        aria-label={`${s.name}, line ${line.line_no}: ${cell?.normalised_value_inr != null ? formatInr(cell.normalised_value_inr) : "not quoted"}, ${badge.title}`}
-                        className="inline-flex w-full items-center justify-end gap-1"
-                      >
-                        {cell && cell.openFlags.length > 0 && (
-                          <span
-                            className="text-amber-700"
-                            title={`${cell.openFlags.length} open flag${cell.openFlags.length > 1 ? "s" : ""}`}
-                          >
-                            ⚑
-                          </span>
-                        )}
-                        {pendingSub && (
-                          <span className="rounded bg-violet-100 px-1 text-[10px] text-violet-800">
-                            sub
-                          </span>
-                        )}
-                        <span
-                          className={`${isL1 && !outside ? "font-semibold text-emerald-900" : ""} ${pendingSub ? "text-zinc-400 line-through decoration-zinc-300" : ""}`}
-                        >
-                          {cell?.normalised_value_inr != null ? (
-                            formatInr(cell.normalised_value_inr)
-                          ) : (
-                            <span className="text-zinc-400">none</span>
-                          )}
-                        </span>
-                        <span
-                          title={badge.title}
-                          className={`rounded px-1 text-[10px] font-medium ${badge.style}`}
-                        >
-                          {badge.label}
-                        </span>
-                      </button>
-                      {gap !== null && (
-                        <span className="block text-[11px] italic text-zinc-500">
-                          gap: {formatInr(gap)} (lowest other)
-                        </span>
-                      )}
-                      {open === key && cell && (
-                        <div
-                          data-cell-card
-                          className={`absolute top-full z-30 mt-1 ${suppliers.indexOf(s) >= 2 ? "right-0" : "left-0"}`}
-                        >
-                          <CellCard
-                            cell={cell}
-                            supplierName={s.name}
-                            lineLabel={`Line ${line.line_no}: ${line.description}`}
-                          />
-                        </div>
-                      )}
-                    </td>
-                  );
-                })}
-                <td className="px-2 py-1.5 text-right">
-                  {lr.l1Value !== null ? (
-                    <>
-                      <span className="font-medium text-emerald-900">
-                        {lr.l1.join(", ")}
-                      </span>
-                      <span className="block text-[11px] text-zinc-500">
-                        {formatInr(lr.l1Value)}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-zinc-400">none</span>
-                  )}
-                </td>
-                <td className="px-2 py-1.5 text-right text-zinc-600">
-                  {lr.spreadPct !== null ? `${lr.spreadPct.toFixed(1)}%` : ""}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-        <tfoot className="border-t-2 border-zinc-300 text-sm">
-          <tr>
-            <td className="sticky left-0 bg-white px-2 py-2 font-medium">
-              {mode === "common" ? "Common basket total" : "All lines total"}
-            </td>
-            <td className="px-2 py-2 text-right text-zinc-600">
-              {formatInrCompact(lastCycleTotal)}
-            </td>
-            {suppliers.map((s) => {
-              const r = result.suppliers.find((x) => x.code === s.code)!;
-              const total = totalFor(r, mode);
-              const vsLast = lastCycleTotal
-                ? ((total - lastCycleTotal) / lastCycleTotal) * 100
-                : null;
-              return (
-                <td key={s.code} className="px-2 py-2 text-right">
-                  <span
-                    className={
-                      s.code === best
-                        ? "font-semibold text-emerald-900"
-                        : "font-medium"
-                    }
-                  >
-                    {formatInrCompact(total)}
-                  </span>
-                  {vsLast !== null && (
-                    <span className="block text-[11px] text-zinc-500">
-                      {vsLast >= 0 ? "+" : ""}
-                      {vsLast.toFixed(1)}% vs last cycle
-                    </span>
-                  )}
-                </td>
-              );
-            })}
-            <td colSpan={2} />
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  );
-}
-
-function SummaryRow({
-  label,
-  view,
-  children,
-}: {
-  label: string;
-  view: ComparisonView;
-  children: (code: string) => React.ReactNode;
-}) {
-  return (
-    <tr className="border-t border-zinc-100 bg-zinc-50/60">
-      <th className="sticky left-0 z-10 bg-zinc-50 px-2 py-1 text-left font-medium text-zinc-500">
-        {label}
-      </th>
-      <th />
-      {view.suppliers.map((s) => (
-        <th key={s.code} className="px-2 py-1 text-right font-normal">
-          {children(s.code)}
-        </th>
-      ))}
-      <th colSpan={2} />
-    </tr>
-  );
-}
+type Side = { kind: "analyst" } | { kind: "supplier"; code: string } | { kind: "substitute"; key: string } | null;
 
 function QuestionnaireTab({ view }: { view: ComparisonView }) {
   return (
-    <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
-      <table className="w-full min-w-[900px] text-sm">
-        <thead className="bg-zinc-50 text-xs text-zinc-500">
-          <tr>
-            <th className="px-3 py-2 text-left">Question</th>
+    <div className="overflow-x-auto rounded-xs border border-rule bg-sheet">
+      <table className="w-full min-w-[900px] border-collapse text-[13px]">
+        <thead>
+          <tr className="text-xs text-slate">
+            <th className="border-b border-ink px-3 py-2 text-left font-semibold">Question</th>
             {view.suppliers.map((s) => (
-              <th key={s.code} className="px-3 py-2 text-left">
+              <th key={s.code} className="border-b border-ink px-3 py-2 text-left font-semibold">
                 {s.code}. {s.name}
               </th>
             ))}
@@ -397,20 +34,17 @@ function QuestionnaireTab({ view }: { view: ComparisonView }) {
         </thead>
         <tbody>
           {view.questions.map((q) => (
-            <tr key={q.key} className="border-t border-zinc-100 align-top">
-              <td className="max-w-[16rem] px-3 py-2">{q.text}</td>
+            <tr key={q.key} className="align-top">
+              <th scope="row" className="max-w-[16rem] border-b border-rule px-3 py-2 text-left font-normal">
+                {q.text}
+              </th>
               {view.suppliers.map((s) => {
                 const a = view.answers[s.code]?.[q.key];
+                const pass = a?.pass_fail === "pass";
                 return (
-                  <td key={s.code} className="px-3 py-2">
-                    <span
-                      className={`font-medium ${a?.pass_fail === "pass" ? "text-emerald-700" : "text-red-700"}`}
-                    >
-                      {a?.pass_fail === "pass" ? "Pass" : "Fail"}
-                    </span>
-                    <span className="block text-xs text-zinc-600">
-                      {a?.answer ?? "Not answered."}
-                    </span>
+                  <td key={s.code} className="border-b border-rule px-3 py-2">
+                    <span className={`font-semibold ${pass ? "text-ledger" : "text-oxblood"}`}>{pass ? "Pass" : "Fail"}</span>
+                    <span className="block text-xs text-slate">{a?.answer ?? "Not answered."}</span>
                   </td>
                 );
               })}
@@ -424,70 +58,125 @@ function QuestionnaireTab({ view }: { view: ComparisonView }) {
 
 function DocumentsTab({ view }: { view: ComparisonView }) {
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-      {view.suppliers.map((s) => (
-        <div
-          key={s.code}
-          className="rounded-md border border-zinc-200 bg-white p-3 text-sm"
-        >
-          <p className="font-medium">
-            {s.code}. {s.name}
-          </p>
-          <ul className="mt-2 space-y-1">
-            {s.documents.map((d) => (
-              <li key={d.id} className="flex items-center gap-2">
-                <FormatIcon format={d.format} />
-                <Link
-                  href={`/quotes?supplier=${s.code}`}
-                  className="truncate text-zinc-800 underline-offset-2 hover:underline"
-                  title={d.file_name}
-                >
-                  {d.file_name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
+    <table className="w-full max-w-3xl border-collapse text-[13px]">
+      <thead>
+        <tr className="text-xs text-slate">
+          <th className="border-b border-ink py-2 pr-3 text-left font-semibold">Supplier</th>
+          <th className="border-b border-ink py-2 text-left font-semibold">Documents</th>
+        </tr>
+      </thead>
+      <tbody>
+        {view.suppliers.map((s) => (
+          <tr key={s.code} className="align-top">
+            <th scope="row" className="border-b border-rule py-2 pr-3 text-left font-semibold">
+              {s.code}. {s.name}
+            </th>
+            <td className="border-b border-rule py-2">
+              <ul className="space-y-1">
+                {s.documents.map((d) => (
+                  <li key={d.id} className="flex items-center gap-2">
+                    <FormatIcon format={d.format} />
+                    <Link href={`/quotes?supplier=${s.code}`} className="truncate underline decoration-rule underline-offset-4 hover:decoration-ink" title={d.file_name}>
+                      {d.file_name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function Legend() {
+  return (
+    <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate">
+      <span>
+        <span className="font-semibold text-ink">63,900</span> Extracted
+      </span>
+      <span>
+        <span className="val-inferred">71,400</span> Inferred
+      </span>
+      <span className="inline-flex items-center gap-1">
+        <span className="val-missing inline-block h-3 w-8 align-middle" /> Not quoted
+      </span>
+      <span className="inline-flex items-center gap-1">
+        <span className="inline-block h-3 w-[3px] bg-ledger" /> L1
+      </span>
+      <span>
+        <span className="rounded-xs border border-field px-1">sub</span> substitute, not counted until signed off
+      </span>
+      <span>
+        <span className="text-pencil">⚑</span> open flag
+      </span>
+      <span>Hover a price for its source; click to keep it open</span>
+    </p>
   );
 }
 
 export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonView; focusCell?: string | null }) {
   const [tab, setTab] = useState<Tab>("matrix");
   const [mode, setMode] = useState<BasketMode>("common");
-  const [drawer, setDrawer] = useState<string | null>(null);
-  const [analystOpen, setAnalystOpen] = useState(true);
+  const [side, setSide] = useState<Side>(null);
+  const [highlight, setHighlight] = useState<{ key: string; n: number } | null>(focusCell ? { key: focusCell, n: 0 } : null);
+  const close = useCallback(() => setSide(null), []);
+
+  // A unit price cited by the analyst links to its cell when exactly one cell has it.
+  const citer = useMemo<Citer>(() => {
+    const index = new Map<number, string[]>();
+    for (const [code, byLine] of Object.entries(view.cells)) {
+      for (const [line, c] of Object.entries(byLine)) {
+        if (c.normalised_value_inr === null) continue;
+        const k = Math.round(c.normalised_value_inr * 100);
+        index.set(k, [...(index.get(k) ?? []), `${code}:${line}`]);
+      }
+    }
+    return {
+      keyFor: (v, lines) => {
+        const keys = (index.get(Math.round(v * 100)) ?? []).filter((k) => lines.includes(Number(k.split(":")[1])));
+        return keys.length === 1 ? keys[0] : null;
+      },
+      cite: (key) => {
+        setTab("matrix");
+        setHighlight((h) => ({ key, n: (h?.n ?? 0) + 1 }));
+      },
+    };
+  }, [view.cells]);
+
+  const subCell = side?.kind === "substitute" ? (() => {
+    const [code, line] = side.key.split(":");
+    const cell = view.cells[code]?.[Number(line)];
+    const l = view.lines.find((x) => x.line_no === Number(line));
+    const s = view.suppliers.find((x) => x.code === code);
+    return cell && l && s ? { cell, label: `line ${l.line_no}: ${l.description}`, name: `${s.code}. ${s.name}` } : null;
+  })() : null;
+
   const tabs: [Tab, string][] = [
-    ["matrix", "Quote Comparison"],
+    ["matrix", "Prices"],
     ["questionnaire", "Questionnaire answers"],
     ["documents", "Documents"],
   ];
 
   return (
-    <div
-      className={`grid gap-4 ${analystOpen ? "2xl:grid-cols-[minmax(0,1fr)_28rem] xl:grid-cols-[minmax(0,1fr)_24rem]" : ""}`}
-    >
-      <section className="min-w-0 space-y-3">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold">Quote Comparison</h2>
-            <p className="text-sm text-zinc-600">
-              INR per piece, ex-GST, delivered to hub. Hover any cell for its
-              source and ledger; click to pin it.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {!analystOpen && (
-              <button
-                type="button"
-                onClick={() => setAnalystOpen(true)}
-                className="rounded-md bg-sky-700 px-3 py-1.5 text-sm text-white hover:bg-sky-800"
-              >
+    <CiteContext.Provider value={citer}>
+      <div className={`grid gap-5 ${side ? "grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_460px]" : "grid-cols-1"}`}>
+        <section className="min-w-0 space-y-3">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-semibold">Quote Comparison</h1>
+              <p className="text-sm text-slate">INR per piece, ex-GST, delivered to hub</p>
+            </div>
+            {side?.kind !== "analyst" && (
+              <button type="button" onClick={() => setSide({ kind: "analyst" })} className={btn.primary}>
                 Ask the analyst
               </button>
             )}
-            <div role="tablist" className="flex gap-1">
+          </div>
+
+          <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 border-b border-rule">
+            <div role="tablist" aria-label="Comparison views" className="flex gap-5">
               {tabs.map(([key, label]) => (
                 <button
                   key={key}
@@ -495,87 +184,55 @@ export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonV
                   aria-selected={tab === key}
                   type="button"
                   onClick={() => setTab(key)}
-                  className={`rounded-md px-3 py-1.5 text-sm ${tab === key ? "bg-zinc-900 text-white" : "bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-100"}`}
+                  className={`-mb-px border-b-2 pb-2 text-sm ${tab === key ? "border-ink font-semibold" : "border-transparent text-slate hover:text-ink"}`}
                 >
                   {label}
                 </button>
               ))}
             </div>
-          </div>
-        </div>
-
-        {tab === "matrix" && (
-          <>
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm">
-              <fieldset className="flex flex-wrap gap-4">
+            {tab === "matrix" && (
+              <fieldset className="mb-1.5 flex rounded-xs border border-field text-xs">
                 <legend className="sr-only">Basket</legend>
-                <label className="flex items-center gap-1.5">
-                  <input
-                    type="radio"
-                    name="mode"
-                    checked={mode === "common"}
-                    onChange={() => setMode("common")}
-                  />
-                  Common basket ({view.result.commonBasket.length} lines every
-                  supplier can be counted on)
-                </label>
-                <label className="flex items-center gap-1.5">
-                  <input
-                    type="radio"
-                    name="mode"
-                    checked={mode === "all"}
-                    onChange={() => setMode("all")}
-                  />
-                  All lines, gaps priced at the lowest other quote
-                </label>
+                {(
+                  [
+                    ["common", `Common basket, ${view.result.commonBasket.length} lines`],
+                    ["all", `All ${view.lines.length} lines, gaps priced`],
+                  ] as const
+                ).map(([m, label]) => (
+                  <label key={m} className={`cursor-pointer px-2.5 py-1 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ink ${mode === m ? "bg-ink font-semibold text-white" : "bg-sheet hover:bg-tint"}`}>
+                    <input type="radio" name="mode" className="sr-only" checked={mode === m} onChange={() => setMode(m)} />
+                    {label}
+                  </label>
+                ))}
               </fieldset>
-              <p className="flex flex-wrap gap-3 text-xs text-zinc-600">
-                <span>
-                  <span className="rounded bg-zinc-100 px-1">E</span> Extracted
-                </span>
-                <span>
-                  <span className="rounded bg-amber-100 px-1">I</span> Inferred
-                </span>
-                <span>
-                  <span className="rounded bg-red-100 px-1">M</span> Missing
-                </span>
-                <span>⚑ open flag</span>
-                <span>
-                  <span className="rounded bg-violet-100 px-1">sub</span>{" "}
-                  substitute awaiting sign-off, not counted
-                </span>
-                <span>
-                  <span className="rounded bg-emerald-50 px-1">L1</span> lowest
-                  counted price
-                </span>
-              </p>
-            </div>
-            {mode === "all" && (
-              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                All-lines totals price each gap at the lowest other
-                supplier&apos;s quote so suppliers can be compared on the full
-                RFx. Gap prices are not quotes; they are labelled in each cell.
-              </p>
             )}
-            <Matrix view={view} mode={mode} onOpenSupplier={setDrawer} focusCell={focusCell} />
-          </>
-        )}
-        {tab === "questionnaire" && <QuestionnaireTab view={view} />}
-        {tab === "documents" && <DocumentsTab view={view} />}
-        {drawer && (
-          <SupplierDrawer
-            view={view}
-            code={drawer}
-            mode={mode}
-            onClose={() => setDrawer(null)}
-          />
-        )}
-      </section>
-      {analystOpen && (
-        <div className="h-[80vh] xl:sticky xl:top-4 xl:h-[calc(100vh-2rem)] xl:self-start">
-          <AnalystPanel onClose={() => setAnalystOpen(false)} />
-        </div>
-      )}
-    </div>
+          </div>
+
+          {tab === "matrix" && (
+            <>
+              <Legend />
+              {mode === "all" && (
+                <p className="border-l-[3px] border-amber bg-amber-tint px-3 py-1.5 text-xs text-pencil">
+                  Each gap is priced at the lowest other supplier&apos;s quote so every supplier can be compared on the full RFx. Gap prices are not quotes and are labelled in the cell.
+                </p>
+              )}
+              <Matrix
+                view={view}
+                mode={mode}
+                onOpenSupplier={(code) => setSide({ kind: "supplier", code })}
+                onOpenSubstitute={(key) => setSide({ kind: "substitute", key })}
+                highlight={highlight}
+              />
+            </>
+          )}
+          {tab === "questionnaire" && <QuestionnaireTab view={view} />}
+          {tab === "documents" && <DocumentsTab view={view} />}
+        </section>
+
+        {side?.kind === "analyst" && <AnalystPanel onClose={close} />}
+        {side?.kind === "supplier" && <SupplierPanel view={view} code={side.code} mode={mode} onClose={close} />}
+        {side?.kind === "substitute" && subCell && <SubstitutePanel cell={subCell.cell} supplierName={subCell.name} lineLabel={subCell.label} onClose={close} />}
+      </div>
+    </CiteContext.Provider>
   );
 }

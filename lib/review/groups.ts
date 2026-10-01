@@ -1,0 +1,46 @@
+// Presentation grouping for the review queue: items that share a reason sit together
+// so Priya can review them as one decision. Pure; reads only what each item carries.
+import type { NormalisationKind } from "@/lib/db/types";
+import { PRIOR_PRICING_REASON } from "@/lib/normalise/normaliseResponse";
+import type { QueueItem } from "./queue";
+
+export type QueueGroup = { key: string; title: string; note: string; items: QueueItem[] };
+
+const STEP_GROUP: Partial<Record<NormalisationKind, [string, string]>> = {
+  gst: ["GST-inclusive, back-calculated", "Quoted including GST; code divided out the rate to compare ex-GST."],
+  pack_size: ["Priced per pack", "Code divided the pack price by the pack size."],
+  bundle: ["Bundle split", "A bundle price less the standalone price of the other item."],
+  uom: ["Unit converted", "Code converted the quoted unit to per piece."],
+};
+
+const FLAG_TITLE: Record<string, string> = {
+  gst_rate_mismatch: "GST rate differs from the expected rate",
+  substitute_offered: "Substitute models",
+};
+
+export function groupQueue(items: QueueItem[], stepsByValue: Map<string, NormalisationKind[]>): QueueGroup[] {
+  const groups = new Map<string, QueueGroup>();
+  const add = (key: string, title: string, note: string, item: QueueItem) => {
+    if (!groups.has(key)) groups.set(key, { key, title, note, items: [] });
+    groups.get(key)!.items.push(item);
+  };
+  for (const item of items) {
+    if (item.kind === "questionnaire") add("questionnaire", "Questionnaire", "Failed answers leave the queue only when the supplier's reply passes.", item);
+    else if (item.kind === "response_flag") add("terms", "Quote terms", "Flags on the quote as a whole.", item);
+    else if (item.confidence === "missing") add("missing", "Not quoted", "Never imputed. Accept as not quoted, or ask the supplier.", item);
+    else if (item.confidence === "inferred") {
+      if (item.detail === PRIOR_PRICING_REASON) add("prior", "Same as last year", "Shown at Meridian's last-cycle price; the supplier gave no number.", item);
+      else {
+        const kind = (stepsByValue.get(item.valueId ?? "") ?? []).find((k) => STEP_GROUP[k]);
+        if (kind) add(`step:${kind}`, STEP_GROUP[kind]![0], STEP_GROUP[kind]![1], item);
+        else add("judgement", "Judgement calls", "Claude read the document and made a call; the reason is shown on each.", item);
+      }
+    } else {
+      const type = item.flags[0]?.type ?? "other";
+      add(`flag:${type}`, FLAG_TITLE[type] ?? type.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase()), "Extracted values with an open flag.", item);
+    }
+  }
+  const order = ["missing", "judgement", "prior", "step:gst", "step:pack_size", "step:bundle", "step:uom", "terms", "questionnaire"];
+  const rank = (k: string) => (order.includes(k) ? order.indexOf(k) : k.startsWith("flag:") ? 2.5 : 99);
+  return [...groups.values()].sort((a, b) => rank(a.key) - rank(b.key));
+}

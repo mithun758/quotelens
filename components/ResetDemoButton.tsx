@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { resetDemo } from "@/app/actions/resetDemo";
+import { btn } from "./ui/styles";
 
 export function ResetDemoButton() {
   const [pending, startTransition] = useTransition();
@@ -39,12 +40,12 @@ export function ResetDemoButton() {
         type="button"
         onClick={onClick}
         disabled={pending}
-        className="rounded-md border border-zinc-300 px-3 py-1 text-zinc-700 hover:bg-zinc-100 disabled:opacity-60"
+        className={btn.secondary}
       >
         {pending ? "Resetting..." : "Reset demo"}
       </button>
       {error && (
-        <span role="alert" className="text-xs text-red-700">
+        <span role="alert" className="text-xs text-oxblood">
           {error}
         </span>
       )}

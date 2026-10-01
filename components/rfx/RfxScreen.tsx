@@ -7,6 +7,8 @@ import { sendProblems, type DraftLine, type RfxDraft } from "@/lib/rfx/draft";
 import type { DraftState } from "@/lib/rfx/store";
 import { Markdown } from "../analyst/AnswerCard";
 import { ErrorNote } from "../ErrorNote";
+import { displayDate } from "../quotes/format";
+import { btn } from "../ui/styles";
 
 const SUGGESTIONS = ["We need to run our annual IT refresh across our three hubs.", "Draft the IT refresh from last year's list, with our standard questionnaire and terms."];
 
@@ -20,14 +22,15 @@ const textToSpec = (text: string) =>
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block text-xs text-zinc-600">
+    <label className="block text-xs text-slate">
       {label}
       <div className="mt-0.5">{children}</div>
     </label>
   );
 }
 
-const input = "w-full rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-900 disabled:bg-zinc-50";
+// Fields ruled like a printed form: a bottom rule, a tint while editing.
+const input = "w-full rounded-xs border-0 border-b border-field bg-transparent px-1 py-1 text-[13px] text-ink hover:bg-tint focus:bg-tint disabled:border-rule disabled:hover:bg-transparent";
 
 export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: DraftState; supplierCount: number; asOfDate: string }) {
   const router = useRouter();
@@ -97,13 +100,14 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
     });
   }
 
+  const th = "border-b border-ink py-1 pr-2 text-left text-xs font-semibold text-slate";
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
-      <aside aria-label="RFx co-pilot" className="flex h-[78vh] min-h-0 flex-col rounded-md border border-zinc-200 bg-white xl:sticky xl:top-4 xl:h-[calc(100vh-2rem)]">
-        <div className="flex items-center justify-between border-b border-zinc-200 px-3 py-2">
+    <div className="grid grid-cols-[22rem_minmax(0,1fr)] gap-6 2xl:grid-cols-[26rem_minmax(0,1fr)]">
+      <aside aria-label="RFx co-pilot" className="sticky top-[4.75rem] flex h-[calc(100vh-6rem)] min-h-0 flex-col border border-rule bg-sheet">
+        <div className="flex items-start justify-between gap-2 border-b border-rule px-4 py-3">
           <div>
-            <h2 className="text-sm font-semibold">RFx co-pilot</h2>
-            <p className="text-[11px] text-zinc-500">Describe what you need; the draft fills in on the right.</p>
+            <h2 className="text-base font-semibold">RFx co-pilot</h2>
+            <p className="text-xs text-slate">Describe what you need; the document fills in on the right.</p>
           </div>
           <button
             type="button"
@@ -116,38 +120,46 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
                 else setError(r.error);
               })
             }
-            className="rounded px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+            className={`${btn.quiet} whitespace-nowrap`}
           >
             New draft
           </button>
         </div>
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3">
           {conversation.length === 0 && (
-            <div className="space-y-2">
-              <p className="text-sm text-zinc-600">Tell the co-pilot what this RFx is for. Try:</p>
-              {SUGGESTIONS.map((s) => (
-                <button key={s} type="button" onClick={() => send(s)} disabled={locked} className="block w-full rounded border border-zinc-200 px-2 py-1.5 text-left text-xs text-zinc-700 hover:bg-zinc-50">
-                  {s}
-                </button>
-              ))}
+            <div>
+              <p className="text-sm text-slate">Tell the co-pilot what this RFx is for, or start with one of these:</p>
+              <ul className="mt-2 divide-y divide-rule border-y border-rule">
+                {SUGGESTIONS.map((s) => (
+                  <li key={s}>
+                    <button type="button" onClick={() => send(s)} disabled={locked} className="block w-full px-1 py-2 text-left text-sm hover:bg-tint">
+                      {s}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
           {conversation.map((t, i) =>
             t.role === "user" ? (
-              <p key={i} className="ml-6 rounded-md bg-zinc-900 px-3 py-2 text-sm text-white">
+              <p key={i} className="border-l-[3px] border-ink pl-2 text-sm font-semibold">
                 {t.content}
               </p>
             ) : (
-              <div key={i} className="rounded-md bg-zinc-50 px-3 py-2">
+              <div key={i}>
                 <Markdown text={t.content} />
               </div>
             ),
           )}
-          {pending && conversation.at(-1)?.role === "user" && <p className="text-sm text-zinc-500">Drafting...</p>}
+          {pending && conversation.at(-1)?.role === "user" && (
+            <p role="status" className="text-sm text-slate">
+              Drafting. A full RFx takes about 30 seconds.
+            </p>
+          )}
           <div ref={endRef} />
         </div>
         <form
-          className="border-t border-zinc-200 p-2"
+          className="border-t border-rule p-3"
           onSubmit={(e) => {
             e.preventDefault();
             send(message);
@@ -169,33 +181,25 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
             }}
             rows={2}
             placeholder={locked ? "This RFx has been sent" : "Describe the purchase, or ask for changes"}
-            className="w-full resize-none rounded border border-zinc-300 px-2 py-1.5 text-sm"
+            className="w-full resize-none rounded-xs border border-field bg-sheet px-2 py-1.5 text-sm placeholder:text-slate"
           />
-          <div className="mt-1 flex justify-end">
-            <button type="submit" disabled={pending || locked || !message.trim()} className="rounded bg-zinc-900 px-3 py-1 text-sm text-white disabled:opacity-50">
+          <div className="mt-2 flex justify-end">
+            <button type="submit" disabled={pending || locked || !message.trim()} className={btn.primary}>
               Send
             </button>
           </div>
         </form>
       </aside>
 
-      <section aria-label="RFx draft" className="min-w-0 space-y-4">
-        {error && <ErrorNote message={error} busy={pending} onRetry={failedMessage ? () => send(failedMessage) : undefined} />}
-        {locked && (
-          <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-            Sent to {supplierCount} suppliers{initial.sentAt ? ` on ${new Date(initial.sentAt).toLocaleString("en-GB", { timeZone: "Asia/Kolkata" })} IST` : ""} (simulated). Start a new draft to make changes.
+      <section aria-label="RFx draft" className="min-w-0 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm">
+            <span className="text-slate">Status </span>
+            <span className="font-semibold">{locked ? `Sent${initial.sentAt ? ` ${displayDate(initial.sentAt)}` : ""}` : dirty ? "Draft, unsaved changes" : "Draft, saved"}</span>
           </p>
-        )}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="text-xl font-semibold">{draft.title || "New RFx draft"}</h2>
-            <p className="text-sm text-zinc-600">
-              {draft.lines.length} line{draft.lines.length === 1 ? "" : "s"} · {draft.questionnaire.length} questionnaire questions · every field is editable
-            </p>
-          </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={pending || !dirty || locked} onClick={save} className="rounded border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-100 disabled:opacity-50">
-              {dirty ? "Save changes" : "Saved"}
+            <button type="button" disabled={pending || !dirty || locked} onClick={save} className={btn.secondary}>
+              {dirty ? "Save draft" : "Saved"}
             </button>
             <button
               type="button"
@@ -212,182 +216,208 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
                   } else setError(r.error);
                 })
               }
-              className="rounded bg-sky-700 px-3 py-1.5 text-sm text-white hover:bg-sky-800 disabled:opacity-40"
+              className={btn.primary}
             >
-              Send to suppliers
+              Send RFx
             </button>
           </div>
         </div>
+        {error && <ErrorNote message={error} busy={pending} onRetry={failedMessage ? () => send(failedMessage) : undefined} />}
+        {locked && <p className="border-l-[3px] border-ledger bg-ledger-tint px-3 py-2 text-sm text-ledger">Sent to {supplierCount} suppliers (simulated). Start a new draft to make changes.</p>}
         {!locked && problems.length > 0 && draft.lines.length > 0 && (
-          <ul className="list-disc rounded-md border border-amber-200 bg-amber-50 px-6 py-2 text-xs text-amber-900">
-            {problems.map((p) => (
-              <li key={p}>{p}</li>
-            ))}
-          </ul>
+          <div className="border-l-[3px] border-amber bg-amber-tint px-3 py-2 text-xs text-pencil">
+            <p className="font-semibold">Before you can send</p>
+            <ul className="mt-1 list-disc pl-4">
+              {problems.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
+          </div>
         )}
 
-        <fieldset disabled={locked} className="min-w-0 grid gap-3 rounded-md border border-zinc-200 bg-white p-3 sm:grid-cols-2 lg:grid-cols-5">
-          <legend className="px-1 text-xs font-medium text-zinc-500">RFx</legend>
-          <div className="sm:col-span-2">
-            <Field label="Title">
-              <input className={input} value={draft.title} onChange={(e) => update({ title: e.target.value })} />
-            </Field>
-          </div>
-          <Field label="Category">
-            <input className={input} value={draft.category} onChange={(e) => update({ category: e.target.value })} />
-          </Field>
-          <Field label="Need by">
-            <input type="date" className={input} value={draft.need_by_date} onChange={(e) => update({ need_by_date: e.target.value })} />
-          </Field>
-          <Field label="Approval days">
-            <input type="number" min={0} className={input} value={draft.approval_days} onChange={(e) => update({ approval_days: Number(e.target.value) })} />
-          </Field>
-          <div className="sm:col-span-2 lg:col-span-5">
-            <Field label="Delivery hubs (comma separated)">
-              <input
-                className={input}
-                value={draft.delivery_hubs.join(", ")}
-                onChange={(e) =>
-                  update({
-                    delivery_hubs: e.target.value
-                      .split(",")
-                      .map((h) => h.trim())
-                      .filter(Boolean),
-                  })
-                }
-              />
-            </Field>
-          </div>
-        </fieldset>
-
-        <fieldset disabled={locked} className="min-w-0 rounded-md border border-zinc-200 bg-white">
-          <legend className="ml-3 px-1 text-xs font-medium text-zinc-500">Lines</legend>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-sm">
-              <thead className="bg-zinc-50 text-xs text-zinc-500">
-                <tr>
-                  <th className="px-2 py-1 text-left">#</th>
-                  <th className="px-2 py-1 text-left">Description</th>
-                  <th className="px-2 py-1 text-left">Specification (attribute: value, one per line)</th>
-                  <th className="px-2 py-1 text-left">Category</th>
-                  <th className="px-2 py-1 text-right">Qty</th>
-                  <th className="px-2 py-1 text-left">Unit</th>
-                  <th className="px-2 py-1 text-center" title="Memory-exposed: laptops, desktops, SSDs">Mem</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {draft.lines.map((l, i) => (
-                  <tr key={i} className="border-t border-zinc-100 align-top">
-                    <td className="px-2 py-1 text-zinc-500">{l.line_no}</td>
-                    <td className="px-2 py-1">
-                      <textarea aria-label={`Line ${l.line_no} description`} rows={2} className={input} value={l.description} onChange={(e) => updateLine(i, { description: e.target.value })} />
-                    </td>
-                    <td className="px-2 py-1">
-                      <SpecEditor key={`${version}-${l.line_no}-${draft.lines.length}`} value={l.spec} onChange={(spec) => updateLine(i, { spec })} label={`Line ${l.line_no} specification`} />
-                    </td>
-                    <td className="w-36 px-2 py-1">
-                      <input aria-label={`Line ${l.line_no} category`} className={input} value={l.category} onChange={(e) => updateLine(i, { category: e.target.value })} />
-                    </td>
-                    <td className="w-20 px-2 py-1">
-                      <input aria-label={`Line ${l.line_no} quantity`} type="number" min={1} className={`${input} text-right`} value={l.quantity} onChange={(e) => updateLine(i, { quantity: Number(e.target.value) })} />
-                    </td>
-                    <td className="w-20 px-2 py-1">
-                      <input aria-label={`Line ${l.line_no} unit`} className={input} value={l.uom} onChange={(e) => updateLine(i, { uom: e.target.value })} />
-                    </td>
-                    <td className="px-2 py-1 text-center">
-                      <input aria-label={`Line ${l.line_no} memory-exposed`} type="checkbox" checked={l.memory_exposed} onChange={(e) => updateLine(i, { memory_exposed: e.target.checked })} />
-                    </td>
-                    <td className="px-2 py-1">
-                      <button type="button" onClick={() => update({ lines: draft.lines.filter((_, j) => j !== i).map((x, j) => ({ ...x, line_no: j + 1 })) })} className="text-xs text-zinc-500 hover:text-red-700" aria-label={`Remove line ${l.line_no}`}>
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <button
-            type="button"
-            onClick={() => update({ lines: [...draft.lines, { line_no: draft.lines.length + 1, description: "New item", category: "Other", spec: [], quantity: 1, uom: "piece", memory_exposed: false }] })}
-            className="m-2 rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
-          >
-            Add line
-          </button>
-        </fieldset>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <fieldset disabled={locked} className="min-w-0 space-y-2 rounded-md border border-zinc-200 bg-white p-3">
-            <legend className="px-1 text-xs font-medium text-zinc-500">Commercial terms</legend>
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Quote validity required (days)">
-                <input type="number" min={0} className={input} value={draft.terms.validity_days_required} onChange={(e) => update({ terms: { ...draft.terms, validity_days_required: Number(e.target.value) } })} />
+        <article className="border border-rule bg-sheet px-8 py-7 shadow-[0_8px_24px_rgb(27_42_65/0.06)]">
+          <fieldset disabled={locked} className="min-w-0 border-b-2 border-ink pb-4">
+            <legend className="sr-only">RFx</legend>
+            <p className="text-xs text-slate">Request for quotation, Meridian Diagnostics</p>
+            <input aria-label="Title" placeholder="RFx title" className={`${input} mt-1 text-xl font-semibold`} value={draft.title} onChange={(e) => update({ title: e.target.value })} />
+            <div className="mt-3 grid grid-cols-4 gap-x-5 gap-y-3">
+              <Field label="Category">
+                <input className={input} value={draft.category} onChange={(e) => update({ category: e.target.value })} />
               </Field>
-              <Field label="Delivery within (days)">
-                <input type="number" min={0} className={input} value={draft.terms.delivery_days} onChange={(e) => update({ terms: { ...draft.terms, delivery_days: Number(e.target.value) } })} />
+              <Field label="Need by">
+                <input type="date" className={input} value={draft.need_by_date} onChange={(e) => update({ need_by_date: e.target.value })} />
+              </Field>
+              <Field label="Approval days">
+                <input type="number" min={0} className={input} value={draft.approval_days} onChange={(e) => update({ approval_days: Number(e.target.value) })} />
+              </Field>
+              <Field label="Delivery hubs">
+                <input
+                  placeholder="Bengaluru, Chennai"
+                  className={input}
+                  value={draft.delivery_hubs.join(", ")}
+                  onChange={(e) =>
+                    update({
+                      delivery_hubs: e.target.value
+                        .split(",")
+                        .map((h) => h.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                />
               </Field>
             </div>
-            {(["gst_basis", "delivery_basis", "warranty", "payment", "currency"] as const).map((k) => (
-              <Field key={k} label={{ gst_basis: "GST basis", delivery_basis: "Delivery basis", warranty: "Warranty", payment: "Payment", currency: "Currency" }[k]}>
-                <input className={input} value={draft.terms[k]} onChange={(e) => update({ terms: { ...draft.terms, [k]: e.target.value } })} />
-              </Field>
-            ))}
           </fieldset>
 
-          <fieldset disabled={locked} className="min-w-0 space-y-2 rounded-md border border-zinc-200 bg-white p-3">
-            <legend className="px-1 text-xs font-medium text-zinc-500">Quality questionnaire</legend>
-            {draft.questionnaire.map((q, i) => (
-              <div key={i} className="flex gap-2">
-                <input
-                  aria-label={`Question ${i + 1}`}
-                  className={input}
-                  value={q.text}
-                  onChange={(e) => update({ questionnaire: draft.questionnaire.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)) })}
-                />
-                <label className="flex shrink-0 items-center gap-1 text-xs text-zinc-600" title="Evidence document required">
-                  <input
-                    type="checkbox"
-                    checked={q.evidence_required}
-                    onChange={(e) => update({ questionnaire: draft.questionnaire.map((x, j) => (j === i ? { ...x, evidence_required: e.target.checked } : x)) })}
-                  />
-                  Evidence
-                </label>
-                <button type="button" onClick={() => update({ questionnaire: draft.questionnaire.filter((_, j) => j !== i) })} className="shrink-0 text-xs text-zinc-500 hover:text-red-700" aria-label={`Remove question ${i + 1}`}>
-                  Remove
-                </button>
-              </div>
-            ))}
+          <fieldset disabled={locked} className="mt-6 min-w-0">
+            <legend className="text-base font-semibold">1. Lines</legend>
+            {draft.lines.length === 0 ? (
+              <p className="mt-2 border-y border-rule py-6 text-center text-sm text-slate">No lines yet. Describe the purchase to the co-pilot, or add a line yourself.</p>
+            ) : (
+              <table className="mt-2 w-full table-fixed border-collapse text-[13px]">
+                <colgroup>
+                  <col className="w-7" />
+                  <col className="w-[24%]" />
+                  <col />
+                  <col className="w-[7.5rem]" />
+                  <col className="w-14" />
+                  <col className="w-16" />
+                  <col className="w-[4.5rem]" />
+                  <col className="w-16" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th className={th}>#</th>
+                    <th className={th}>Description</th>
+                    <th className={th}>Specification, one per line</th>
+                    <th className={th}>Category</th>
+                    <th className={`${th} text-right`}>Qty</th>
+                    <th className={th}>Unit</th>
+                    <th className={th} title="Memory-exposed: laptops, desktops, SSDs">
+                      Memory
+                    </th>
+                    <th className={th}>
+                      <span className="sr-only">Remove</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {draft.lines.map((l, i) => (
+                    <tr key={i} className="align-top">
+                      <td className="border-b border-rule py-1.5 pr-2 text-xs text-slate">{l.line_no}</td>
+                      <td className="border-b border-rule py-1.5 pr-2">
+                        <textarea aria-label={`Line ${l.line_no} description`} rows={2} className={`${input} resize-none`} value={l.description} onChange={(e) => updateLine(i, { description: e.target.value })} />
+                      </td>
+                      <td className="border-b border-rule py-1.5 pr-2">
+                        <SpecEditor key={`${version}-${l.line_no}-${draft.lines.length}`} value={l.spec} onChange={(spec) => updateLine(i, { spec })} label={`Line ${l.line_no} specification`} />
+                      </td>
+                      <td className="border-b border-rule py-1.5 pr-2">
+                        <input aria-label={`Line ${l.line_no} category`} className={input} value={l.category} onChange={(e) => updateLine(i, { category: e.target.value })} />
+                      </td>
+                      <td className="border-b border-rule py-1.5 pr-2">
+                        <input aria-label={`Line ${l.line_no} quantity`} type="number" min={1} className={`${input} text-right`} value={l.quantity} onChange={(e) => updateLine(i, { quantity: Number(e.target.value) })} />
+                      </td>
+                      <td className="border-b border-rule py-1.5 pr-2">
+                        <input aria-label={`Line ${l.line_no} unit`} className={input} value={l.uom} onChange={(e) => updateLine(i, { uom: e.target.value })} />
+                      </td>
+                      <td className="border-b border-rule py-1.5 pt-2.5">
+                        <input aria-label={`Line ${l.line_no} memory-exposed`} type="checkbox" className="accent-ink" checked={l.memory_exposed} onChange={(e) => updateLine(i, { memory_exposed: e.target.checked })} />
+                      </td>
+                      <td className="border-b border-rule py-1.5 text-right">
+                        <button type="button" onClick={() => update({ lines: draft.lines.filter((_, j) => j !== i).map((x, j) => ({ ...x, line_no: j + 1 })) })} className="text-xs text-slate underline decoration-rule underline-offset-2 hover:text-oxblood" aria-label={`Remove line ${l.line_no}`}>
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
             <button
               type="button"
-              onClick={() => update({ questionnaire: [...draft.questionnaire, { key: `question_${draft.questionnaire.length + 1}`, text: "New question", evidence_required: false }] })}
-              className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
+              onClick={() => update({ lines: [...draft.lines, { line_no: draft.lines.length + 1, description: "New item", category: "Other", spec: [], quantity: 1, uom: "piece", memory_exposed: false }] })}
+              className={`${btn.small} mt-2`}
             >
-              Add question
+              Add line
             </button>
           </fieldset>
-        </div>
+
+          <div className="mt-7 grid grid-cols-2 gap-8">
+            <fieldset disabled={locked} className="min-w-0 space-y-3">
+              <legend className="text-base font-semibold">2. Commercial terms</legend>
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <Field label="Validity required, days">
+                  <input type="number" min={0} className={input} value={draft.terms.validity_days_required} onChange={(e) => update({ terms: { ...draft.terms, validity_days_required: Number(e.target.value) } })} />
+                </Field>
+                <Field label="Delivery within, days">
+                  <input type="number" min={0} className={input} value={draft.terms.delivery_days} onChange={(e) => update({ terms: { ...draft.terms, delivery_days: Number(e.target.value) } })} />
+                </Field>
+              </div>
+              {(["gst_basis", "delivery_basis", "warranty", "payment", "currency"] as const).map((k) => (
+                <Field key={k} label={{ gst_basis: "GST basis", delivery_basis: "Delivery basis", warranty: "Warranty", payment: "Payment", currency: "Currency" }[k]}>
+                  <input className={input} value={draft.terms[k]} onChange={(e) => update({ terms: { ...draft.terms, [k]: e.target.value } })} />
+                </Field>
+              ))}
+            </fieldset>
+
+            <fieldset disabled={locked} className="min-w-0">
+              <legend className="text-base font-semibold">3. Quality questionnaire</legend>
+              <ol className="pt-2">
+                {draft.questionnaire.map((q, i) => (
+                  <li key={i} className="flex items-start gap-2 border-b border-rule py-1.5">
+                    <span className="w-5 shrink-0 pt-1 text-right text-xs text-slate">{i + 1}</span>
+                    <textarea
+                      aria-label={`Question ${i + 1}`}
+                      rows={2}
+                      className={`${input} resize-none border-b-0`}
+                      value={q.text}
+                      onChange={(e) => update({ questionnaire: draft.questionnaire.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)) })}
+                    />
+                    <label className="flex shrink-0 items-center gap-1 pt-1 text-xs text-slate" title="Evidence document required">
+                      <input
+                        type="checkbox"
+                        className="accent-ink"
+                        checked={q.evidence_required}
+                        onChange={(e) => update({ questionnaire: draft.questionnaire.map((x, j) => (j === i ? { ...x, evidence_required: e.target.checked } : x)) })}
+                      />
+                      Evidence
+                    </label>
+                    <button type="button" onClick={() => update({ questionnaire: draft.questionnaire.filter((_, j) => j !== i) })} className="shrink-0 pt-1 text-xs text-slate underline decoration-rule underline-offset-2 hover:text-oxblood" aria-label={`Remove question ${i + 1}`}>
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              <button
+                type="button"
+                onClick={() => update({ questionnaire: [...draft.questionnaire, { key: `question_${draft.questionnaire.length + 1}`, text: "New question", evidence_required: false }] })}
+                className={`${btn.small} mt-2`}
+              >
+                Add question
+              </button>
+            </fieldset>
+          </div>
+        </article>
       </section>
 
       {sent && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-zinc-900/30 p-4">
-          <div role="dialog" aria-modal="true" aria-label="RFx sent" className="w-full max-w-md space-y-3 rounded-md bg-white p-5 shadow-xl">
-            <h3 className="text-lg font-semibold">Sent to {sent.suppliers.length} suppliers</h3>
-            <p className="text-sm text-zinc-600">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-ink/30 p-4">
+          <div role="dialog" aria-modal="true" aria-label="RFx sent" className="panel-in w-full max-w-md space-y-3 rounded-xs border border-rule bg-sheet p-5 shadow-[0_8px_24px_rgb(27_42_65/0.18)]">
+            <h3 className="text-base font-semibold">Sent to {sent.suppliers.length} suppliers</h3>
+            <p className="text-sm text-slate">
               &quot;{draft.title}&quot; with {draft.lines.length} lines went out on {new Date(sent.sentAt).toLocaleString("en-GB", { timeZone: "Asia/Kolkata" })} IST. Email sending is simulated in this prototype.
             </p>
-            <ul className="space-y-1 text-sm">
+            <ul className="border-y border-rule text-sm">
               {sent.suppliers.map((s) => (
-                <li key={s.code} className="flex justify-between rounded border border-zinc-200 px-2 py-1">
+                <li key={s.code} className="flex justify-between border-b border-rule py-1.5 last:border-b-0">
                   <span>
                     {s.code}. {s.name}
                   </span>
-                  <span className="text-xs text-emerald-700">Sent (simulated)</span>
+                  <span className="text-xs text-ledger">Sent, simulated</span>
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-zinc-500">The five supplier responses for this demo are already in. Next, review them.</p>
-            <button type="button" onClick={() => router.push("/quotes")} className="w-full rounded bg-zinc-900 px-3 py-2 text-sm text-white">
+            <p className="text-xs text-slate">The five supplier responses for this demo are already in. Next, review them.</p>
+            <button type="button" onClick={() => router.push("/quotes")} className={`${btn.primary} w-full`}>
               Go to Quotes
             </button>
           </div>
@@ -404,7 +434,7 @@ function SpecEditor({ value, onChange, label }: { value: DraftLine["spec"]; onCh
     <textarea
       aria-label={label}
       rows={Math.max(2, Math.min(6, value.length))}
-      className={`${input} font-mono text-xs`}
+      className={`${input} resize-none text-xs leading-4`}
       value={text}
       onChange={(e) => {
         setText(e.target.value);

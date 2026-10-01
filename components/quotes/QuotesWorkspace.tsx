@@ -3,21 +3,25 @@
 import { useMemo, useState } from "react";
 import type { SupplierDetail } from "@/lib/quotes/load";
 import type { QueueItem } from "@/lib/review/queue";
+import { Stamp } from "../ui/Stamp";
 import { DocumentViewer, type SourceHighlight, type ViewerDocument } from "./DocumentViewer";
 import { displayDate, locatorLabel } from "./format";
 import { ReviewQueue } from "./ReviewQueue";
 import { SentEmails } from "./SentEmails";
 import { ValuesTable } from "./ValuesTable";
 
-export function QuotesWorkspace({ detail, documents }: { detail: SupplierDetail; documents: ViewerDocument[] }) {
+export function QuotesWorkspace({ detail, documents, freshness }: { detail: SupplierDetail; documents: ViewerDocument[]; freshness: string | null }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [activeDocId, setActiveDocId] = useState<string | null>(documents[0]?.id ?? null);
+  // Open on the document most values were read from (the quotation, not a certificate).
+  const [activeDocId, setActiveDocId] = useState<string | null>(() => {
+    const counts = new Map<string, number>();
+    for (const v of detail.values) if (v.source_document_id) counts.set(v.source_document_id, (counts.get(v.source_document_id) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? documents[0]?.id ?? null;
+  });
+  const [settled, setSettled] = useState<{ ids: string[]; n: number }>({ ids: [], n: 0 });
 
   const selected = detail.values.find((v) => v.id === selectedId) ?? null;
-  const highlight: SourceHighlight = useMemo(
-    () => (selected ? { locator: selected.source_locator, snippet: selected.source_snippet } : null),
-    [selected],
-  );
+  const highlight: SourceHighlight = useMemo(() => (selected ? { locator: selected.source_locator, snippet: selected.source_snippet } : null), [selected]);
 
   function selectValue(id: string) {
     const v = detail.values.find((x) => x.id === id);
@@ -31,61 +35,60 @@ export function QuotesWorkspace({ detail, documents }: { detail: SupplierDetail;
 
   const { supplier, response, terms } = detail;
   const sourceDoc = documents.find((d) => d.id === selected?.source_document_id);
+  const fields: [string, string][] = [
+    ["Received", response ? displayDate(response.received_at) : "No response"],
+    ["Quote date", displayDate(terms?.quote_date) || "Not stated"],
+    ["Valid until", displayDate(terms?.valid_until) || "Not stated"],
+    ["Freight", terms?.freight_terms ?? "Not stated"],
+    ["Payment", terms?.payment_terms ?? "Not stated"],
+    ["GSTIN", supplier.gstin ? `${supplier.gstin} (${supplier.state})` : "Not on file"],
+  ];
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 className="text-xl font-semibold">
+      <header className="space-y-2 border-b border-rule pb-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-semibold">
             {supplier.code}. {supplier.name}
-          </h2>
-          <p className="text-sm text-zinc-600">
-            {response ? `Received ${displayDate(response.received_at)} by email` : "No response"} · GSTIN {supplier.gstin ?? "not on file"} ({supplier.state})
-          </p>
+          </h1>
+          {freshness && <Stamp status={freshness} title="Quote Freshness; details on Quote Comparison" />}
         </div>
-        {terms && (
-          <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-600">
-            <div>
-              <dt className="inline text-zinc-500">Quote date </dt>
-              <dd className="inline font-medium text-zinc-900">{displayDate(terms.quote_date) || "not stated"}</dd>
+        <dl className="grid grid-cols-3 gap-x-6 gap-y-2 text-[13px] xl:grid-cols-6">
+          {fields.map(([k, v]) => (
+            <div key={k} className="min-w-0">
+              <dt className="text-xs text-slate">{k}</dt>
+              <dd className={`truncate ${v === "Not stated" ? "text-slate" : ""}`} title={v}>
+                {v}
+              </dd>
             </div>
-            <div>
-              <dt className="inline text-zinc-500">Valid until </dt>
-              <dd className="inline font-medium text-zinc-900">{displayDate(terms.valid_until) || "not stated"}</dd>
-            </div>
-            <div>
-              <dt className="inline text-zinc-500">Freight </dt>
-              <dd className="inline font-medium text-zinc-900">{terms.freight_terms ?? "not stated"}</dd>
-            </div>
-            <div>
-              <dt className="inline text-zinc-500">Payment </dt>
-              <dd className="inline font-medium text-zinc-900">{terms.payment_terms ?? "not stated"}</dd>
-            </div>
-          </dl>
-        )}
-      </div>
+          ))}
+        </dl>
+      </header>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-        <div className="space-y-2 xl:sticky xl:top-4 xl:self-start">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-2 lg:sticky lg:top-[4.75rem] lg:self-start">
           <DocumentViewer documents={documents} activeId={activeDocId} onSelect={setActiveDocId} highlight={highlight} />
           {selected && (
-            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-zinc-800">
-              <span className="font-medium">Source:</span> {sourceDoc?.file_name ?? "email body"}
+            <p className="border-l-[3px] border-amber bg-amber-tint px-3 py-2 text-xs">
+              <span className="font-semibold">Source</span> {sourceDoc?.file_name ?? "email body"}
               {locatorLabel(selected.source_locator) && `, ${locatorLabel(selected.source_locator)}`}
-              {selected.source_snippet && <span className="block text-zinc-600">“{selected.source_snippet}”</span>}
-            </div>
+              {selected.source_snippet && <span className="block">“{selected.source_snippet}”</span>}
+            </p>
           )}
         </div>
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-5">
           <ReviewQueue
             supplierCode={supplier.code}
             supplierName={supplier.name}
             items={detail.queue}
+            values={detail.values}
             awaiting={detail.awaiting}
             onFocus={focusQueueItem}
+            focusedValueId={selectedId}
+            onAccepted={(ids) => setSettled((s) => ({ ids, n: s.n + 1 }))}
           />
           <SentEmails clarifications={detail.clarifications} supplierName={supplier.name} />
-          <ValuesTable values={detail.values} selectedId={selectedId} onSelect={selectValue} />
+          <ValuesTable values={detail.values} selectedId={selectedId} onSelect={selectValue} settled={settled} />
         </div>
       </div>
     </div>

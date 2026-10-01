@@ -17,7 +17,7 @@ function Marked({ text, snippet }: { text: string; snippet: string | null }) {
   return (
     <>
       {text.slice(0, i)}
-      <mark className="rounded-sm bg-amber-300/70 px-0.5">{text.slice(i, i + snippet.trim().length)}</mark>
+      <mark className="rounded-xs bg-[#f2dcae] px-0.5">{text.slice(i, i + snippet.trim().length)}</mark>
       {text.slice(i + snippet.trim().length)}
     </>
   );
@@ -38,13 +38,13 @@ function Spreadsheet({ model, highlight }: { model: Extract<DocumentModel, { kin
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1 border-b border-zinc-200 px-2 pt-2">
+      <div className="flex flex-wrap gap-4 border-b border-rule px-3">
         {model.sheets.map((s) => (
           <button
             key={s.name}
             type="button"
             onClick={() => setSheet(s.name)}
-            className={`rounded-t px-2 py-1 text-xs ${s.name === active.name ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"}`}
+            className={`-mb-px border-b-2 pb-1.5 pt-2 text-xs ${s.name === active.name ? "border-ink font-semibold" : "border-transparent text-slate hover:text-ink"}`}
           >
             {s.name}
           </button>
@@ -52,11 +52,11 @@ function Spreadsheet({ model, highlight }: { model: Extract<DocumentModel, { kin
       </div>
       <div className="max-h-[70vh] overflow-auto">
         <table className="border-collapse text-xs">
-          <thead className="sticky top-0 bg-zinc-100 text-zinc-500">
+          <thead className="sticky top-0 bg-paper text-slate">
             <tr>
-              <th className="border border-zinc-200 px-1" />
+              <th className="border border-rule px-1" />
               {active.columns.map((c) => (
-                <th key={c} className="border border-zinc-200 px-2 font-normal">
+                <th key={c} className="border border-rule px-2 font-normal">
                   {c}
                 </th>
               ))}
@@ -65,7 +65,7 @@ function Spreadsheet({ model, highlight }: { model: Extract<DocumentModel, { kin
           <tbody>
             {active.rows.map((row) => (
               <tr key={row.r}>
-                <td className="border border-zinc-200 bg-zinc-50 px-1 text-zinc-400">{row.r}</td>
+                <td className="border border-rule bg-paper px-1 text-slate">{row.r}</td>
                 {row.cells
                   .filter((c) => !c.hidden)
                   .map((c) => {
@@ -76,7 +76,7 @@ function Spreadsheet({ model, highlight }: { model: Extract<DocumentModel, { kin
                         ref={hot ? hotRef : undefined}
                         colSpan={c.colSpan}
                         rowSpan={c.rowSpan}
-                        className={`max-w-[28rem] border border-zinc-200 px-2 py-0.5 align-top ${hot ? "bg-amber-300/60 outline outline-2 outline-amber-500" : ""}`}
+                        className={`max-w-[28rem] border border-rule px-2 py-0.5 align-top ${hot ? "bg-amber-tint outline outline-2 outline-amber" : ""}`}
                       >
                         {c.text}
                       </td>
@@ -104,14 +104,14 @@ function Lines({ model, highlight }: { model: Extract<DocumentModel, { kind: "li
   }, [hot, snippet]);
 
   return (
-    <div className={`max-h-[70vh] overflow-auto p-3 text-sm ${model.marker === "L" ? "font-mono text-xs" : ""}`}>
+    <div className={`max-h-[70vh] overflow-auto p-3 text-sm ${model.marker === "L" ? "text-[13px]" : ""}`}>
       {model.lines.map((l) => (
         <div
           key={l.n}
           ref={l.n === hot ? hotRef : undefined}
-          className={`flex gap-3 rounded px-1 ${model.marker === "P" ? "py-1" : ""} ${l.n === hot ? "bg-amber-100" : ""}`}
+          className={`flex gap-3 rounded px-1 ${model.marker === "P" ? "py-1" : ""} ${l.n === hot ? "bg-amber-tint" : ""}`}
         >
-          <span className="w-8 shrink-0 select-none text-right text-zinc-400">
+          <span className="w-8 shrink-0 select-none text-right text-slate">
             {model.marker}
             {l.n}
           </span>
@@ -134,18 +134,18 @@ export function DocumentViewer({
   highlight: SourceHighlight;
 }) {
   const active = documents.find((d) => d.id === activeId) ?? documents[0];
-  if (!active) return <p className="text-sm text-zinc-600">No documents.</p>;
+  if (!active) return <p className="text-sm text-slate">No documents.</p>;
   const bbox = highlight?.locator?.bbox && highlight.locator.bbox.length === 4 ? (highlight.locator.bbox as [number, number, number, number]) : null;
 
   return (
-    <div className="rounded-md border border-zinc-200 bg-white">
-      <div className="flex flex-wrap gap-1 border-b border-zinc-200 p-2">
+    <div className="border border-rule bg-sheet">
+      <div className="flex gap-x-4 overflow-x-auto border-b border-rule px-3">
         {documents.map((d) => (
           <button
             key={d.id}
             type="button"
             onClick={() => onSelect(d.id)}
-            className={`truncate rounded px-2 py-1 text-xs ${d.id === active.id ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"}`}
+            className={`-mb-px max-w-[13rem] shrink-0 truncate border-b-2 pb-2 pt-2.5 text-xs ${d.id === active.id ? "border-ink font-semibold" : "border-transparent text-slate hover:text-ink"}`}
             title={d.file_name}
           >
             {d.file_name}

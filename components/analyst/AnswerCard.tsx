@@ -4,7 +4,9 @@ import { useState, useTransition } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { exportAnswerAction, type AnalystReply } from "@/app/(app)/comparison/analyst-actions";
+import { btn } from "../ui/styles";
 import { AnalystChart } from "./AnalystChart";
+import { Cited, LineScopeFor, firstCellText, textOf } from "./cite";
 
 function download(fileName: string, base64: string, mime: string) {
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -16,29 +18,65 @@ function download(fileName: string, base64: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
-export function Markdown({ text }: { text: string }) {
+// Markdown in the house style: answers and the memo use the same ruled tables as
+// the comparison, with right-aligned tabular figures.
+export function Markdown({ text, size = "sm" }: { text: string; size?: "sm" | "doc" }) {
   return (
-    <div className="space-y-2 text-sm leading-relaxed text-zinc-800 [&_strong]:font-semibold [&_strong]:text-zinc-900">
+    <div className={`space-y-2 ${size === "doc" ? "text-[13px] leading-[19px]" : "text-sm leading-5"} [&_strong]:font-semibold`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           table: ({ children }) => (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-xs">{children}</table>
+              <table className="w-full border-collapse text-[13px]">{children}</table>
             </div>
           ),
-          th: ({ children }) => <th className="border-b border-zinc-300 px-1.5 py-1 text-left font-medium text-zinc-600">{children}</th>,
-          td: ({ children }) => <td className="border-b border-zinc-100 px-1.5 py-1 align-top">{children}</td>,
-          ul: ({ children }) => <ul className="list-disc space-y-0.5 pl-5">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal space-y-0.5 pl-5">{children}</ol>,
+          th: ({ children, style }) => (
+            <th style={style} className="border-b border-ink px-2 py-1 text-left text-xs font-semibold text-slate">
+              {children}
+            </th>
+          ),
+          td: ({ children, style }) => (
+            <td style={style} className="h-8 border-b border-rule px-2 py-1 align-top">
+              <Cited>{children}</Cited>
+            </td>
+          ),
+          tr: ({ children }) => (
+            <tr>
+              <LineScopeFor text={textOf(children)} firstCell={firstCellText(children)}>
+                {children}
+              </LineScopeFor>
+            </tr>
+          ),
+          p: ({ children }) => (
+            <p>
+              <LineScopeFor text={textOf(children)}>
+                <Cited>{children}</Cited>
+              </LineScopeFor>
+            </p>
+          ),
+          li: ({ children }) => (
+            <li>
+              <LineScopeFor text={textOf(children)}>
+                <Cited>{children}</Cited>
+              </LineScopeFor>
+            </li>
+          ),
+          strong: ({ children }) => (
+            <strong>
+              <Cited>{children}</Cited>
+            </strong>
+          ),
+          ul: ({ children }) => <ul className="list-disc space-y-1 pl-5">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal space-y-1 pl-5">{children}</ol>,
           a: ({ children, href }) => (
-            <a href={href} target="_blank" rel="noreferrer" className="text-sky-800 underline underline-offset-2">
+            <a href={href} target="_blank" rel="noreferrer" className="underline decoration-slate underline-offset-[3px] hover:decoration-ink">
               {children}
             </a>
           ),
-          h1: ({ children }) => <p className="font-semibold">{children}</p>,
-          h2: ({ children }) => <p className="font-semibold">{children}</p>,
-          h3: ({ children }) => <p className="font-semibold">{children}</p>,
+          h1: ({ children }) => <p className="pt-1 text-sm font-semibold">{children}</p>,
+          h2: ({ children }) => <p className="border-b border-rule pb-1 pt-2 text-sm font-semibold">{children}</p>,
+          h3: ({ children }) => <p className="pt-1 font-semibold">{children}</p>,
         }}
       >
         {text}
@@ -60,61 +98,67 @@ export function AnswerCard({ question, reply }: { question: string; reply: Analy
     });
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <Markdown text={reply.answer} />
       {reply.charts.map((c, i) => (
         <AnalystChart key={i} spec={c} />
       ))}
       {reply.exports.map((e) => (
-        <a key={e.url} href={e.url} className="block text-xs text-sky-800 underline underline-offset-2">
+        <a key={e.url} href={e.url} className="block text-sm underline decoration-slate underline-offset-[3px]">
           Download {e.file_name}
         </a>
       ))}
       {reply.warnings.length > 0 && (
-        <p className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
-          Post-check: {reply.warnings.length} number{reply.warnings.length > 1 ? "s" : ""} not found in any tool result ({reply.warnings.map((w) => w.text).join(", ")}). Treat {reply.warnings.length > 1 ? "them" : "it"} with care.
+        <p className="border-l-[3px] border-amber bg-amber-tint px-2 py-1 text-xs text-pencil">
+          {reply.warnings.length} number{reply.warnings.length > 1 ? "s" : ""} not found in any tool result: {reply.warnings.map((w) => w.text).join(", ")}. Check {reply.warnings.length > 1 ? "them" : "it"} before relying on {reply.warnings.length > 1 ? "them" : "it"}.
         </p>
       )}
-      <details className="rounded border border-zinc-200 bg-zinc-50 text-xs">
-        <summary className="cursor-pointer px-2 py-1 font-medium text-zinc-700">How I got this</summary>
-        <div className="space-y-2 px-2 pb-2">
+      <details className="group border-t border-rule pt-2 text-xs">
+        <summary className="cursor-pointer font-semibold text-slate hover:text-ink">How I got this</summary>
+        <div className="mt-2 space-y-3">
           <div>
-            <p className="font-medium text-zinc-800">Basis</p>
-            <ul className="list-disc pl-4 text-zinc-700">
+            <p className="font-semibold">Basis</p>
+            <ul className="mt-0.5 list-disc pl-4 text-slate">
               {reply.basis.length ? reply.basis.map((b) => <li key={b}>{b}</li>) : <li>No supplier filter or basket was applied.</li>}
             </ul>
           </div>
           <div>
-            <p className="font-medium text-zinc-800">Tools called ({reply.tools.length})</p>
-            <ol className="list-decimal space-y-1 pl-4">
+            <p className="font-semibold">Tools called ({reply.tools.length})</p>
+            <ol className="mt-0.5 list-decimal space-y-1.5 pl-4">
               {reply.tools.map((t, i) => (
                 <li key={i}>
-                  <span className="font-mono text-zinc-900">{t.name}</span>
-                  {t.error && <span className="text-red-700"> failed: {t.error}</span>}
-                  <pre className="mt-0.5 overflow-x-auto whitespace-pre-wrap break-all rounded bg-white p-1 font-mono text-[10.5px] text-zinc-600">{JSON.stringify(t.input)}</pre>
+                  <span className="font-semibold">{t.name}</span>
+                  {t.error && <span className="text-oxblood"> failed: {t.error}</span>}
+                  <span className="block break-all text-slate">{JSON.stringify(t.input)}</span>
                 </li>
               ))}
             </ol>
           </div>
-          <p className={reply.warnings.length ? "text-amber-900" : "text-zinc-600"}>
-            Post-check:{" "}
+          <p className={reply.warnings.length ? "text-pencil" : "text-slate"}>
             {reply.warnings.length
-              ? reply.warnings.map((w) => `${w.text} (${w.where}) not found in any tool result`).join("; ")
-              : "every number in the answer was found in a tool result."}
+              ? reply.warnings.map((w) => `${w.text} (${w.where}) was not found in any tool result.`).join(" ")
+              : "Every number in the answer was found in a tool result."}
           </p>
-          <p className="text-zinc-500">
-            {reply.seconds}s · ${reply.costUsd.toFixed(3)}
-          </p>
+          <dl className="flex gap-4 text-slate">
+            <div>
+              <dt className="inline">Time </dt>
+              <dd className="inline text-ink">{reply.seconds} s</dd>
+            </div>
+            <div>
+              <dt className="inline">Model cost </dt>
+              <dd className="inline text-ink">${reply.costUsd.toFixed(3)}</dd>
+            </div>
+          </dl>
           <div className="flex gap-2">
-            <button type="button" disabled={pending} onClick={() => exportAs("xlsx")} className="rounded border border-zinc-300 bg-white px-2 py-0.5 hover:bg-zinc-100 disabled:opacity-60">
+            <button type="button" disabled={pending} onClick={() => exportAs("xlsx")} className={btn.small}>
               Export Excel
             </button>
-            <button type="button" disabled={pending} onClick={() => exportAs("pdf")} className="rounded border border-zinc-300 bg-white px-2 py-0.5 hover:bg-zinc-100 disabled:opacity-60">
+            <button type="button" disabled={pending} onClick={() => exportAs("pdf")} className={btn.small}>
               Export PDF
             </button>
-            {pending && <span className="text-zinc-500">Preparing...</span>}
+            {pending && <span className="self-center text-slate">Preparing the file...</span>}
           </div>
-          {error && <p className="text-red-700">{error}</p>}
+          {error && <p className="text-oxblood">{error}</p>}
         </div>
       </details>
     </div>

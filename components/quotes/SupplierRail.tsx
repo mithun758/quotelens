@@ -2,51 +2,48 @@ import Link from "next/link";
 import type { SupplierSummary } from "@/lib/quotes/load";
 import { FormatIcon } from "./FormatIcon";
 
-const STATUS: Record<string, string> = {
-  received: "Received",
-  processing: "Extracting",
-  extracted: "Extracted",
-  failed: "Extraction failed",
-};
-
-export function SupplierRail({ rail, selected }: { rail: SupplierSummary[]; selected: string | null }) {
+export function SupplierRail({ rail, selected, totalLines }: { rail: SupplierSummary[]; selected: string | null; totalLines: number }) {
   return (
-    <nav aria-label="Supplier responses" className="w-full shrink-0 space-y-2 lg:w-64">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Supplier emails</h2>
-      {rail.map(({ supplier, response, formats, queueCount, awaiting }) => {
-        const active = supplier.code === selected;
-        return (
-          <Link
-            key={supplier.id}
-            href={`/quotes?supplier=${supplier.code}`}
-            className={`block rounded-md border px-3 py-2 text-sm ${active ? "border-zinc-900 bg-white shadow-sm" : "border-zinc-200 bg-white hover:border-zinc-400"}`}
-          >
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="font-medium">
-                {supplier.code}. {supplier.name}
-              </span>
-              {supplier.is_incumbent && <span className="text-[10px] uppercase text-zinc-500">Incumbent</span>}
-            </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-600">
-              {formats.map((f) => (
-                <FormatIcon key={f} format={f} />
-              ))}
-              <span>·</span>
-              <span>{response ? STATUS[response.status] ?? response.status : "No response"}</span>
-              {response?.coverage_count !== null && response?.coverage_count !== undefined && (
-                <>
-                  <span>·</span>
-                  <span className="font-medium text-zinc-800">{response.coverage_count}/30 lines</span>
-                </>
-              )}
-            </div>
-            <div className="mt-1 flex gap-2 text-xs">
-              {queueCount > 0 && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900">{queueCount} need you</span>}
-              {awaiting > 0 && <span className="rounded bg-sky-100 px-1.5 py-0.5 text-sky-900">Awaiting supplier</span>}
-            </div>
-          </Link>
-        );
-      })}
+    <nav aria-label="Supplier responses" className="w-[13.5rem] shrink-0">
+      <h2 className="pb-2 text-xs font-semibold text-slate">Supplier responses</h2>
+      <ul className="border-y border-rule">
+        {rail.map(({ supplier, response, formats, queueCount, awaiting }) => {
+          const active = supplier.code === selected;
+          const extracted = response?.status === "extracted";
+          const coverage = response?.coverage_count ?? null;
+          return (
+            <li key={supplier.id} className="border-b border-rule last:border-b-0">
+              <Link href={`/quotes?supplier=${supplier.code}`} aria-current={active ? "page" : undefined} className={`relative block px-3 py-2.5 hover:bg-tint ${active ? "bg-tint" : ""}`}>
+                {active && <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-ink" />}
+                <span className="block text-[13px] font-semibold leading-4">
+                  {supplier.code}. {supplier.name}
+                </span>
+                {supplier.is_incumbent && <span className="block text-xs text-slate">Incumbent</span>}
+                <span className="mt-1 flex flex-wrap gap-x-2 text-xs">
+                  {formats.map((f) => (
+                    <FormatIcon key={f} format={f} />
+                  ))}
+                </span>
+                {extracted && coverage !== null ? (
+                  <>
+                    <span aria-hidden className="mt-2 block h-[3px] w-full bg-rule">
+                      <span className="block h-full bg-ink" style={{ width: `${(coverage / totalLines) * 100}%` }} />
+                    </span>
+                    <span className="mt-1 flex justify-between text-xs">
+                      <span>
+                        {coverage} of {totalLines} lines
+                      </span>
+                      {awaiting > 0 ? <span className="font-semibold">Awaiting reply</span> : queueCount > 0 ? <span className="text-pencil">{queueCount} to review</span> : <span className="text-ledger">Reviewed</span>}
+                    </span>
+                  </>
+                ) : (
+                  <span className="mt-1 block text-xs text-slate">{response?.status === "failed" ? "Extraction failed" : response ? "Received, not extracted" : "No response"}</span>
+                )}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }

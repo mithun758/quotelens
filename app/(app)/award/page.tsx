@@ -2,6 +2,7 @@ import { NotExtractedNote } from "@/components/ErrorNote";
 import { AwardScreen } from "@/components/award/AwardScreen";
 import { negotiationLines } from "@/lib/award/negotiation";
 import { loadAwardView } from "@/lib/award/view";
+import { asOfDate, formatDisplayDate } from "@/lib/config";
 import { db } from "@/lib/db/client";
 
 export const metadata = { title: "Award · QuoteLens" };
@@ -21,6 +22,8 @@ export default async function AwardPage() {
       freshness={freshness}
       memo={award?.memo_markdown ? { markdown: award.memo_markdown, warnings: (award.memo_warnings as { text: string; reason: string }[]) ?? [], generatedAt: award.memo_generated_at, status: award.status } : null}
       negotiationCount={negotiationLines(view.chosen).length}
+      memoDate={formatDisplayDate(asOfDate())}
+      rfxTitle={data.rfx.title}
     />
   );
 }

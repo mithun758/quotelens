@@ -11,7 +11,7 @@ export function LoginForm({ next }: { next: string }) {
   return (
     <form action={formAction} className="mt-4 space-y-3">
       <input type="hidden" name="next" value={next} />
-      <label htmlFor="passcode" className="block text-sm font-medium">
+      <label htmlFor="passcode" className="block text-sm font-semibold">
         Passcode
       </label>
       <input
@@ -21,17 +21,17 @@ export function LoginForm({ next }: { next: string }) {
         autoComplete="current-password"
         required
         autoFocus
-        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+        className="w-full rounded-xs border border-field bg-sheet px-3 py-2 text-sm"
       />
       {state.error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-oxblood">
           {state.error}
         </p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60"
+        className="w-full rounded-xs bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-[#2a3d5a] disabled:opacity-45"
       >
         {pending ? "Checking..." : "Continue"}
       </button>

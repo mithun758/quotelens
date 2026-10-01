@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { askAnalystAction, type AnalystReply } from "@/app/(app)/comparison/analyst-actions";
 import { ErrorNote } from "../ErrorNote";
+import { SidePanel } from "../ui/SidePanel";
+import { btn, input } from "../ui/styles";
 import { AnswerCard } from "./AnswerCard";
 
 type Exchange = { question: string; reply: AnalystReply | null; error: string | null };
@@ -57,76 +59,78 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <aside aria-label="Analyst" className="flex h-full min-h-0 flex-col rounded-md border border-zinc-200 bg-white">
-      <div className="flex items-center justify-between border-b border-zinc-200 px-3 py-2">
-        <div>
-          <h3 className="text-sm font-semibold">Analyst</h3>
-          <p className="text-[11px] text-zinc-500">Every number comes from a tool result, and is checked.</p>
-        </div>
-        <div className="flex gap-1">
-          {history.length > 0 && (
-            <button type="button" onClick={() => setHistory([])} disabled={pending} className="rounded px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100">
-              New conversation
-            </button>
-          )}
-          <button type="button" onClick={onClose} className="rounded px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100" aria-label="Hide analyst">
-            Hide
-          </button>
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 py-3">
-        {history.length === 0 && (
-          <div className="space-y-2">
-            <p className="text-sm text-zinc-600">Ask about the comparison in plain language. Try:</p>
-            {SUGGESTIONS.map((s) => (
-              <button key={s} type="button" onClick={() => ask(s)} className="block w-full rounded border border-zinc-200 px-2 py-1.5 text-left text-xs text-zinc-700 hover:bg-zinc-50">
-                {s}
+    <SidePanel
+      title="Analyst"
+      subtitle="Every number comes from a tool result and is checked."
+      onClose={onClose}
+      footer={
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            ask(question);
+          }}
+        >
+          <label htmlFor="analyst-question" className="sr-only">
+            Ask the analyst
+          </label>
+          <textarea
+            id="analyst-question"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                ask(question);
+              }
+            }}
+            rows={2}
+            placeholder="Ask about prices, suppliers, freshness or the award"
+            className={`${input} w-full resize-none`}
+          />
+          <div className="mt-2 flex items-center justify-between">
+            {history.length > 0 ? (
+              <button type="button" onClick={() => setHistory([])} disabled={pending} className={btn.quiet}>
+                New conversation
               </button>
-            ))}
+            ) : (
+              <span />
+            )}
+            <button type="submit" disabled={pending || !question.trim()} className={btn.primary}>
+              {pending ? "Working..." : "Ask"}
+            </button>
+          </div>
+        </form>
+      }
+    >
+      <div className="space-y-5">
+        {history.length === 0 && (
+          <div>
+            <p className="text-sm text-slate">Ask about the comparison in plain language, or start with one of these:</p>
+            <ul className="mt-2 divide-y divide-rule border-y border-rule">
+              {SUGGESTIONS.map((s) => (
+                <li key={s}>
+                  <button type="button" onClick={() => ask(s)} className="block w-full px-1 py-2 text-left text-sm hover:bg-tint">
+                    {s}
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         {history.map((e, i) => (
-          <div key={i} className="space-y-2">
-            <p className="ml-6 rounded-md bg-zinc-900 px-3 py-2 text-sm text-white">{e.question}</p>
+          <article key={i} className="space-y-2">
+            <p className="border-l-[3px] border-ink pl-2 text-sm font-semibold">{e.question}</p>
             {e.reply && <AnswerCard question={e.question} reply={e.reply} />}
             {e.error && <ErrorNote message={e.error} busy={pending} onRetry={i === history.length - 1 ? () => ask(e.question, true) : undefined} />}
-            {!e.reply && !e.error && <p className="text-sm text-zinc-500">Working through the tools...</p>}
-          </div>
+            {!e.reply && !e.error && (
+              <p role="status" className="text-sm text-slate">
+                Working through the tools. Most answers take 10 to 20 seconds.
+              </p>
+            )}
+          </article>
         ))}
         <div ref={endRef} />
       </div>
-
-      <form
-        className="border-t border-zinc-200 p-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          ask(question);
-        }}
-      >
-        <label htmlFor="analyst-question" className="sr-only">
-          Ask the analyst
-        </label>
-        <textarea
-          id="analyst-question"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              ask(question);
-            }
-          }}
-          rows={2}
-          placeholder="Ask about prices, suppliers, freshness or the award"
-          className="w-full resize-none rounded border border-zinc-300 px-2 py-1.5 text-sm"
-        />
-        <div className="mt-1 flex justify-end">
-          <button type="submit" disabled={pending || !question.trim()} className="rounded bg-zinc-900 px-3 py-1 text-sm text-white disabled:opacity-50">
-            {pending ? "Thinking..." : "Ask"}
-          </button>
-        </div>
-      </form>
-    </aside>
+    </SidePanel>
   );
 }

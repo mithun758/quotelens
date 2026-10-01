@@ -6,7 +6,7 @@ import type { ChartSpec } from "@/lib/tools/make_chart";
 
 // Validated categorical palette (light steps), assigned in fixed order, never cycled.
 const SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
-const INK = { primary: "#18181b", secondary: "#52514e", grid: "#e4e4e7" };
+const INK = { primary: "#1b2a41", secondary: "#5b6676", grid: "#d9dcd6" };
 
 const fmt = (v: number) => v.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
@@ -17,16 +17,16 @@ export function AnalystChart({ spec }: { spec: ChartSpec }) {
   const multi = series.length > 1;
 
   return (
-    <figure className="rounded-md border border-zinc-200 bg-white p-2">
+    <figure className="border-y border-rule py-2">
       <figcaption className="mb-1 flex items-center justify-between gap-2 px-1">
-        <span className="text-xs font-semibold text-zinc-900">{spec.title}</span>
-        <button type="button" onClick={() => setAsTable(!asTable)} className="text-[11px] text-zinc-600 underline underline-offset-2">
+        <span className="text-xs font-semibold">{spec.title}</span>
+        <button type="button" onClick={() => setAsTable(!asTable)} className="text-xs text-slate underline decoration-rule underline-offset-2 hover:text-ink">
           {asTable ? "Show chart" : "Show as table"}
         </button>
       </figcaption>
       {asTable ? (
         <table className="w-full text-xs">
-          <thead className="text-zinc-500">
+          <thead className="text-slate">
             <tr>
               <th className="px-1 py-0.5 text-left font-medium">{spec.x_label ?? ""}</th>
               {series.map((s) => (
@@ -38,7 +38,7 @@ export function AnalystChart({ spec }: { spec: ChartSpec }) {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.category} className="border-t border-zinc-100">
+              <tr key={r.category} className="border-t border-rule">
                 <td className="px-1 py-0.5">{r.category}</td>
                 {series.map((s) => (
                   <td key={s.name} className="px-1 py-0.5 text-right">
@@ -68,7 +68,7 @@ export function AnalystChart({ spec }: { spec: ChartSpec }) {
                 <CartesianGrid stroke={INK.grid} vertical={false} />
                 <XAxis dataKey="category" tick={{ fontSize: 11, fill: INK.secondary }} tickLine={false} axisLine={{ stroke: INK.grid }} />
                 <YAxis tick={{ fontSize: 11, fill: INK.secondary }} tickLine={false} axisLine={false} tickFormatter={fmt} width={56} />
-                <Tooltip cursor={{ fill: "#f4f4f5" }} formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, color: INK.primary }} />
+                <Tooltip cursor={{ fill: "#eef1f5" }} formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, color: INK.primary }} />
                 {multi && <Legend wrapperStyle={{ fontSize: 11, color: INK.secondary }} />}
                 {series.map((s, i) => (
                   <Bar key={s.name} dataKey={s.name} fill={SERIES[i]} radius={[4, 4, 0, 0]} maxBarSize={48} />
@@ -79,7 +79,10 @@ export function AnalystChart({ spec }: { spec: ChartSpec }) {
         </div>
       )}
       {(spec.y_label || spec.x_label) && !asTable && (
-        <p className="px-1 text-[11px] text-zinc-500">{[spec.y_label && `Y: ${spec.y_label}`, spec.x_label && `X: ${spec.x_label}`].filter(Boolean).join(" · ")}</p>
+        <p className="flex gap-4 px-1 text-xs text-slate">
+          {spec.y_label && <span>Vertical: {spec.y_label}</span>}
+          {spec.x_label && <span>Horizontal: {spec.x_label}</span>}
+        </p>
       )}
     </figure>
   );

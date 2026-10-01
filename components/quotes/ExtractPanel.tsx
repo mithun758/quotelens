@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { btn } from "../ui/styles";
 
 type State = { status: "waiting" | "running" | "done" | "failed"; detail?: string };
 
@@ -34,36 +35,36 @@ export function ExtractPanel({ pending }: { pending: { code: string; name: strin
   }
 
   const failed = Object.entries(states).filter(([, s]) => s.status === "failed").map(([c]) => c);
-  const label = { waiting: "Waiting", running: "Extracting...", done: "Done", failed: "Failed" } as const;
-  const tone = { waiting: "text-zinc-500", running: "text-sky-800", done: "text-emerald-700", failed: "text-red-700" } as const;
+  const label = { waiting: "Waiting", running: "Reading...", done: "Done", failed: "Failed" } as const;
+  const tone = { waiting: "text-slate", running: "text-ink", done: "text-ledger", failed: "text-oxblood" } as const;
 
   return (
-    <section className="rounded-md border border-sky-200 bg-sky-50 p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-label="Extract quotes" className="border-l-[3px] border-ink bg-sheet px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-sky-950">
-            {pending.length} supplier response{pending.length === 1 ? "" : "s"} received, not yet extracted
+          <h2 className="text-base font-semibold">
+            {pending.length} supplier response{pending.length === 1 ? "" : "s"} received, not yet read
           </h2>
-          <p className="text-xs text-sky-900">Claude reads every document, maps items to the 30 RFx lines and code normalises the prices. About a minute.</p>
+          <p className="text-sm text-slate">Claude reads every document and maps items to the RFx lines; code normalises the prices. It takes about a minute, and you can leave this page while it runs.</p>
         </div>
         <div className="flex gap-2">
           {!started && (
-            <button type="button" disabled={running} onClick={() => extract(pending.map((p) => p.code))} className="rounded bg-sky-700 px-3 py-1.5 text-sm text-white hover:bg-sky-800 disabled:opacity-50">
+            <button type="button" disabled={running} onClick={() => extract(pending.map((p) => p.code))} className={btn.primary}>
               Extract all quotes
             </button>
           )}
           {failed.length > 0 && !running && (
-            <button type="button" onClick={() => extract(failed)} className="rounded border border-red-300 bg-white px-3 py-1.5 text-sm text-red-800 hover:bg-red-50">
+            <button type="button" onClick={() => extract(failed)} className={btn.secondary}>
               Retry failed ({failed.length})
             </button>
           )}
         </div>
       </div>
       {started && (
-        <ul className="mt-2 grid gap-1 text-xs sm:grid-cols-2 lg:grid-cols-5">
+        <ol className="mt-3 grid grid-cols-5 border-t border-rule text-xs" aria-live="polite">
           {pending.map((p) => (
-            <li key={p.code} className="rounded border border-sky-200 bg-white px-2 py-1">
-              <span className="font-medium">
+            <li key={p.code} className="border-r border-rule px-2 py-2 last:border-r-0">
+              <span className="block font-semibold">
                 {p.code}. {p.name}
               </span>
               <span className={`block ${tone[states[p.code].status]}`}>
@@ -72,7 +73,7 @@ export function ExtractPanel({ pending }: { pending: { code: string; name: strin
               </span>
             </li>
           ))}
-        </ul>
+        </ol>
       )}
     </section>
   );
