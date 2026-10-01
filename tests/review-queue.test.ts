@@ -57,7 +57,7 @@ describe("review queue", () => {
     const missing = value({ confidence_state: "missing", status: "needs_review", normalised_value_inr: null, line_item_id: "line-17" });
     const clarification: ClarificationRow = {
       id: "c1", flag_id: "f", supplier_id: "s", question: "Can you quote line 17?", reply_text: null, status: "awaiting",
-      line_item_id: "line-17", field: "unit_price", target_flag_type: null, answered_at: null, created_at: "",
+      line_item_id: "line-17", field: "unit_price", target_flag_type: null, answered_at: null, subject: "Line 17", sent_at: "", created_at: "",
     };
     const [item] = buildReviewQueue({ ...base, values: [missing], clarifications: [clarification] });
     expect(item.clarification?.status).toBe("awaiting");

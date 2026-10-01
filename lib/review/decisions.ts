@@ -115,6 +115,7 @@ export async function sendClarification(client: Db, supplierCode: string, keys: 
       flag_id: flag.data.id,
       supplier_id: detail.supplier.id,
       question: body.trim(),
+      subject: subject.trim() || "Clarification",
       status: "awaiting",
       line_item_id: value?.line_item_id ?? null,
       field: value?.field ?? null,

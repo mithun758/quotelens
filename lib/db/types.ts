@@ -191,6 +191,8 @@ export type ClarificationRow = {
   field: string | null;
   target_flag_type: string | null;
   answered_at: string | null;
+  subject: string | null;
+  sent_at: string;
   created_at: string;
 };
 
@@ -307,7 +309,7 @@ export type Database = {
       normalisation_step: TableDef<NormalisationStepRow>;
       quote_terms: TableDef<QuoteTermsRow, "references_prior_pricing" | "discounts">;
       flag: TableDef<FlagRow, "status">;
-      clarification: TableDef<ClarificationRow, "status">;
+      clarification: TableDef<ClarificationRow, "status" | "sent_at">;
       questionnaire_answer: TableDef<QuestionnaireAnswerRow>;
       award: TableDef<AwardRow, "allocations" | "status">;
       audit_event: TableDef<AuditEventRow>;

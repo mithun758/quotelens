@@ -98,10 +98,10 @@ export function ReviewQueue({
             <button
               type="button"
               disabled={pending}
-              onClick={() => run(() => receiveReplyAction(supplierCode), "Reply received and re-extracted.")}
+              onClick={() => run(() => receiveReplyAction(supplierCode), "Supplier reply received and re-extracted by the model.")}
               className="rounded border border-sky-300 bg-sky-50 px-2 py-1 text-xs text-sky-900 disabled:opacity-60"
             >
-              {pending ? "Checking..." : "Check inbox for reply"}
+              {pending ? "Reading the reply..." : "Simulate supplier reply"}
             </button>
           )}
         </div>
@@ -138,7 +138,7 @@ export function ReviewQueue({
                     setSelected([]);
                   }
                   return r;
-                }, "Sent. These items now show Awaiting supplier.")
+                }, "Sent (simulated). These items now show Awaiting supplier.")
               }
               className="rounded bg-zinc-900 px-2 py-1 text-xs text-white disabled:opacity-60"
             >

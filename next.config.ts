@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // PDF export embeds these fonts at runtime; make sure Vercel ships them.
+  outputFileTracingIncludes: { "/**": ["./lib/export/fonts/**"] },
 };
 
 export default nextConfig;

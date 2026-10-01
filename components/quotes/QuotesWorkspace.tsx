@@ -6,6 +6,7 @@ import type { QueueItem } from "@/lib/review/queue";
 import { DocumentViewer, type SourceHighlight, type ViewerDocument } from "./DocumentViewer";
 import { displayDate, locatorLabel } from "./format";
 import { ReviewQueue } from "./ReviewQueue";
+import { SentEmails } from "./SentEmails";
 import { ValuesTable } from "./ValuesTable";
 
 export function QuotesWorkspace({ detail, documents }: { detail: SupplierDetail; documents: ViewerDocument[] }) {
@@ -83,6 +84,7 @@ export function QuotesWorkspace({ detail, documents }: { detail: SupplierDetail;
             awaiting={detail.awaiting}
             onFocus={focusQueueItem}
           />
+          <SentEmails clarifications={detail.clarifications} supplierName={supplier.name} />
           <ValuesTable values={detail.values} selectedId={selectedId} onSelect={selectValue} />
         </div>
       </div>
