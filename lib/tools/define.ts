@@ -1,0 +1,22 @@
+// A typed analyst tool: zod input and output, backed by /lib functions.
+import { z } from "zod";
+import type { Db } from "@/lib/db/client";
+import type { AnalystData } from "./data";
+
+export type ToolContext = { data: AnalystData; client: Db };
+
+export type AnalystTool<I extends z.ZodType = z.ZodType, O extends z.ZodType = z.ZodType> = {
+  name: string;
+  description: string;
+  input: I;
+  output: O;
+  // Tools whose numbers come from the model (charts, exports) are checked, not trusted.
+  modelSuppliedNumbers?: boolean;
+  run: (ctx: ToolContext, input: z.infer<I>) => Promise<z.infer<O>> | z.infer<O>;
+};
+
+export function defineTool<I extends z.ZodType, O extends z.ZodType>(tool: AnalystTool<I, O>): AnalystTool<I, O> {
+  return tool;
+}
+
+export const round2 = (n: number) => Math.round(n * 100) / 100;

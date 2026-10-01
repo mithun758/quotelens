@@ -163,8 +163,11 @@ export type QuoteTermsRow = {
   payment_terms: string | null;
   delivery_days: number | null;
   references_prior_pricing: boolean;
+  discounts: QuoteDiscount[];
   created_at: string;
 };
+
+export type QuoteDiscount = { percent: number; threshold_inr: number | null; condition: string | null; applies_to_lines: number[]; description: string };
 
 export type FlagRow = {
   id: string;
@@ -302,7 +305,7 @@ export type Database = {
       document: TableDef<DocumentRow>;
       extracted_value: TableDef<ExtractedValueRow, "status">;
       normalisation_step: TableDef<NormalisationStepRow>;
-      quote_terms: TableDef<QuoteTermsRow, "references_prior_pricing">;
+      quote_terms: TableDef<QuoteTermsRow, "references_prior_pricing" | "discounts">;
       flag: TableDef<FlagRow, "status">;
       clarification: TableDef<ClarificationRow, "status">;
       questionnaire_answer: TableDef<QuestionnaireAnswerRow>;

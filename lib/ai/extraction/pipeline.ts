@@ -322,6 +322,11 @@ async function replaceResponseData(
       payment_terms: t.payment_terms?.value ?? null,
       delivery_days: toInt(t.delivery_days?.value),
       references_prior_pricing: !!t.prior_pricing_reference,
+      discounts: result.docs.flatMap((d) =>
+        d.extraction.discounts
+          .filter((x) => x.percent !== null)
+          .map((x) => ({ percent: x.percent!, threshold_inr: x.threshold_amount, condition: x.condition, applies_to_lines: x.applies_to_rfx_lines, description: x.description })),
+      ),
     }),
     "insert terms",
   );
