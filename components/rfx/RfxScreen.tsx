@@ -276,19 +276,17 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
               <table className="mt-2 w-full table-fixed border-collapse text-[13px]">
                 <colgroup>
                   <col className="w-7" />
-                  <col className="w-[24%]" />
                   <col />
-                  <col className="w-[7.5rem]" />
+                  <col className="w-[7rem]" />
                   <col className="w-14" />
-                  <col className="w-16" />
-                  <col className="w-[4.5rem]" />
-                  <col className="w-16" />
+                  <col className="w-14" />
+                  <col className="w-[3.75rem]" />
+                  <col className="w-[3.75rem]" />
                 </colgroup>
                 <thead>
                   <tr>
                     <th className={th}>#</th>
-                    <th className={th}>Description</th>
-                    <th className={th}>Specification, one per line</th>
+                    <th className={th}>Item and specification, one per line</th>
                     <th className={th}>Category</th>
                     <th className={`${th} text-right`}>Qty</th>
                     <th className={th}>Unit</th>
@@ -304,10 +302,8 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
                   {draft.lines.map((l, i) => (
                     <tr key={i} className="align-top">
                       <td className="border-b border-rule py-1.5 pr-2 text-xs text-slate">{l.line_no}</td>
-                      <td className="border-b border-rule py-1.5 pr-2">
-                        <textarea aria-label={`Line ${l.line_no} description`} rows={2} className={`${input} resize-none`} value={l.description} onChange={(e) => updateLine(i, { description: e.target.value })} />
-                      </td>
-                      <td className="border-b border-rule py-1.5 pr-2">
+                      <td className="border-b border-rule py-1.5 pr-3">
+                        <input aria-label={`Line ${l.line_no} description`} className={`${input} font-semibold`} value={l.description} onChange={(e) => updateLine(i, { description: e.target.value })} />
                         <SpecEditor key={`${version}-${l.line_no}-${draft.lines.length}`} value={l.spec} onChange={(spec) => updateLine(i, { spec })} label={`Line ${l.line_no} specification`} />
                       </td>
                       <td className="border-b border-rule py-1.5 pr-2">
@@ -323,22 +319,22 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
                         <input aria-label={`Line ${l.line_no} memory-exposed`} type="checkbox" className="accent-ink" checked={l.memory_exposed} onChange={(e) => updateLine(i, { memory_exposed: e.target.checked })} />
                       </td>
                       <td className="border-b border-rule py-1.5 text-right">
-                        <button type="button" onClick={() => update({ lines: draft.lines.filter((_, j) => j !== i).map((x, j) => ({ ...x, line_no: j + 1 })) })} className="text-xs text-slate underline decoration-rule underline-offset-2 hover:text-oxblood" aria-label={`Remove line ${l.line_no}`}>
+                        {!locked && <button type="button" onClick={() => update({ lines: draft.lines.filter((_, j) => j !== i).map((x, j) => ({ ...x, line_no: j + 1 })) })} className="text-xs text-slate underline decoration-rule underline-offset-2 hover:text-oxblood" aria-label={`Remove line ${l.line_no}`}>
                           Remove
-                        </button>
+                        </button>}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
-            <button
+            {!locked && <button
               type="button"
               onClick={() => update({ lines: [...draft.lines, { line_no: draft.lines.length + 1, description: "New item", category: "Other", spec: [], quantity: 1, uom: "piece", memory_exposed: false }] })}
               className={`${btn.small} mt-2`}
             >
               Add line
-            </button>
+            </button>}
           </fieldset>
 
           <div className="mt-7 grid grid-cols-2 gap-8">
@@ -367,7 +363,7 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
                     <span className="w-5 shrink-0 pt-1 text-right text-xs text-slate">{i + 1}</span>
                     <textarea
                       aria-label={`Question ${i + 1}`}
-                      rows={2}
+                      rows={3}
                       className={`${input} resize-none border-b-0`}
                       value={q.text}
                       onChange={(e) => update({ questionnaire: draft.questionnaire.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)) })}
@@ -381,19 +377,19 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
                       />
                       Evidence
                     </label>
-                    <button type="button" onClick={() => update({ questionnaire: draft.questionnaire.filter((_, j) => j !== i) })} className="shrink-0 pt-1 text-xs text-slate underline decoration-rule underline-offset-2 hover:text-oxblood" aria-label={`Remove question ${i + 1}`}>
+                    {!locked && <button type="button" onClick={() => update({ questionnaire: draft.questionnaire.filter((_, j) => j !== i) })} className="shrink-0 pt-1 text-xs text-slate underline decoration-rule underline-offset-2 hover:text-oxblood" aria-label={`Remove question ${i + 1}`}>
                       Remove
-                    </button>
+                    </button>}
                   </li>
                 ))}
               </ol>
-              <button
+              {!locked && <button
                 type="button"
                 onClick={() => update({ questionnaire: [...draft.questionnaire, { key: `question_${draft.questionnaire.length + 1}`, text: "New question", evidence_required: false }] })}
                 className={`${btn.small} mt-2`}
               >
                 Add question
-              </button>
+              </button>}
             </fieldset>
           </div>
         </article>
@@ -433,8 +429,8 @@ function SpecEditor({ value, onChange, label }: { value: DraftLine["spec"]; onCh
   return (
     <textarea
       aria-label={label}
-      rows={Math.max(2, Math.min(6, value.length))}
-      className={`${input} resize-none text-xs leading-4`}
+      rows={Math.max(2, Math.min(10, value.length + 1))}
+      className={`${input} mt-1 resize-none text-xs leading-4 text-slate`}
       value={text}
       onChange={(e) => {
         setText(e.target.value);
