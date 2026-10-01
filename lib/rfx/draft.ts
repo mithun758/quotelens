@@ -99,3 +99,59 @@ export function sendProblems(d: RfxDraft, asOfDate: string): string[] {
   if (!d.terms.validity_days_required) p.push("Set the quote validity you require.");
   return p;
 }
+
+// Vendor-neutral specs. A line may name a brand only when Priya has given a reason;
+// the brand and her reason are then written into the spec, so they travel with the RFx.
+// The list covers common brands across the categories Meridian buys; processor families
+// ("Intel Core i5 or AMD Ryzen 5 equivalent") are performance tiers, not brand locks.
+const BRANDS = [
+  "Hewlett Packard", "HP", "Dell", "Lenovo", "ThinkPad", "Apple", "MacBook", "iMac", "Asus", "Acer", "Microsoft Surface", "Surface Pro", "EliteBook", "ProBook", "Latitude", "Inspiron",
+  "Samsung", "LG", "BenQ", "ViewSonic", "Philips", "Cisco", "Meraki", "Aruba", "Ubiquiti", "TP-Link", "Netgear", "D-Link", "Juniper", "Fortinet", "Sophos",
+  "Logitech", "Brother", "Canon", "Epson", "Xerox", "Zebra", "Honeywell", "APC", "Schneider", "Eaton", "Seagate", "Western Digital", "SanDisk", "Kingston",
+  "Godrej", "Featherlite", "Herman Miller", "Steelcase", "Haworth", "Wipro", "Durian", "Nilkamal", "Smurfit", "WestRock", "Tetra Pak",
+];
+const BRAND_RE = new RegExp(`(?<![A-Za-z0-9])(${BRANDS.map((b) => b.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&")).join("|")})(?![A-Za-z0-9])`, "i");
+const BRAND_ATTRS = ["Brand required", "Reason for brand"];
+
+export const BrandRequirement = z.object({ brand: z.string().min(1), reason: z.string().min(8) });
+export type BrandRequirement = z.infer<typeof BrandRequirement>;
+
+// The first brand named in a line's description or spec, ignoring the recorded brand attributes.
+export function brandIn(line: Pick<DraftLine, "description" | "spec">): string | null {
+  const text = [line.description, ...line.spec.filter((s) => !BRAND_ATTRS.includes(s.attribute)).flatMap((s) => [s.attribute, s.value])].join(" \n ");
+  // "HP" as horsepower ("1.5 HP motor") is a unit, not a brand.
+  const m = text.replace(/\d+(\.\d+)?\s*HP\b/gi, "").match(BRAND_RE);
+  return m ? m[1] : null;
+}
+
+// Applies a brand requirement to a line, or refuses a branded line that has none.
+export function withBrandRule(line: DraftLine, requirement?: BrandRequirement | null): DraftLine {
+  const spec = line.spec.filter((s) => !BRAND_ATTRS.includes(s.attribute));
+  if (requirement) {
+    // The recorded pair replaces any loose "Brand" or "Make" attribute.
+    const rest = spec.filter((s) => !/^(brand|make|manufacturer)$/i.test(s.attribute.trim()));
+    return { ...line, spec: [...rest, { attribute: "Brand required", value: requirement.brand }, { attribute: "Reason for brand", value: requirement.reason }] };
+  }
+  const brand = brandIn(line);
+  if (brand) {
+    const kept = line.spec.find((s) => s.attribute === "Brand required");
+    if (kept) return line;
+    throw new Error(
+      `Line "${line.description}" names ${brand}. Write a vendor-neutral spec with measurable attributes, or, if Priya has given a reason to keep the brand, pass brand_requirement with her reason.`,
+    );
+  }
+  return { ...line, spec };
+}
+
+// The essentials an RFx needs before it can be drafted in full, from what the draft holds.
+export const ESSENTIALS = ["quantity", "delivery locations", "need-by date", "warranty", "quote validity", "GST basis"] as const;
+export function missingEssentials(d: RfxDraft): (typeof ESSENTIALS)[number][] {
+  const out: (typeof ESSENTIALS)[number][] = [];
+  if (!d.lines.length || d.lines.some((l) => !l.quantity)) out.push("quantity");
+  if (!d.delivery_hubs.length) out.push("delivery locations");
+  if (!d.need_by_date) out.push("need-by date");
+  if (!d.terms.warranty.trim()) out.push("warranty");
+  if (!d.terms.validity_days_required) out.push("quote validity");
+  if (!d.terms.gst_basis.trim()) out.push("GST basis");
+  return out;
+}
