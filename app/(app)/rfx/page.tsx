@@ -10,5 +10,5 @@ export default async function RfxPage() {
   const client = db();
   const [state, { data: suppliers }] = await Promise.all([getDraft(client), client.from("supplier").select("code, name").order("code")]);
   // Keyed by the draft's update time, so the screen re-reads the draft after Lens edits it.
-  return <RfxScreen key={state.updatedAt ?? "new"} initial={state} supplierCount={suppliers?.length ?? 0} asOfDate={asOfDate()} />;
+  return <RfxScreen key={state.updatedAt ?? "new"} initial={state} suppliers={suppliers ?? []} asOfDate={asOfDate()} />;
 }
