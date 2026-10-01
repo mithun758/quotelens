@@ -8,7 +8,7 @@ export type ResponseStatus = "received" | "processing" | "extracted" | "failed";
 export type ConfidenceState = "extracted" | "inferred" | "missing";
 export type ExtractedValueStatus = "auto_accepted" | "needs_review" | "confirmed" | "corrected";
 export type SubstituteStatus = "pending" | "approved" | "rejected";
-export type NormalisationKind = "fx" | "uom" | "pack_size" | "gst" | "discount" | "freight";
+export type NormalisationKind = "fx" | "uom" | "pack_size" | "gst" | "discount" | "freight" | "bundle";
 export type Severity = "low" | "medium" | "high";
 export type FlagStatus = "open" | "resolved" | "overridden";
 export type ClarificationStatus = "awaiting" | "answered";
@@ -242,6 +242,39 @@ export type FxRateRow = {
   created_at: string;
 };
 
+export type RunStatus = "running" | "succeeded" | "partial" | "failed";
+export type RunSnapshot = Record<string, Record<string, { value: number | null; confidence: ConfidenceState }>>;
+
+export type ExtractionRunRow = {
+  id: string;
+  scope: string;
+  status: RunStatus;
+  started_at: string;
+  finished_at: string | null;
+  duration_ms: number | null;
+  cost_usd: number | null;
+  snapshot: RunSnapshot | null;
+  errors: Json | null;
+  created_at: string;
+};
+
+export type ModelCallRow = {
+  id: string;
+  run_id: string | null;
+  purpose: string;
+  supplier_code: string | null;
+  document_name: string | null;
+  model: string;
+  attempt: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_input_tokens: number;
+  cache_creation_input_tokens: number;
+  cost_usd: number;
+  duration_ms: number;
+  created_at: string;
+};
+
 // Columns the database fills in; optional on insert. Nullable columns are optional too.
 type OptionalOnInsert<R> = Extract<keyof R, "id" | "created_at"> | { [K in keyof R]: null extends R[K] ? K : never }[keyof R];
 type Insertable<R> = Omit<R, OptionalOnInsert<R>> & Partial<Pick<R, OptionalOnInsert<R>>>;
@@ -271,6 +304,8 @@ export type Database = {
       audit_event: TableDef<AuditEventRow>;
       benchmark_series: TableDef<BenchmarkSeriesRow, "is_illustrative">;
       fx_rate: TableDef<FxRateRow, "is_illustrative">;
+      extraction_run: TableDef<ExtractionRunRow, "status" | "started_at">;
+      model_call: TableDef<ModelCallRow, "attempt" | "cache_read_input_tokens" | "cache_creation_input_tokens">;
     };
     Views: Record<string, never>;
     Functions: {
@@ -301,3 +336,6 @@ export const TABLE_NAMES = [
   "benchmark_series",
   "fx_rate",
 ] as const satisfies readonly TableName[];
+
+// Operational history: not demo data, so "Reset demo" leaves these alone.
+export const OPS_TABLE_NAMES = ["extraction_run", "model_call"] as const satisfies readonly TableName[];

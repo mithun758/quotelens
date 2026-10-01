@@ -178,7 +178,7 @@ Extraction is one model call per document, returning structured JSON against a f
 | State | Meaning | Default handling |
 | --- | --- | --- |
 | Extracted | Read directly and unambiguously | Auto-accepted, click to source |
-| Inferred | The model made a judgement (unit basis, footnote discount applied, handwritten digit, substitute model match) | Goes to review queue with a one-line reason |
+| Inferred | The model made a judgement (unit basis, footnote discount applied, handwritten digit, substitute model match), or the normalised price depends on a code-derived conversion (pack size, bundle split, GST-inclusive back-calculation) | Goes to review queue with a one-line reason; for conversions the reason states the conversion |
 | Missing | Not quoted or unreadable | Never imputed, never zero; line excluded from that supplier's common-basket total |
 
 **Normalisation basis:** INR, per piece, ex-GST, delivered to hub. Each step is stored as a NormalisationStep and shown in the ledger on hover, for example "USD 412.00 × 84.60 (illustrative rate, 30 Sep 2026) = ₹34,855" or "₹2,450 per pack of 10 = ₹245 per piece".
@@ -190,6 +190,10 @@ Extraction is one model call per document, returning structured JSON against a f
 - An ambiguous unit basis is never guessed. It becomes Inferred and is routed to Ask supplier.
 - Totals are computed on the common basket (lines every supplier quoted) by default. A toggle shows all lines with gaps priced at the lowest other quote, labelled clearly.
 - Substitute models are compared attribute by attribute against the RFx spec (meets, exceeds, deviates) and need Arjun's sign-off before they count.
+- A bundle is split by subtracting the supplier's own standalone price for the other bundled line; the result is Inferred because the quote never states the split.
+- FX conversion at the seeded as-of rate stays Extracted: the price is stated and the rate is on file, and the ledger shows both.
+
+**Model and repeatability:** extraction uses structured outputs validated with zod and retries once on schema failure. The model does not accept a fixed temperature, so runs can differ; every full run is recorded with a snapshot, and /eval shows run-to-run variance as a known limitation alongside token use and cost per supplier and per run.
 
 ## Quote Freshness
 
@@ -258,7 +262,7 @@ Eligibility defaults: questionnaire passed and substitutes approved by Arjun. Pr
 
 **Gating:** the memo cannot be generated while any line in the chosen scenario rests on an Inferred value, an open flag, or a Stale supplier. Priya can override a blocker with a typed reason, which is stored as an AuditEvent and printed in the memo.
 
-**The award memo** (one page, for Meera) contains the recommended scenario and total, savings versus L1 and last cycle, why each alternative lost, assumptions (FX rate, basket, GST basis), freshness status, overrides with reasons, and open risks. Every figure links back to its cell. It exports as PDF and Markdown.
+**The award memo** (one page, for Meera) contains the recommended scenario and total, savings versus L1 and last cycle, why each alternative lost, assumptions (FX rate, basket, GST basis), freshness status, overrides with reasons, and open risks. Every figure links back to its cell. When a winning price rests on a prior-pricing reference ("same as last year"), the memo says so for that line and notes that the price may look cheap because it reflects last year's market, not today's. It exports as PDF and Markdown.
 
 ## Dataset
 
@@ -315,7 +319,7 @@ The seeded dataset is one RFx of 30 lines, five supplier responses in five forma
 
 **Seeded clarification:** Priya asks E to confirm India warranty and quote lines 17, 18 and 23. E replies confirming a 3-year onsite India warranty on everything quoted, serviced in all three cities, declines the UPS and firewall lines, answers the rest of the questionnaire, and attaches its ISO 9001 certificate and HP authorisation letter. The reply and attachments are re-extracted by the model.
 
-**Demo question 6 outcome** (checked by the seed generator): before E's clarification, the only qualified supplier that is not Stale is A, so the split awards everything to A, above last cycle. After the clarification, E qualifies and the split is A plus E, with E winning both laptop lines.
+**Demo question 6 outcome** (checked by the seed generator): before E's clarification, the only qualified supplier that is not Stale is A, so the split awards everything to A, above last cycle. After the clarification, E qualifies and the split is A plus E: E wins both laptop lines plus 3 to 5 others (currently the dock, both monitors, HDMI cables and external SSDs), no more than 4 of which rest on its "same as last year" prices (currently HDMI cables and external SSDs), and A wins the rest. The A plus E total is below last cycle.
 
 **Benchmarks (illustrative):** a weekly memory price index from June to September 2026 rising about 11% overall, and USD/INR moving from 83.10 on 14 Sep to 84.60 on 30 Sep.
 
@@ -393,6 +397,10 @@ Newest first. Add a row for every change to this document.
 
 | Date | Decision | Why |
 | --- | --- | --- |
+| 1 Oct 2026 | Any value whose normalised price depends on a code-derived conversion (pack size, bundle split, GST-inclusive back-calculation) is Inferred, with the conversion as its reason. FX stays Extracted | Conversions are code's assumptions about what the supplier meant; the buyer should see them in the review queue. Also stops confidence flipping between runs on these lines |
+| 1 Oct 2026 | Extraction cannot be pinned to temperature 0 (the model rejects the parameter). Run-to-run variance, tokens and cost per call are recorded and shown on /eval | Honest about repeatability; cost visible before the live demo |
+| 30 Sep 2026 | A's prices retuned: A stays above last cycle on laptops, dock, 27" monitor, HDMI cables and SSDs, and sits 1 to 4% below it elsewhere. After clarification E wins lines 1 and 2 plus 3 to 5 others, at most 4 of them on "same as last year" prices, and A wins the rest; the generator refuses to write output otherwise | Otherwise E swept 23 lines, 17 on last year's prices, which overstated E and buried the laptop story |
+| 30 Sep 2026 | The award memo flags any winning line priced on a prior-pricing reference as possibly cheap because it reflects last year's market | A "same as last year" price can win on paper while being stale in a rising market; Meera should see that |
 | 30 Sep 2026 | E's clarification reply attaches a valid ISO 9001 certificate and an HP authorisation letter and answers the questionnaire, so E fails before clarification and passes after. C keeps failing (expired ISO, no OEM letter). Demo question 6 reworded to "qualified suppliers, excluding stale quotes". Expected Q6: all to A before clarification; A plus E after, with E on both laptop lines. Both states are in ground\_truth.json and checked by the generator. | Without evidence E could never qualify, so Q6 always collapsed to A alone; the clarification loop now visibly changes the award |
 | 30 Sep 2026 | docs/SOURCE\_OF\_TRUTH.md in the repo is the master copy; changes are made there directly | Ends re-exporting and keeps one authoritative version |
 | 30 Sep 2026 | Supplier E invoices through its Indian branch in Chennai: Tamil Nadu GSTIN (state code 33). Quotes stay in USD. Supply to the Bengaluru and Hyderabad hubs is inter-state (IGST); Chennai is intra-state (CGST and SGST). Customs and importer of record are out of scope. | Gives E a real GST registration for the questionnaire while keeping its USD quote as the FX case; the comparison is ex-GST, so the tax split does not change prices |

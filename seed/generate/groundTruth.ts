@@ -57,7 +57,7 @@ function supplierA(): GroundTruthLine[] {
       return {
         line_no: 1, quoted: true, raw_value: inr(laptop + backpack), raw_unit: "per bundle (laptop + backpack), qty 60", raw_currency: "INR",
         expected_confidence: "inferred", expected_normalised_inr: laptop, normalisation: [],
-        notes: `Quoted only as a laptop + backpack bundle at ${inr(laptop + backpack)}. Laptop price inferred as bundle minus A's standalone backpack price ${inr(backpack)}.`,
+        notes: `Quoted only as a laptop + backpack bundle at ${inr(laptop + backpack)}. The sheet does not state the backpack's value inside the bundle, so the laptop price is inferred as bundle minus A's standalone backpack price ${inr(backpack)} (Peripherals & Storage sheet).`,
       };
     }
     if (n === 3) return plain(3, backpack, "per piece", "Standalone row for 10 additional backpacks; the other 60 are inside the line 1 bundle.");
@@ -65,9 +65,9 @@ function supplierA(): GroundTruthLine[] {
       const inclusive = round2(price * (1 + GST_RATE));
       return {
         line_no: n, quoted: true, raw_value: inr(inclusive, 2), raw_unit: n === 25 ? "per box" : "per piece", raw_currency: "INR",
-        expected_confidence: "extracted", expected_normalised_inr: price,
+        expected_confidence: "inferred", expected_normalised_inr: price,
         normalisation: [{ kind: "gst", input: inclusive, output: price, rate: 1 + GST_RATE, note: "Networking sheet is GST-inclusive at 18%; divided out" }],
-        notes: "Networking sheet header states prices include 18% GST, unlike A's other sheets.",
+        notes: "Networking sheet header states prices include 18% GST, unlike A's other sheets. Inferred because the ex-GST price is back-calculated by code.",
       };
     }
     return plain(n, price, n === 25 ? "per box" : "per piece");
@@ -269,6 +269,7 @@ function q6(lines: Record<SupplierCode, GroundTruthLine[]>, eKey: "E_before_clar
     summary: {
       suppliers: Object.keys(linesBySupplier).sort(),
       lines_by_supplier: linesBySupplier,
+      lines_on_prior_pricing: allocated.filter((n) => lines[allocation[n].supplier][n - 1].expected_confidence === "inferred" && lines[allocation[n].supplier][n - 1].raw_currency === null),
       total_inr: total,
       last_cycle_inr: lastCycle,
       saving_vs_last_cycle_inr: round2(lastCycle - total),
@@ -341,6 +342,12 @@ function checkBeats(lines: Record<SupplierCode, GroundTruthLine[]>) {
   if (q6After.summary.suppliers.join() !== "A,E") failures.push(`Q6 after clarification awards to ${q6After.summary.suppliers.join(", ")}, want A and E`);
   if (q6After.allocation[1]?.supplier !== "E" || q6After.allocation[2]?.supplier !== "E") failures.push("Q6 after clarification: E does not win both laptop lines");
   if (q6Before.unallocated_lines.length || q6After.unallocated_lines.length) failures.push("Q6 leaves lines unallocated");
+  const eWins = q6After.summary.lines_by_supplier.E ?? [];
+  const eOtherWins = eWins.filter((n) => n !== 1 && n !== 2);
+  const eInferredWins = eWins.filter((n) => lines.E[n - 1].expected_confidence === "inferred");
+  if (eOtherWins.length < 3 || eOtherWins.length > 5) failures.push(`Q6 after clarification: E wins ${eOtherWins.length} lines besides the laptops, want 3 to 5`);
+  if (eInferredWins.length > 4) failures.push(`Q6 after clarification: ${eInferredWins.length} of E's winning lines rest on "same as last year" prices, want at most 4`);
+  if (q6After.summary.saving_vs_last_cycle_inr <= 0) failures.push("Q6 after clarification: A plus E is not below last cycle");
 
   if (failures.length) throw new Error(`Demo beats not met:\n- ${failures.join("\n- ")}`);
 

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "seed": "tsx --env-file=.env.local seed/seed.ts",
-    "seed:generate": "tsx seed/generate/generate.ts"
+    "seed:generate": "tsx seed/generate/generate.ts",
+    "extract": "tsx --env-file=.env.local scripts/extract.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",

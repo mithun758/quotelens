@@ -1,7 +1,7 @@
 // Typed access to seed/suppliers/manifest.json, written by npm run seed:generate.
 import manifestJson from "./suppliers/manifest.json";
 
-export const SUPPLIER_DOCUMENTS_BUCKET = "supplier-documents";
+export { SUPPLIER_DOCUMENTS_BUCKET } from "@/lib/db/storage";
 
 export type ManifestDocument = {
   file_name: string;

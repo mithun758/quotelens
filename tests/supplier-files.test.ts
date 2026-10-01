@@ -63,6 +63,15 @@ describe("generated supplier files", () => {
     expect(after.allocation["2"].supplier).toBe("E");
   });
 
+  it("after clarification E wins 3 to 5 lines besides laptops, at most 4 on prior pricing, and A plus E beats last cycle", () => {
+    const after = groundTruth.demo_beats.q6.after_clarification.summary;
+    const eOther = after.lines_by_supplier.E.filter((n) => n !== 1 && n !== 2);
+    expect(eOther.length).toBeGreaterThanOrEqual(3);
+    expect(eOther.length).toBeLessThanOrEqual(5);
+    expect(after.lines_on_prior_pricing.length).toBeLessThanOrEqual(4);
+    expect(after.saving_vs_last_cycle_inr).toBeGreaterThan(0);
+  });
+
   it("the demo beats hold", () => {
     const beats = groundTruth.demo_beats;
     expect(beats.cheapest_on_common_basket).toBe("B");

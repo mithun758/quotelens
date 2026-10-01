@@ -21,8 +21,9 @@ export const QUANTITY: Record<number, number> = Object.fromEntries(
 
 // Percent change against last cycle. A missing key means the line is not quoted.
 const PCT: Record<Exclude<SupplierCode, "E">, Record<number, number>> = {
-  // Incumbent: comfortable, raises memory-heavy lines.
-  A: { 1: 5, 2: 6, 3: 4, 4: 2, 5: 4, 6: 3, 7: 0, 8: 2, 9: 5, 10: 3, 11: 2, 12: 1, 13: -1, 14: -1, 15: -2, 16: 2, 17: -3, 18: -2, 19: 6, 20: 3, 21: 4, 22: 1, 23: -2, 24: 8, 25: 2, 26: 6, 27: 3, 28: 10, 29: -1, 30: 2 },
+  // Incumbent: raises laptops, dock, QHD monitor, HDMI and SSD; sharpens everything else
+  // just below last cycle, so E's "same as last year" lines rarely beat it.
+  A: { 1: 5, 2: 6, 3: -2, 4: 2, 5: -3, 6: -2, 7: 0, 8: 2, 9: -2, 10: -2, 11: -2, 12: -4, 13: -1, 14: -1, 15: -2, 16: -2, 17: -3, 18: -2, 19: -2, 20: -2, 21: -2, 22: -2, 23: -2, 24: -2, 25: -2, 26: 6, 27: -2, 28: 10, 29: -1, 30: -2 },
   // Dell partner: sharp on almost everything. No firewall (23), no NAS (29).
   B: { 1: -6, 2: -4, 3: -3, 4: -7, 5: -4, 6: -3, 7: -6, 8: -5, 9: -2, 10: -3, 11: -5, 12: -6, 13: -5, 14: -4, 15: -3, 16: -6, 17: -4, 18: -5, 19: -2, 20: -5, 21: -3, 22: -4, 24: -2, 25: -5, 26: -2, 27: -6, 28: -2, 30: -4 },
   // Integrator: cheap on print, power and networking; substitutes on lines 1 and 22.

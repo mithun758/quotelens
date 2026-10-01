@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { beforeAll, describe, expect, it } from "vitest";
-import { TABLE_NAMES } from "@/lib/db/types";
+import { OPS_TABLE_NAMES, TABLE_NAMES } from "@/lib/db/types";
 import { LINE_ITEMS, QUESTIONNAIRE, RFX, SUPPLIERS } from "@/seed/data";
 
 const dir = path.join(process.cwd(), "supabase", "migrations");
@@ -38,11 +38,11 @@ async function seedRfxAndSupplier() {
 }
 
 describe("initial schema migration", () => {
-  it("creates exactly the fifteen tables the app knows about", async () => {
+  it("creates exactly the demo and operational tables the app knows about", async () => {
     const { rows } = await pg.query<{ table_name: string }>(
       "select table_name from information_schema.tables where table_schema = 'public' order by table_name",
     );
-    expect(rows.map((r) => r.table_name)).toEqual([...TABLE_NAMES].sort());
+    expect(rows.map((r) => r.table_name)).toEqual([...TABLE_NAMES, ...OPS_TABLE_NAMES].sort());
   });
 
   it("accepts every seed row and every supplier GSTIN", async () => {
