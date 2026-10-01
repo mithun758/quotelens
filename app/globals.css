@@ -7,15 +7,18 @@
   --paper: #fbfbf9;
   --sheet: #ffffff;
   --rule: #d9dcd6;
+  --rule-strong: #c4c8c1;
   --field: #8b9188;
   --tint: #eef1f5;
   --ledger: #2f6b4f;
-  --ledger-tint: #e8f0eb;
+  --ledger-tint: #e8f1ec;
   --pencil: #8a5a12;
   --amber: #b7791f;
-  --amber-tint: #f8f0e1;
+  --amber-tint: #fbf3e4;
   --oxblood: #9b2c2c;
-  --oxblood-tint: #f6e8e8;
+  --oxblood-tint: #f8ecec;
+  /* Floating panels only (popovers, dialogs, the dock sheet); in-flow content has no shadow. */
+  --float: 0 1px 2px rgb(27 42 65 / 0.06), 0 8px 24px rgb(27 42 65 / 0.08);
 }
 
 @theme inline {
@@ -24,6 +27,7 @@
   --color-paper: var(--paper);
   --color-sheet: var(--sheet);
   --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
   --color-field: var(--field);
   --color-tint: var(--tint);
   --color-ledger: var(--ledger);
@@ -35,6 +39,21 @@
   --color-oxblood-tint: var(--oxblood-tint);
   --font-sans: var(--font-public-sans);
   --radius-xs: 2px;
+  --radius-panel: 6px;
+  --shadow-float: var(--float);
+  /* Type scale: display figure, screen title, section heading, body, table, meta. */
+  --text-display: 28px;
+  --text-display--line-height: 34px;
+  --text-title: 20px;
+  --text-title--line-height: 28px;
+  --text-heading: 16px;
+  --text-heading--line-height: 24px;
+  --text-body: 14px;
+  --text-body--line-height: 20px;
+  --text-table: 13px;
+  --text-table--line-height: 18px;
+  --text-meta: 12px;
+  --text-meta--line-height: 16px;
 }
 
 body {
@@ -72,7 +91,7 @@ body {
   cursor: help;
 }
 .val-missing {
-  background-image: repeating-linear-gradient(135deg, transparent 0 5px, var(--rule) 5px 6px);
+  background-image: repeating-linear-gradient(45deg, transparent 0 5px, var(--rule) 5px 6px);
 }
 
 /* Reason shown on hover or keyboard focus, like a pencil note in the margin. */
@@ -104,17 +123,27 @@ body {
   visibility: visible;
 }
 
-/* Rubber-stamp freshness badge: border plus a hairline inner rule, no fill. */
+/* Rubber-stamp freshness badge: a 1.5px border, a 1px hairline 2px inside it, no fill. */
 .stamp {
-  display: inline-block;
-  padding: 0 6px;
-  border: 1.5px solid currentColor;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border: 1.5px solid var(--stamp-line, currentColor);
   border-radius: 2px;
-  box-shadow: inset 0 0 0 1.5px var(--sheet), inset 0 0 0 2px currentColor;
   font-size: 12px;
-  line-height: 18px;
+  line-height: 16px;
   font-weight: 600;
   white-space: nowrap;
+}
+.stamp::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border: 1px solid var(--stamp-line, currentColor);
+  border-radius: 1px;
+  pointer-events: none;
 }
 
 /* A value just accepted settles from pencil to ink. */
@@ -129,14 +158,14 @@ body {
 .settle {
   animation: settle 1.2s ease-out;
 }
+/* A cell Lens cites pulses amber once, then settles to the selected style. */
 @keyframes cite {
   0%,
-  70% {
-    box-shadow: inset 0 0 0 2px var(--ink);
-    background-color: var(--tint);
+  60% {
+    background-color: var(--amber-tint);
   }
   100% {
-    box-shadow: inset 0 0 0 0 transparent;
+    background-color: var(--tint);
   }
 }
 .cited {
