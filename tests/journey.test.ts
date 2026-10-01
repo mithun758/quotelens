@@ -40,6 +40,6 @@ describe("extraction summary", () => {
   it("separates items found, lines mapped and lines missing", () => {
     const v = (line: number | null, field = "unit_price", confidence = "extracted") => ({ line_no: line, field, confidence_state: confidence }) as never;
     const s = extractionSummary({ values: [v(1), v(2), v(3, "unit_price", "missing"), v(null, "unmatched_item")], queue: [{} as never] }, 30);
-    expect(s).toEqual({ found: 3, mapped: 2, needsReview: 1, missing: 28 });
+    expect(s).toEqual({ found: 3, unmatched: 1, mapped: 2, needsReview: 1, missing: 28 });
   });
 });

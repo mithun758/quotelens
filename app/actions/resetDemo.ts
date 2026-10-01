@@ -6,6 +6,7 @@ import { PASSCODE_COOKIE, isValidSessionToken } from "@/lib/auth/passcode";
 import { db } from "@/lib/db/client";
 import { recordAuditEvent } from "@/lib/db/queries";
 import { friendlyError } from "@/lib/errors";
+import { removeUploads } from "@/lib/uploads/addResponse";
 import { runSeed } from "@/seed/runSeed";
 
 export type ResetDemoResult = { ok: true } | { ok: false; error: string };
@@ -20,6 +21,9 @@ export async function resetDemo(): Promise<ResetDemoResult> {
   try {
     const client = db();
     await runSeed(client);
+    // Uploaded responses' rows went with the seed; their files go too. Best effort:
+    // a leftover file is harmless because no row points at it.
+    await removeUploads(client).catch(() => 0);
     await recordAuditEvent(
       { actor: "priya", action: "reset_demo", target: "database", reason: "Reset demo" },
       client,

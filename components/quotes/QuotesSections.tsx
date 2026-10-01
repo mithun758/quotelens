@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { extractionSummary } from "@/lib/quotes/extraction";
 import { formatLabel, type SupplierDetail } from "@/lib/quotes/load";
+import { AddResponse } from "./AddResponse";
 import { FormatIcon } from "./FormatIcon";
 import { displayDate } from "./format";
 
@@ -9,13 +10,16 @@ const STATUS: Record<string, string> = { received: "Received, not read", process
 export function InboxSection({ details }: { details: SupplierDetail[] }) {
   return (
     <section id="inbox" aria-labelledby="inbox-title" className="scroll-mt-20">
-      <div className="border-b border-ink pb-1">
-        <h2 id="inbox-title" className="text-base font-semibold">
-          Supplier inbox
-        </h2>
-        <p className="text-xs text-slate">Five responses to the RFx, as they arrived. Email is simulated; the files are the real inputs.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-ink pb-1">
+        <div>
+          <h2 id="inbox-title" className="text-base font-semibold">
+            Supplier inbox
+          </h2>
+          <p className="text-xs text-slate">{details.length} responses to the RFx, as they arrived. Email is simulated; the files are the real inputs.</p>
+        </div>
+        <AddResponse suppliers={details.map((d) => ({ code: d.supplier.code, name: d.supplier.name }))} />
       </div>
-      <ol className="grid grid-cols-5 border-b border-rule">
+      <ol className="grid border-b border-rule" style={{ gridTemplateColumns: `repeat(${Math.max(details.length, 1)}, minmax(0, 1fr))` }}>
         {details.map((d) => (
           <li key={d.supplier.id} className="min-w-0 border-r border-rule px-3 py-3 last:border-r-0">
             <Link href={`/quotes?supplier=${d.supplier.code}#exceptions`} className="text-[13px] font-semibold leading-4 underline decoration-rule underline-offset-4 hover:decoration-ink">
@@ -60,6 +64,7 @@ export function ExtractionSection({ details, totalLines, children }: { details: 
             <th className={`${th} text-left`}>Supplier</th>
             <th className={`${th} text-left`}>Status</th>
             <th className={`${th} text-right`}>Items found</th>
+            <th className={`${th} text-right`}>Unmatched</th>
             <th className={`${th} text-right`}>Mapped to RFx lines</th>
             <th className={`${th} w-[9rem] text-left`}>
               <span className="sr-only">Coverage</span>
@@ -82,6 +87,7 @@ export function ExtractionSection({ details, totalLines, children }: { details: 
                 </td>
                 <td className={`${cell} ${read ? "text-ledger" : "text-slate"}`}>{d.response ? STATUS[d.response.status] ?? d.response.status : "No response"}</td>
                 <td className={`${cell} text-right`}>{x?.found ?? ""}</td>
+                <td className={`${cell} text-right ${x?.unmatched ? "text-pencil" : ""}`}>{x ? x.unmatched || "None" : ""}</td>
                 <td className={`${cell} text-right`}>{x ? `${x.mapped} of ${totalLines}` : ""}</td>
                 <td className={cell}>
                   {x && (

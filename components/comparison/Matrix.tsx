@@ -81,8 +81,9 @@ export function Matrix({
 
   const th = "border-b border-ink bg-sheet px-3 text-xs font-semibold text-slate";
   return (
-    <div ref={scrollRef} className="max-h-[calc(100vh-13.5rem)] overflow-auto rounded-xs border border-rule bg-sheet" onScroll={() => setHover(null)}>
-      <table className="w-full min-w-[60rem] table-fixed border-separate border-spacing-0 text-[13px]">
+    <div ref={scrollRef} className="max-h-[calc(100vh-13.5rem)] overflow-auto rounded-xs border border-rule bg-sheet [contain:paint]" onScroll={() => setHover(null)}>
+      {/* Each supplier column needs about 6.5rem; with more suppliers the table scrolls sideways. */}
+      <table className="w-full table-fixed border-separate border-spacing-0 text-[13px]" style={{ minWidth: `${33 + suppliers.length * 6.5}rem` }}>
         <colgroup>
           <col className="w-[15rem]" />
           <col className="w-[3rem]" />
@@ -121,8 +122,8 @@ export function Matrix({
                     <button
                       type="button"
                       onClick={() => onOpenSupplier(s.code)}
-                      className="text-right text-[13px] font-semibold leading-4 text-ink underline decoration-rule underline-offset-4 hover:decoration-ink"
-                      title="Open supplier details and Quote Freshness"
+                      className="line-clamp-3 text-right text-[13px] font-semibold leading-4 text-ink underline decoration-rule underline-offset-4 hover:decoration-ink"
+                      title={`${s.code}. ${s.name}: open supplier details and Quote Freshness`}
                     >
                       {s.code}. {s.name}
                     </button>

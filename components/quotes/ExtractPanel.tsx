@@ -61,7 +61,7 @@ export function ExtractPanel({ pending }: { pending: { code: string; name: strin
         </div>
       </div>
       {started && (
-        <ol className="mt-3 grid grid-cols-5 border-t border-rule text-xs" aria-live="polite">
+        <ol className="mt-3 grid border-t border-rule text-xs" style={{ gridTemplateColumns: `repeat(${pending.length}, minmax(0, 1fr))` }} aria-live="polite">
           {pending.map((p) => (
             <li key={p.code} className="border-r border-rule px-2 py-2 last:border-r-0">
               <span className="block font-semibold">

@@ -12,6 +12,7 @@ export const LIMITS = {
   extraction_supplier: { max: 15, minutes: 30 },
   memo: { max: 10, minutes: 10 },
   clarification: { max: 15, minutes: 10 },
+  upload: { max: 6, minutes: 30 },
 } as const;
 export type AiKind = keyof typeof LIMITS;
 

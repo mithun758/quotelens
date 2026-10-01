@@ -22,7 +22,7 @@ export function NotExtractedNote() {
   return (
     <div className="max-w-xl space-y-3 border-l-[3px] border-ink bg-sheet px-4 py-4">
       <h2 className="text-base font-semibold">Nothing to compare yet</h2>
-      <p className="text-sm text-slate">The five supplier quotes have arrived but have not been read. Extract them on Quotes first; it takes about a minute.</p>
+      <p className="text-sm text-slate">The supplier quotes have arrived but have not been read. Extract them on Quotes first; it takes about a minute.</p>
       <Link href="/quotes" className={btn.primary}>
         Go to Quotes
       </Link>
