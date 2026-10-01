@@ -32,7 +32,9 @@ function Spreadsheet({ model, highlight }: { model: Extract<DocumentModel, { kin
   const setSheet = (name: string) => setPicked({ forTarget: targetKey, sheet: name });
   const active = model.sheets.find((s) => s.name === sheet) ?? model.sheets[0];
   const hotRef = useRef<HTMLTableCellElement>(null);
-  useEffect(() => hotRef.current?.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" }), [active, target?.cell]);
+  useEffect(() => {
+    hotRef.current?.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+  }, [active, target?.cell]);
 
   return (
     <div>
@@ -97,7 +99,9 @@ function Lines({ model, highlight }: { model: Extract<DocumentModel, { kind: "li
   const bySnippet = snippet ? model.lines.find((l) => norm(l.text).includes(norm(snippet)))?.n : undefined;
   const hot = cited && model.lines.some((l) => l.n === cited && (!snippet || norm(l.text).includes(norm(snippet)))) ? cited : (bySnippet ?? cited);
   const hotRef = useRef<HTMLDivElement>(null);
-  useEffect(() => hotRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }), [hot, snippet]);
+  useEffect(() => {
+    hotRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [hot, snippet]);
 
   return (
     <div className={`max-h-[70vh] overflow-auto p-3 text-sm ${model.marker === "L" ? "font-mono text-xs" : ""}`}>
