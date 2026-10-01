@@ -16,6 +16,7 @@ export const ScenarioInput = z.object({
     .describe('For custom: e.g. [{"supplier": "C", "category": "Networking"}]'),
   default_supplier: z.string().optional().describe('For custom: supplier for every line not assigned, e.g. "the rest to B"'),
   apply_conditional_discounts: z.boolean().optional().describe("Default true: apply a supplier's conditional discount when its awarded subtotal meets the condition"),
+  include_pending_substitutes: z.boolean().optional().describe("Default false: substitutes awaiting Arjun's sign-off are not awarded"),
 });
 
 export const computeScenarioTool = defineTool({

@@ -36,19 +36,25 @@ function Matrix({
   view,
   mode,
   onOpenSupplier,
+  focusCell,
 }: {
   view: ComparisonView;
   mode: BasketMode;
   onOpenSupplier: (code: string) => void;
+  focusCell: string | null;
 }) {
   const { lines, suppliers, cells, result } = view;
   const [hover, setHover] = useState<string | null>(null);
-  const [pinned, setPinned] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<string | null>(focusCell);
   const tableRef = useRef<HTMLDivElement>(null);
   const open = pinned ?? hover;
   const best = cheapest(result, mode);
   const lastCycleTotal =
     mode === "common" ? result.lastCycleCommonBasket : result.lastCycleAllLines;
+
+  useEffect(() => {
+    if (focusCell) tableRef.current?.querySelector(`[data-cell="${focusCell}"]`)?.scrollIntoView({ block: "center", inline: "center" });
+  }, [focusCell]);
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -223,7 +229,8 @@ function Matrix({
                   return (
                     <td
                       key={s.code}
-                      className={`relative px-2 py-1.5 text-right ${isL1 && !outside ? "bg-emerald-50" : ""}`}
+                      data-cell={key}
+                      className={`relative px-2 py-1.5 text-right ${isL1 && !outside ? "bg-emerald-50" : ""} ${focusCell === key ? "ring-2 ring-inset ring-sky-500" : ""}`}
                       onMouseEnter={() => setHover(key)}
                       onMouseLeave={() =>
                         setHover((h) => (h === key ? null : h))
@@ -446,7 +453,7 @@ function DocumentsTab({ view }: { view: ComparisonView }) {
   );
 }
 
-export function ComparisonScreen({ view }: { view: ComparisonView }) {
+export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonView; focusCell?: string | null }) {
   const [tab, setTab] = useState<Tab>("matrix");
   const [mode, setMode] = useState<BasketMode>("common");
   const [drawer, setDrawer] = useState<string | null>(null);
@@ -550,7 +557,7 @@ export function ComparisonScreen({ view }: { view: ComparisonView }) {
                 RFx. Gap prices are not quotes; they are labelled in each cell.
               </p>
             )}
-            <Matrix view={view} mode={mode} onOpenSupplier={setDrawer} />
+            <Matrix view={view} mode={mode} onOpenSupplier={setDrawer} focusCell={focusCell} />
           </>
         )}
         {tab === "questionnaire" && <QuestionnaireTab view={view} />}

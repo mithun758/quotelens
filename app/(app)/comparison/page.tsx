@@ -7,7 +7,10 @@ export const dynamic = "force-dynamic";
 // The analyst runs as a server action from this page; a multi-tool answer can take a minute.
 export const maxDuration = 300;
 
-export default async function ComparisonPage() {
+export default async function ComparisonPage({ searchParams }: PageProps<"/comparison">) {
+  const { cell } = await searchParams;
   const view = await loadComparison(db());
-  return <ComparisonScreen view={view} />;
+  // ?cell=B-17 opens that cell's source and ledger (the award memo links here).
+  const focus = typeof cell === "string" && /^[A-Z]-\d+$/.test(cell) ? cell.replace("-", ":") : null;
+  return <ComparisonScreen view={view} focusCell={focus} />;
 }

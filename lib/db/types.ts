@@ -216,8 +216,15 @@ export type AwardRow = {
   savings_vs_last_cycle: number | null;
   memo_markdown: string | null;
   status: AwardStatus;
+  spec: Json;
+  overrides: AwardOverride[];
+  memo_warnings: Json;
+  memo_generated_at: string | null;
+  updated_at: string;
   created_at: string;
 };
+
+export type AwardOverride = { key: string; type: string; supplier: string | null; line: number | null; detail: string; reason: string; at: string };
 
 export type AuditEventRow = {
   id: string;
@@ -311,7 +318,7 @@ export type Database = {
       flag: TableDef<FlagRow, "status">;
       clarification: TableDef<ClarificationRow, "status" | "sent_at">;
       questionnaire_answer: TableDef<QuestionnaireAnswerRow>;
-      award: TableDef<AwardRow, "allocations" | "status">;
+      award: TableDef<AwardRow, "allocations" | "status" | "spec" | "overrides" | "memo_warnings" | "updated_at">;
       audit_event: TableDef<AuditEventRow>;
       benchmark_series: TableDef<BenchmarkSeriesRow, "is_illustrative">;
       fx_rate: TableDef<FxRateRow, "is_illustrative">;

@@ -18,6 +18,8 @@ export type ScenarioSpec = {
   assignments?: CustomAssignment[];
   default_supplier?: string;
   apply_conditional_discounts?: boolean;
+  // Eligibility toggle: count substitutes still awaiting Arjun's sign-off. Rejected ones never count.
+  include_pending_substitutes?: boolean;
 };
 
 export type AllocatedLine = {
@@ -58,16 +60,18 @@ export type ScenarioResult = {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-function countableValue(data: AnalystData, supplier: string, line: number): number | null {
+function countableValue(data: AnalystData, supplier: string, line: number, includePending = false): number | null {
   const c = data.cells[supplier]?.[line];
-  const input = c && { value: c.normalised_value_inr, confidence: c.confidence_state, isSubstitute: c.substitute_status !== null, substituteStatus: c.substitute_status };
-  return counts(input ?? undefined) ? c!.normalised_value_inr : null;
+  if (!c) return null;
+  const pendingAllowed = includePending && c.substitute_status === "pending";
+  const input = { value: c.normalised_value_inr, confidence: c.confidence_state, isSubstitute: c.substitute_status !== null && !pendingAllowed, substituteStatus: c.substitute_status };
+  return counts(input) ? c.normalised_value_inr : null;
 }
 
-function cheapestAmong(data: AnalystData, suppliers: string[], line: number) {
+function cheapestAmong(data: AnalystData, suppliers: string[], line: number, includePending = false) {
   let best: { supplier: string; value: number } | null = null;
   for (const s of suppliers) {
-    const v = countableValue(data, s, line);
+    const v = countableValue(data, s, line, includePending);
     if (v !== null && (!best || v < best.value)) best = { supplier: s, value: v };
   }
   return best;
@@ -78,6 +82,7 @@ export function computeScenario(data: AnalystData, spec: ScenarioSpec): Scenario
   const filter: SupplierFilter = { ...(spec.filter ?? {}) };
   if (spec.scenario === "best_quote_without_incumbent") filter.exclude_incumbent = true;
   const basis = applySupplierFilter(data, filter);
+  const pending = spec.include_pending_substitutes ?? false;
   let eligible = basis.included_suppliers;
   if (spec.scenario === "incumbent") {
     if (!incumbent) throw new Error("No incumbent supplier on file.");
@@ -89,20 +94,20 @@ export function computeScenario(data: AnalystData, spec: ScenarioSpec): Scenario
 
   if (spec.scenario === "best_quote" || spec.scenario === "best_quote_without_incumbent" || spec.scenario === "incumbent") {
     for (const l of data.lines) {
-      const best = cheapestAmong(data, eligible, l.line_no);
+      const best = cheapestAmong(data, eligible, l.line_no, pending);
       if (best) choice.set(l.line_no, best.supplier);
     }
   } else if (spec.scenario === "best_supplier") {
     const ranked = eligible
       .map((s) => {
-        const lines = data.lines.filter((l) => countableValue(data, s, l.line_no) !== null);
-        const commonLines = data.lines.filter((l) => eligible.every((e) => countableValue(data, e, l.line_no) !== null));
-        const common = commonLines.reduce((sum, l) => sum + (countableValue(data, s, l.line_no) ?? 0) * l.quantity, 0);
+        const lines = data.lines.filter((l) => countableValue(data, s, l.line_no, pending) !== null);
+        const commonLines = data.lines.filter((l) => eligible.every((e) => countableValue(data, e, l.line_no, pending) !== null));
+        const common = commonLines.reduce((sum, l) => sum + (countableValue(data, s, l.line_no, pending) ?? 0) * l.quantity, 0);
         return { s, coverage: lines.length, common };
       })
       .sort((a, b) => b.coverage - a.coverage || a.common - b.common);
     const winner = ranked[0]?.s;
-    if (winner) for (const l of data.lines) if (countableValue(data, winner, l.line_no) !== null) choice.set(l.line_no, winner);
+    if (winner) for (const l of data.lines) if (countableValue(data, winner, l.line_no, pending) !== null) choice.set(l.line_no, winner);
   } else {
     const assignments = spec.assignments ?? [];
     for (const l of data.lines) {
@@ -110,7 +115,7 @@ export function computeScenario(data: AnalystData, spec: ScenarioSpec): Scenario
       const s = (a?.supplier ?? spec.default_supplier)?.toUpperCase();
       if (!s) continue;
       if (!eligible.includes(s)) unallocated.push({ line: l.line_no, description: l.description, reason: `${s} is not eligible: ${basis.excluded_suppliers.find((e) => e.supplier === s)?.reason ?? "unknown supplier"}` });
-      else if (countableValue(data, s, l.line_no) === null) unallocated.push({ line: l.line_no, description: l.description, reason: `${s} has no countable price for this line` });
+      else if (countableValue(data, s, l.line_no, pending) === null) unallocated.push({ line: l.line_no, description: l.description, reason: `${s} has no countable price for this line` });
       else choice.set(l.line_no, s);
     }
   }
@@ -126,7 +131,7 @@ export function computeScenario(data: AnalystData, spec: ScenarioSpec): Scenario
     }
     const cell = data.cells[s][l.line_no];
     const unit = cell.normalised_value_inr!;
-    const l1 = cheapestAmong(data, allSuppliers, l.line_no);
+    const l1 = cheapestAmong(data, allSuppliers, l.line_no, pending);
     allocation.push({
       line: l.line_no,
       description: l.description,

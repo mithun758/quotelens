@@ -18,7 +18,7 @@ export type SupplierInfo = {
   quoteDate: string | null;
   validUntil: string | null;
   discounts: QuoteDiscount[];
-  responseFlags: { type: string; severity: string; message: string; status: string }[];
+  responseFlags: { id: string; type: string; severity: string; message: string; status: string }[];
   documents: Record<string, string>;
 };
 
@@ -63,7 +63,7 @@ export async function loadAnalystData(client: Db): Promise<AnalystData> {
       quoteDate: d.terms?.quote_date ?? null,
       validUntil: d.terms?.valid_until ?? null,
       discounts: d.terms?.discounts ?? [],
-      responseFlags: d.flags.filter((f) => f.response_id).map(({ type, severity, message, status }) => ({ type, severity, message, status })),
+      responseFlags: d.flags.filter((f) => f.response_id).map(({ id, type, severity, message, status }) => ({ id, type, severity, message, status })),
       documents: Object.fromEntries(d.documents.map((doc) => [doc.id, doc.file_name])),
     };
   });
