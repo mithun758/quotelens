@@ -157,7 +157,7 @@ export async function loadProgress(client: Db, displayDate: (iso: string) => str
   };
   const status: EventStatus = !rfx.sent_at
     ? "Draft"
-    : award?.award?.memo_generated_at
+    : award?.award?.status === "exported"
       ? "Awarded"
       : extracted && received === rail.length
         ? "Evaluating"

@@ -35,7 +35,7 @@ export function Markdown({ text, size = "sm" }: { text: string; size?: "sm" | "d
             </div>
           ),
           th: ({ children, style }) => (
-            <th style={style} className="border-b border-ink px-2 py-1 text-left text-xs font-semibold text-slate">
+            <th style={style} className="border-b-2 border-rule-strong px-2 py-1.5 text-left text-meta font-semibold text-slate">
               {children}
             </th>
           ),
@@ -47,8 +47,8 @@ export function Markdown({ text, size = "sm" }: { text: string; size?: "sm" | "d
           ul: ({ children }) => <ul className="list-disc space-y-1 pl-5">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal space-y-1 pl-5">{children}</ol>,
           a: ({ children, href }) => <CitationOrLink href={href ?? ""}>{children}</CitationOrLink>,
-          h1: ({ children }) => <p className="pt-1 text-sm font-semibold">{children}</p>,
-          h2: ({ children }) => <p className="border-b border-rule pb-1 pt-2 text-sm font-semibold">{children}</p>,
+          h1: ({ children }) => <p className={`pt-1 font-semibold ${size === "doc" ? "text-heading" : "text-body"}`}>{children}</p>,
+          h2: ({ children }) => <p className={`border-b border-rule pt-3 pb-1 font-semibold ${size === "doc" ? "text-heading" : "text-body"}`}>{children}</p>,
           h3: ({ children }) => <p className="pt-1 font-semibold">{children}</p>,
         }}
       >
