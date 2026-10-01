@@ -1,5 +1,7 @@
 "use server";
 
+import { overrideReasonProblem } from "@/lib/award/override";
+
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { buildMemoFacts } from "@/lib/award/memo-facts";
@@ -15,8 +17,7 @@ import { friendlyError } from "@/lib/errors";
 import { enforceRateLimit } from "@/lib/ratelimit";
 import { recordAuditEvent } from "@/lib/db/queries";
 import type { Json } from "@/lib/db/types";
-import { markdownToBlocks } from "@/lib/export/document";
-import { documentToPdf } from "@/lib/export/pdf";
+import { memoToPdf } from "@/lib/export/memoPdf";
 import { documentToXlsx } from "@/lib/export/xlsx";
 import { formatInr } from "@/lib/format/inr";
 import { acceptItem } from "@/lib/review/decisions";
@@ -57,6 +58,9 @@ export async function resolveBlockerAction(key: string) {
 
 export async function overrideBlockerAction(key: string, reason: string) {
   return guarded(async () => {
+    // Refuse a short reason before loading anything; addOverride enforces it too.
+    const problem = overrideReasonProblem(reason);
+    if (problem) throw new Error(problem);
     const client = db();
     const view = await loadAwardView(client);
     const b = view.blockers.find((x) => x.key === key);
@@ -100,7 +104,10 @@ export async function exportMemoAction(format: "pdf" | "md") {
     const subtitle = `For Meera, Head of Commercial Finance · from Priya, Category Buyer · Meridian Diagnostics · as of ${formatDisplayDate(asOfDate())} · figures link to their comparison cells at ${origin}/award`;
     let bytes: Buffer;
     if (format === "pdf") {
-      bytes = Buffer.from(await documentToPdf({ title, subtitle, blocks: markdownToBlocks(award.memo_markdown) }, { compact: true }));
+      // Laid out like the preview on the Award screen; the memo text is as generated.
+      const rfx = await client.from("rfx").select("title").single();
+      const warnings = ((award.memo_warnings as { text: string; reason: string }[] | null) ?? []).map((w) => `${w.text} (${w.reason})`);
+      bytes = Buffer.from(await memoToPdf({ markdown: award.memo_markdown, date: formatDisplayDate(asOfDate()), rfxTitle: rfx.data?.title ?? "IT Refresh 2026", warnings }));
     } else {
       const absolute = award.memo_markdown.replace(/\]\((\/[^)]+)\)/g, (_m, p: string) => `](${origin}${p})`);
       bytes = Buffer.from(`# ${title}\n\n_${subtitle}_\n\n${absolute}\n`, "utf8");

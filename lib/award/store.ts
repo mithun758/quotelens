@@ -1,4 +1,5 @@
 // Persistence for the award: one per RFx. Every change writes an AuditEvent.
+import { overrideReasonProblem } from "./override";
 import type { Db } from "@/lib/db/client";
 import { recordAuditEvent } from "@/lib/db/queries";
 import type { AwardOverride, AwardRow, Json } from "@/lib/db/types";
@@ -35,7 +36,8 @@ export async function saveSpec(client: Db, spec: AwardSpec): Promise<void> {
 }
 
 export async function addOverride(client: Db, blocker: Omit<AwardOverride, "reason" | "at">, reason: string): Promise<void> {
-  if (reason.trim().length < 10) throw new Error("Give a reason of at least a few words; it is printed in the memo.");
+  const problem = overrideReasonProblem(reason);
+  if (problem) throw new Error(problem);
   const award = await ensureAward(client);
   const overrides = [...(award.overrides ?? []).filter((o) => o.key !== blocker.key), { ...blocker, reason: reason.trim(), at: new Date().toISOString() }];
   const { error } = await client.from("award").update({ overrides, memo_markdown: null, memo_generated_at: null, status: "draft", updated_at: new Date().toISOString() }).eq("id", award.id);

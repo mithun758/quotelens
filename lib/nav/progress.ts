@@ -20,7 +20,7 @@ export type Step = { href: StageTarget["path"]; label: string; stages: Stage[] }
 // attention: what the collapsed Lens tab counts on each screen.
 // status: where the event stands, for the badge beside its name in the top bar.
 // search: what the Cmd+K bar can jump to.
-export type EventStatus = "Draft" | "Collecting quotes" | "Evaluating" | "Awarded";
+export type EventStatus = "Draft" | "Collecting quotes" | "Evaluating" | "Sent for approval";
 export type Progress = {
   rfxTitle: string;
   status: EventStatus;
@@ -158,7 +158,7 @@ export async function loadProgress(client: Db, displayDate: (iso: string) => str
   const status: EventStatus = !rfx.sent_at
     ? "Draft"
     : award?.award?.status === "exported"
-      ? "Awarded"
+      ? "Sent for approval"
       : extracted && received === rail.length
         ? "Evaluating"
         : "Collecting quotes";

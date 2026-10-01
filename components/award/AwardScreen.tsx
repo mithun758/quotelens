@@ -14,6 +14,8 @@ import {
   saveSpecAction,
   sendToNegotiationAction,
 } from "@/app/(app)/award/actions";
+import { OVERRIDE_MIN_CHARS as OVERRIDE_MIN } from "@/lib/award/override";
+import { memoLayout } from "@/lib/award/memoLayout";
 import type { AwardSpec } from "@/lib/award/spec";
 import type { AwardView, BlockerView } from "@/lib/award/view";
 import { formatInr, formatInrCompact } from "@/lib/format/inr";
@@ -51,7 +53,6 @@ const BLOCKER: Record<string, { label: string; icon: LucideIcon }> = {
   unallocated_line: { label: "Line not covered", icon: CircleSlash },
 };
 const blockerLabel = (t: string) => BLOCKER[t]?.label ?? t.replace(/_/g, " ");
-const OVERRIDE_MIN = 15;
 
 function download(fileName: string, base64: string, mime: string) {
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -510,7 +511,7 @@ export function AwardScreen({ view, supplierNames, freshness, memo, negotiationC
             {memo ? (
               <div className="pt-3">
                 {memo.warnings.length > 0 && <p className="mb-3 rounded-xs border-l-2 border-amber bg-amber-tint px-2 py-1 text-meta text-pencil">Post-check: {memo.warnings.map((w) => `${w.text} (${w.reason})`).join("; ")}.</p>}
-                <Markdown text={memo.markdown} size="doc" />
+                <MemoBody markdown={memo.markdown} />
               </div>
             ) : (
               <p className="py-12 text-center text-body text-slate">
@@ -622,6 +623,33 @@ export function AwardScreen({ view, supplierNames, freshness, memo, negotiationC
           </form>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// The memo as generated, laid out like the PDF: the Quote Freshness section shows a
+// stamp beside each supplier it names.
+function MemoBody({ markdown }: { markdown: string }) {
+  const layout = memoLayout(markdown);
+  return (
+    <div className="space-y-2">
+      <Markdown text={layout.before} size="doc" />
+      {layout.freshness && (
+        <section aria-label={layout.freshness.heading} className="space-y-2">
+          <p className="border-b border-rule pt-3 pb-1 text-heading font-semibold">{layout.freshness.heading}</p>
+          <ul className="space-y-2">
+            {layout.freshness.items.map((item, i) => (
+              <li key={i} className="flex items-start gap-2">
+                {item.status && <Stamp status={item.status} className="shrink-0" />}
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <Markdown text={item.text} size="doc" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {layout.after && <Markdown text={layout.after} size="doc" />}
     </div>
   );
 }

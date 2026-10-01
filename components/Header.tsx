@@ -9,7 +9,7 @@ const STATUS_TONE: Record<EventStatus, "neutral" | "pencil" | "ink" | "ledger"> 
   Draft: "neutral",
   "Collecting quotes": "pencil",
   Evaluating: "ink",
-  Awarded: "ledger",
+  "Sent for approval": "ledger",
 };
 
 // The top bar on every screen: who, which event and where it stands, the as-of date,
