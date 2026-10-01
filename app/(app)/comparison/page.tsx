@@ -1,12 +1,11 @@
-import { PlaceholderPage } from "@/components/PlaceholderPage";
+import { ComparisonScreen } from "@/components/comparison/ComparisonScreen";
+import { loadComparison } from "@/lib/comparison/load";
+import { db } from "@/lib/db/client";
 
 export const metadata = { title: "Quote Comparison · QuoteLens" };
+export const dynamic = "force-dynamic";
 
-export default function Page() {
-  return (
-    <PlaceholderPage
-      title="Quote Comparison"
-      description="30 lines by 5 suppliers in INR, per piece, ex-GST delivered, with L1, coverage, confidence, flags and Quote Freshness. The analyst docks here. Built in Phases 3 to 5."
-    />
-  );
+export default async function ComparisonPage() {
+  const view = await loadComparison(db());
+  return <ComparisonScreen view={view} />;
 }

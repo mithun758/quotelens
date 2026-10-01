@@ -11,7 +11,8 @@ async function guarded<T>(fn: () => Promise<T>, { changesData = true } = {}): Pr
   if (!(await hasValidSession())) return { ok: false, error: "Passcode required" };
   try {
     const data = await fn();
-    if (changesData) revalidatePath("/quotes");
+    // Layout-wide so the header's open-blocker counter updates too.
+    if (changesData) revalidatePath("/", "layout");
     return { ok: true, data };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Something went wrong" };

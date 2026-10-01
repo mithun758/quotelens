@@ -104,6 +104,16 @@ describe("normaliseResponse ledger", () => {
     }
   });
 
+  it("only a deviating substitute needs sign-off; a meets-or-exceeds equivalent counts as extracted", () => {
+    const check = (result: "meets" | "exceeds" | "deviates") => [{ attribute: "fits_laptop_in", required: "14", offered: "15", result }];
+    const equivalent = valueFor([item({ rfx_line_no: 3, is_substitute: true, substitute_check: check("exceeds") })], 3);
+    expect(equivalent).toMatchObject({ needs_signoff: false, confidence_state: "extracted", flags: [] });
+    expect(equivalent.substitute_check).not.toBeNull();
+    const deviating = valueFor([item({ rfx_line_no: 3, is_substitute: true, substitute_check: check("deviates") })], 3);
+    expect(deviating).toMatchObject({ needs_signoff: true, confidence_state: "inferred" });
+    expect(deviating.flags.map((f) => f.type)).toEqual(["substitute_pending_signoff"]);
+  });
+
   it("same as last year: Inferred at the last-cycle price", () => {
     const v = valueFor([item({ rfx_line_no: 3, price_status: "same_as_previous", raw_price: null, source: { locator: { page: null, sheet: null, cell: null, paragraph: null, line: 16, bbox: null }, snippet: "All other items same as last year's rates." } })], 3);
     expect(v.normalised_value_inr).toBe(1200);

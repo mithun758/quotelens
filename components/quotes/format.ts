@@ -1,4 +1,4 @@
-import type { ConfidenceState, SourceLocator } from "@/lib/db/types";
+import type { ConfidenceState, NormalisationStepRow, SourceLocator } from "@/lib/db/types";
 
 export const inr = (n: number | null | undefined) =>
   n === null || n === undefined ? "" : `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -30,3 +30,17 @@ export function locatorLabel(loc: SourceLocator | null | undefined): string {
   if (loc.page) return `page ${loc.page}`;
   return "";
 }
+
+// One ledger line, e.g. "USD 740.00 × 84.6 (Illustrative rate, 30 Sep 2026) = ₹62,604".
+export function stepText(s: NormalisationStepRow, currency: string | null): string {
+  const date = s.rate_date ? `, ${displayDate(s.rate_date)}` : "";
+  switch (s.kind) {
+    case "fx":
+      return `${currency ?? ""} ${Number(s.input).toFixed(2)} × ${s.rate} (${s.rate_source}${date}) = ${inr(s.output)}`;
+    case "bundle":
+      return `${inr(s.input)} − ${inr(s.rate)} (${s.rate_source}) = ${inr(s.output)}`;
+    default:
+      return `${inr(s.input)} ÷ ${s.rate} (${s.rate_source}) = ${inr(s.output)}`;
+  }
+}
+

@@ -6,7 +6,7 @@ import { asOfDate } from "@/lib/config";
 import type { Db } from "@/lib/db/client";
 import { recordAuditEvent } from "@/lib/db/queries";
 import { downloadDocument } from "@/lib/db/storage";
-import type { DocumentRow, Insert, Json, LineItemRow, RfxRow, RunSnapshot, SourceLocator, SupplierRow } from "@/lib/db/types";
+import type { DocumentRow, ExtractedValueRow, Insert, Json, LineItemRow, RfxRow, RunSnapshot, SourceLocator, SupplierRow } from "@/lib/db/types";
 import { validUntil } from "@/lib/normalise/dates";
 import { normaliseResponse, type NormalisedValue, type SourcedItem } from "@/lib/normalise/normaliseResponse";
 import { evaluateQuestionnaire, type DocExtraction } from "@/lib/questionnaire/evaluate";
@@ -194,11 +194,12 @@ async function replaceResponseData(
   const lineId = new Map(lines.map((l) => [l.line_no, l.id]));
 
   // Priya's decisions survive re-extraction only while the value they were made on is unchanged.
+  // Arjun's substitute sign-off is kept the same way.
   const { data: decided } = await client
     .from("extracted_value")
-    .select("line_item_id, field, status, raw_value, normalised_value_inr, reason")
+    .select("line_item_id, field, status, raw_value, normalised_value_inr, reason, substitute_status")
     .eq("response_id", responseId)
-    .in("status", ["confirmed", "corrected"]);
+    .or("status.in.(confirmed,corrected),substitute_status.in.(approved,rejected)");
   const decisions = new Map((decided ?? []).map((d) => [`${d.line_item_id ?? ""}|${d.field}`, d]));
 
   // Clear previous extraction for this response. Steps and value flags cascade.
@@ -230,7 +231,7 @@ async function replaceResponseData(
       source_snippet: v.source?.snippet ?? null,
       match_reason: v.match_reason,
       substitute_check: v.substitute_check,
-      substitute_status: v.substitute_check ? "pending" : null,
+      substitute_status: v.needs_signoff ? "pending" : null,
       status: v.confidence_state === "extracted" ? "auto_accepted" : "needs_review",
     });
     v.steps.forEach((s, i) => steps.push({ extracted_value_id: id, step_order: i + 1, ...s }));
@@ -345,15 +346,16 @@ async function replaceResponseData(
       );
       continue;
     }
-    check(
-      await client
-        .from("extracted_value")
-        .update(prior.status === "corrected" ? { status: "corrected", normalised_value_inr: prior.normalised_value_inr, reason: prior.reason } : { status: "confirmed" })
-        .eq("id", v.id!),
-      "reapply decision",
-    );
+    const update: Partial<ExtractedValueRow> = {};
+    if (prior.status === "corrected") Object.assign(update, { status: "corrected", normalised_value_inr: prior.normalised_value_inr, reason: prior.reason });
+    if (prior.status === "confirmed") update.status = "confirmed";
+    if (v.substitute_status === "pending" && (prior.substitute_status === "approved" || prior.substitute_status === "rejected")) update.substitute_status = prior.substitute_status;
+    if (!Object.keys(update).length) continue;
+    check(await client.from("extracted_value").update(update).eq("id", v.id!), "reapply decision");
     if (prior.status === "confirmed" || prior.status === "corrected") {
       await client.from("flag").update({ status: "resolved" }).eq("extracted_value_id", v.id!).eq("status", "open");
+    } else if (update.substitute_status) {
+      await client.from("flag").update({ status: "resolved" }).eq("extracted_value_id", v.id!).eq("type", "substitute_pending_signoff");
     }
   }
 }

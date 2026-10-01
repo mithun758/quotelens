@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { countOpenBlockers } from "@/lib/blockers/count";
 import { RFX_TITLE, asOfDate, formatDisplayDate } from "@/lib/config";
+import { db } from "@/lib/db/client";
 import { ResetDemoButton } from "./ResetDemoButton";
 
 // /eval is deliberately not linked: it is a hidden page.
@@ -10,9 +12,8 @@ const NAV = [
   { href: "/award", label: "Award" },
 ] as const;
 
-export function Header() {
-  // Placeholder until blockers are computed from open flags (Phase 6).
-  const openBlockers: number | null = null;
+export async function Header() {
+  const openBlockers = await countOpenBlockers(db()).catch(() => null);
 
   return (
     <header className="border-b border-zinc-200 bg-white">
@@ -25,7 +26,10 @@ export function Header() {
           <span className="text-zinc-600">
             As of <span className="font-medium text-zinc-900">{formatDisplayDate(asOfDate())}</span>
           </span>
-          <span className="rounded-full border border-zinc-300 px-3 py-1 text-zinc-700">
+          <span
+            className={`rounded-full border px-3 py-1 ${openBlockers ? "border-amber-300 bg-amber-50 text-amber-900" : "border-zinc-300 text-zinc-700"}`}
+            title="Inferred values not yet accepted or corrected, plus open flags and clarifications"
+          >
             Open blockers: <span className="font-semibold">{openBlockers ?? "–"}</span>
           </span>
           <ResetDemoButton />

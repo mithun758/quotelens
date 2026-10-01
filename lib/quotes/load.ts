@@ -6,6 +6,7 @@ import type {
   DocumentRow,
   ExtractedValueRow,
   FlagRow,
+  LineItemRow,
   NormalisationStepRow,
   QuestionnaireAnswerRow,
   QuoteTermsRow,
@@ -60,7 +61,7 @@ type All = {
   clarifications: ClarificationRow[];
   questionnaire: QuestionnaireAnswerRow[];
   terms: QuoteTermsRow[];
-  lines: { id: string; line_no: number; description: string }[];
+  lines: LineItemRow[];
 };
 
 async function loadAll(client: Db): Promise<All> {
@@ -75,7 +76,7 @@ async function loadAll(client: Db): Promise<All> {
     client.from("clarification").select("*").order("created_at"),
     client.from("questionnaire_answer").select("*"),
     client.from("quote_terms").select("*"),
-    client.from("line_item").select("id, line_no, description").order("line_no"),
+    client.from("line_item").select("*").order("line_no"),
   ]);
   if (rfx.error || !rfx.data) throw new Error(`load rfx: ${rfx.error?.message}`);
   return {
@@ -123,6 +124,12 @@ function detailFor(all: All, supplier: SupplierRow): SupplierDetail {
     clarifications,
     queue,
   };
+}
+
+// Every supplier's detail plus the RFx lines: the input to the Quote Comparison.
+export async function loadAllDetails(client: Db): Promise<{ rfx: RfxRow; lines: LineItemRow[]; details: SupplierDetail[] }> {
+  const all = await loadAll(client);
+  return { rfx: all.rfx, lines: all.lines, details: all.suppliers.map((s) => detailFor(all, s)) };
 }
 
 export async function loadQuotes(client: Db, code: string | null): Promise<{ rail: SupplierSummary[]; detail: SupplierDetail | null; rfx: RfxRow }> {

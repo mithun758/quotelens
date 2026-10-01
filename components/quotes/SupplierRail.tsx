@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { SupplierSummary } from "@/lib/quotes/load";
+import { FormatIcon } from "./FormatIcon";
 
 const STATUS: Record<string, string> = {
   received: "Received",
@@ -27,7 +28,9 @@ export function SupplierRail({ rail, selected }: { rail: SupplierSummary[]; sele
               {supplier.is_incumbent && <span className="text-[10px] uppercase text-zinc-500">Incumbent</span>}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-600">
-              <span>{formats.join(" + ")}</span>
+              {formats.map((f) => (
+                <FormatIcon key={f} format={f} />
+              ))}
               <span>·</span>
               <span>{response ? STATUS[response.status] ?? response.status : "No response"}</span>
               {response?.coverage_count !== null && response?.coverage_count !== undefined && (

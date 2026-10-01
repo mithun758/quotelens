@@ -20,7 +20,7 @@ export type Scenario =
   | "best_quote_without_incumbent"
   | "custom";
 export type AwardStatus = "draft" | "blocked" | "ready" | "exported";
-export type Actor = "priya" | "system" | "model";
+export type Actor = "priya" | "arjun" | "system" | "model";
 
 export type RfxTerms = {
   validity_required: boolean;

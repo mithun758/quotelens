@@ -36,6 +36,7 @@ export type NormalisedValue = {
   source: ExtractionSource | null;
   match_reason: string | null;
   substitute_check: SubstituteCheck | null;
+  needs_signoff: boolean;
   steps: LedgerStep[];
   flags: ValueFlag[];
 };
@@ -68,17 +69,22 @@ function missing(line_no: number, reason: string, item?: SourcedItem): Normalise
     source: item?.source ?? null,
     match_reason: item?.match_reason ?? null,
     substitute_check: null,
+    needs_signoff: false,
     steps: [],
     flags: [],
   };
 }
 
+// The RFx accepts any OEM that meets or exceeds every attribute, so only an offer that
+// deviates on at least one attribute is a substitute needing Arjun's sign-off.
+export function needsSignoff(item: Pick<SourcedItem, "is_substitute" | "substitute_check">): boolean {
+  return item.is_substitute && item.substitute_check.some((c) => c.result === "deviates");
+}
+
 function substituteNote(item: SourcedItem): string | null {
-  if (!item.is_substitute) return null;
+  if (!needsSignoff(item)) return null;
   const deviates = item.substitute_check.filter((c) => c.result === "deviates").map((c) => c.attribute);
-  return deviates.length
-    ? `Substitute model deviates on ${deviates.join(", ")}; needs Arjun's sign-off.`
-    : "Substitute model; needs Arjun's sign-off.";
+  return `Substitute model deviates on ${deviates.join(", ")}; needs Arjun's sign-off.`;
 }
 
 // Price for one non-bundle item, before any bundle split.
@@ -96,6 +102,7 @@ function normaliseItem(item: SourcedItem, line: LineItemRow, ctx: Context): Norm
     source: item.source,
     match_reason: item.match_reason,
     substitute_check: item.is_substitute ? item.substitute_check : null,
+    needs_signoff: needsSignoff(item),
   };
   const flags: ValueFlag[] = [];
   const modelReason = item.confidence === "inferred" ? item.reason : null;

@@ -1,20 +1,7 @@
 "use client";
 
-import type { NormalisationStepRow } from "@/lib/db/types";
 import type { ValueWithLine } from "@/lib/quotes/load";
-import { CONFIDENCE_LABEL, CONFIDENCE_STYLE, displayDate, inr, locatorLabel } from "./format";
-
-export function stepText(s: NormalisationStepRow, currency: string | null): string {
-  const date = s.rate_date ? `, ${displayDate(s.rate_date)}` : "";
-  switch (s.kind) {
-    case "fx":
-      return `${currency ?? ""} ${Number(s.input).toFixed(2)} × ${s.rate} (${s.rate_source}${date}) = ${inr(s.output)}`;
-    case "bundle":
-      return `${inr(s.input)} − ${inr(s.rate)} (${s.rate_source}) = ${inr(s.output)}`;
-    default:
-      return `${inr(s.input)} ÷ ${s.rate} (${s.rate_source}) = ${inr(s.output)}`;
-  }
-}
+import { CONFIDENCE_LABEL, CONFIDENCE_STYLE, inr, locatorLabel, stepText } from "./format";
 
 function StatusTag({ status }: { status: ValueWithLine["status"] }) {
   if (status === "confirmed") return <span className="text-xs text-emerald-700">Accepted</span>;
