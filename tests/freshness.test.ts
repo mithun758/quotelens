@@ -107,3 +107,12 @@ describe("rule thresholds", () => {
     expect(status({ quoteDate: "2026-09-14", foreignCurrencies: ["USD"] }).fired.map((r) => r.key)).toContain("fx_movement");
   });
 });
+
+describe("prior-pricing rule", () => {
+  it("fires only when lines are shown at Meridian's last-cycle price", async () => {
+    const { priorPricing } = await import("@/lib/freshness/rules");
+    const base = { referencesPriorPricing: true, priorPricingLines: [] as number[] } as Parameters<typeof priorPricing>[0];
+    expect(priorPricing(base).fired).toBe(false);
+    expect(priorPricing({ ...base, priorPricingLines: [3, 5] }).fired).toBe(true);
+  });
+});

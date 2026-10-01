@@ -25,6 +25,8 @@ export function stepText(s: NormalisationStepRow, currency: string | null): stri
   switch (s.kind) {
     case "fx":
       return `${currency ?? ""} ${Number(s.input).toFixed(2)} × ${s.rate} (${s.rate_source}${date}) = ${inr(s.output)}`;
+    case "revision":
+      return `${inr(s.input)} revised to ${inr(s.output)}. ${s.rate_source ?? ""}`.trim();
     case "bundle":
       return `${inr(s.input)} − ${inr(s.rate)} (${s.rate_source}) = ${inr(s.output)}`;
     default:
@@ -32,3 +34,8 @@ export function stepText(s: NormalisationStepRow, currency: string | null): stri
   }
 }
 
+
+// The earlier price a later document revised, if any: shown struck through beside the new one.
+export function revisionOf(steps: NormalisationStepRow[]): NormalisationStepRow | null {
+  return [...steps].reverse().find((s) => s.kind === "revision") ?? null;
+}

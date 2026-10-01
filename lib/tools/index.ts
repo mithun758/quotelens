@@ -11,6 +11,7 @@ import { getMeridianStandards, getPurchaseHistory, getSuppliers, updateRfxDraft 
 import { exportTool } from "./export";
 import { filterSuppliers } from "./filter_suppliers";
 import { getComparison } from "./get_comparison";
+import { getAwardStatus } from "./get_award_status";
 import { getFreshness } from "./get_freshness";
 import { getSource } from "./get_source";
 import { listBlockers } from "./list_blockers";
@@ -28,6 +29,7 @@ export const ANALYST_TOOLS: AnalystTool[] = [
   compareLastCycle,
   getFreshness,
   listBlockers,
+  getAwardStatus,
   getSource,
   draftClarificationTool,
   makeChart,

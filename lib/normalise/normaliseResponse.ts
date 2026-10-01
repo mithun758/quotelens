@@ -44,7 +44,13 @@ export type NormalisedValue = {
   flags: ValueFlag[];
 };
 
-type Context = { lines: LineItemRow[]; fxRates: FxRateRow[]; asOfDate: string; supplierCode: string };
+type Context = { lines: LineItemRow[]; fxRates: FxRateRow[]; asOfDate: string; supplierCode: string; documentDates?: Record<string, string | null> };
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const day = (iso: string) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${d} ${MONTHS[m - 1]} ${y}`;
+};
 
 const BASIS_UNIT: Record<ExtractedItem["price_basis"], string> = {
   per_piece: "per piece",
@@ -210,8 +216,11 @@ export type NormalisedResponse = { values: NormalisedValue[]; unmatched: Sourced
 
 export function normaliseResponse(items: SourcedItem[], ctx: Context): NormalisedResponse {
   const byLine = new Map<number, SourcedItem>();
+  // The earlier stated price a later document revised, per line.
+  const revised = new Map<number, SourcedItem>();
   const unmatched: SourcedItem[] = [];
   const lineNos = new Set(ctx.lines.map((l) => l.line_no));
+  const dateOf = (i: SourcedItem) => (i.documentId ? (ctx.documentDates?.[i.documentId] ?? null) : null);
 
   for (const item of items) {
     if (item.rfx_line_no === null || !lineNos.has(item.rfx_line_no)) {
@@ -219,7 +228,21 @@ export function normaliseResponse(items: SourcedItem[], ctx: Context): Normalise
       continue;
     }
     const existing = byLine.get(item.rfx_line_no);
-    if (!existing || itemRank(item) < itemRank(existing)) byLine.set(item.rfx_line_no, item);
+    if (!existing || itemRank(item) < itemRank(existing)) {
+      byLine.set(item.rfx_line_no, item);
+      continue;
+    }
+    // Two stated prices from different documents: the later-dated document wins, and the
+    // earlier price is kept for the ledger.
+    if (itemRank(item) === itemRank(existing) && item.price_status === "stated" && item.documentId !== existing.documentId) {
+      const [a, b] = [dateOf(item), dateOf(existing)];
+      if (a && b && a > b) {
+        revised.set(item.rfx_line_no, existing);
+        byLine.set(item.rfx_line_no, item);
+      } else if (a && b && b > a && !revised.has(item.rfx_line_no)) {
+        revised.set(item.rfx_line_no, item);
+      }
+    }
   }
 
   // Pass 1: everything except bundles.
@@ -280,6 +303,23 @@ export function normaliseResponse(items: SourcedItem[], ctx: Context): Normalise
         bundle.reason,
       ),
       steps,
+    });
+  }
+
+  // Revisions: the ledger keeps the earlier price as a step, and the cell shows it struck through.
+  for (const [lineNo, earlier] of revised) {
+    const current = results.get(lineNo);
+    const line = ctx.lines.find((l) => l.line_no === lineNo)!;
+    const before = normaliseItem(earlier, line, ctx).normalised_value_inr;
+    const now = current?.normalised_value_inr ?? null;
+    const [from, to] = [dateOf(earlier), dateOf(byLine.get(lineNo)!)];
+    if (!current || before === null || now === null || before === now || !from || !to) continue;
+    results.set(lineNo, {
+      ...current,
+      steps: [
+        ...current.steps,
+        { kind: "revision", input: before, output: now, rate: null, rate_source: `Revised in the supplier's document of ${day(to)}; the price in its document of ${day(from)} was ₹${before.toLocaleString("en-IN")}`, rate_date: to },
+      ],
     });
   }
 

@@ -7,6 +7,7 @@ import type { ComparisonView } from "@/lib/comparison/load";
 import { formatInrCompact } from "@/lib/format/inr";
 import { Stamp } from "../ui/Stamp";
 import { Value } from "../ui/Value";
+import { revisionOf } from "../quotes/format";
 import { CellCard } from "./CellCard";
 
 const num = (n: number) => n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -193,7 +194,7 @@ export function Matrix({
                         onFocus={() => setHover(key)}
                         onBlur={() => setHover((h) => (h === key ? null : h))}
                         aria-label={`${s.name}, line ${line.line_no}: ${missing ? "not quoted" : `₹${num(cell!.normalised_value_inr!)}, ${cell!.confidence_state}`}${isL1 ? ", L1" : ""}${sub ? ", substitute not counted" : ""}`}
-                        className="flex h-9 w-full items-center justify-end gap-1.5 px-3"
+                        className={`flex h-9 w-full items-center justify-end gap-1.5 ${cell && revisionOf(cell.steps) ? "px-1.5" : "px-3"}`}
                       >
                         {cell && cell.openFlags.length > 0 && (
                           <span aria-hidden className={cell.openFlags.some((f) => f.severity === "high") ? "text-oxblood" : "text-pencil"} title={`${cell.openFlags.length} open flag${cell.openFlags.length > 1 ? "s" : ""}`}>
@@ -210,7 +211,16 @@ export function Matrix({
                             <Value state="missing" reason={cell?.reason ?? "Not quoted"} />
                           )
                         ) : (
-                          <span className={`inline-flex items-center gap-1.5 ${isL1 ? "font-semibold" : ""} ${sub ? "text-slate line-through decoration-field" : ""}`}>
+                          <span className={`inline-flex items-center gap-1 ${isL1 ? "font-semibold" : ""} ${sub ? "text-slate line-through decoration-field" : ""}`}>
+                            {(() => {
+                              const rev = revisionOf(cell!.steps);
+                              return rev ? (
+                                <s className="text-[11px] font-normal text-slate decoration-slate" title={rev.rate_source ?? "Revised"}>
+                                  {num(Number(rev.input))}
+                                  <span className="sr-only"> (earlier price), now</span>
+                                </s>
+                              ) : null;
+                            })()}
                             {isL1 && <span aria-hidden className="h-4 w-[3px] bg-ledger" />}
                             {cell!.confidence_state === "inferred" ? <span className="val-inferred">{num(cell!.normalised_value_inr!)}</span> : num(cell!.normalised_value_inr!)}
                           </span>

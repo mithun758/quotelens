@@ -2,7 +2,7 @@
 
 import type { ComparisonCell } from "@/lib/comparison/load";
 import { formatInr } from "@/lib/format/inr";
-import { locatorLabel, stepText } from "../quotes/format";
+import { locatorLabel, revisionOf, stepText } from "../quotes/format";
 import { btn } from "../ui/styles";
 import { Value } from "../ui/Value";
 
@@ -49,6 +49,14 @@ export function CellCard({ cell, supplierName, lineLabel, onOpenSubstitute }: { 
         </p>
       )}
       {cell.reason && <p className="text-pencil">{cell.reason}</p>}
+      {(() => {
+        const rev = revisionOf(cell.steps);
+        return rev ? (
+          <p>
+            <span className="font-semibold">Revised.</span> <s className="text-slate">{formatInr(Number(rev.input))}</s> now {formatInr(Number(rev.output))}. <span className="text-slate">{rev.rate_source}</span>
+          </p>
+        ) : null;
+      })()}
       {cell.steps.length > 0 && (
         <div>
           <p className="font-semibold">Normalisation ledger</p>

@@ -1,13 +1,11 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { BasketMode } from "@/lib/comparison/build";
 import { decisionReady } from "@/lib/comparison/decisionReady";
 import type { ComparisonView } from "@/lib/comparison/load";
-import { CiteContext, type Citer } from "../analyst/cite";
-import { LensUiContext, ViewControlContext, type ViewControl } from "../analyst/viewControl";
+import { useLens, useLensScreen } from "../lens/LensProvider";
 import { displayDate } from "../quotes/format";
 import { Stamp } from "../ui/Stamp";
 import { btn } from "../ui/styles";
@@ -15,11 +13,7 @@ import { Matrix } from "./Matrix";
 import { SubstitutePanel } from "./SubstitutePanel";
 import { SupplierPanel } from "./SupplierDrawer";
 
-// Client-only: the conversation is restored from sessionStorage.
-const AnalystPanel = dynamic(() => import("../analyst/AnalystPanel").then((m) => m.AnalystPanel), { ssr: false });
-
 type View = "prices" | "compliance" | "freshness";
-type Side = { kind: "supplier"; code: string } | { kind: "substitute"; key: string } | null;
 
 const th = "border-b border-ink px-3 py-2 text-left text-xs font-semibold text-slate";
 const td = "border-b border-rule px-3 py-2 align-top";
@@ -244,103 +238,73 @@ export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonV
   const raw = params.get("view") ?? "prices";
   const decision = raw === "decision";
   const tab: View = raw === "compliance" || raw === "freshness" ? raw : "prices";
-  const analystOpen = params.get("analyst") === "1";
   const [mode, setMode] = useState<BasketMode>("common");
-  const [side, setSide] = useState<Side>(null);
   const [highlight, setHighlight] = useState<{ key: string; n: number } | null>(focusCell ? { key: focusCell, n: 0 } : null);
+  const [opened, setOpened] = useState<string | null>(null);
+  const { openSheet, closeSheet, sheet } = useLens();
 
   const ready = useMemo(() => decisionReady(view), [view]);
   const excluded = useMemo(() => (decision ? Object.fromEntries(ready.excluded.map((e) => [e.code, e.reasons])) : {}), [decision, ready]);
   const result = decision ? ready.result : view.result;
+  const names = Object.fromEntries(view.suppliers.map((s) => [s.code, s.name]));
 
-  const openSide = (next: Side) => {
-    setSide(next);
-    setParams({ analyst: null });
+  // Supplier details and Arjun's substitute sign-off open in the Lens dock as a sheet.
+  const openSupplier = (code: string) => {
+    setOpened(`supplier panel open for ${code}`);
+    openSheet({ key: `supplier:${code}`, render: () => <SupplierPanel view={view} code={code} mode={mode} onClose={closeSheet} /> });
   };
-  const closeAll = useCallback(() => {
-    setSide(null);
-    setParams({ analyst: null });
-  }, []);
-  const openAnalyst = () => {
-    setSide(null);
-    setParams({ analyst: "1" });
+  const openSubstitute = (key: string) => {
+    const [code, line] = key.split(":");
+    const cell = view.cells[code]?.[Number(line)];
+    const l = view.lines.find((x) => x.line_no === Number(line));
+    const s = view.suppliers.find((x) => x.code === code);
+    if (!cell || !l || !s) return;
+    setOpened(`substitute sign-off open for supplier ${code}, line ${line}`);
+    openSheet({ key: `substitute:${key}`, render: () => <SubstitutePanel cell={cell} supplierName={`${s.code}. ${s.name}`} lineLabel={`line ${l.line_no}: ${l.description}`} onClose={closeSheet} /> });
   };
-
-  // Lens cites a cell as [[cell:B:17]]; clicking it scrolls to the cell and highlights it.
-  const citer = useMemo<Citer>(
-    () => ({
-      cite: (key) => {
-        setParams({ view: decision ? "decision" : "prices" });
-        setHighlight((h) => ({ key, n: (h?.n ?? 0) + 1 }));
-      },
-    }),
-    [decision],
-  );
-
-  // set_view from the analyst: change the view, Quoted or Decision-ready, and the basket.
-  const viewControl = useMemo<ViewControl>(
-    () => ({
-      apply: (v) => {
-        const base = v.view ?? tab;
-        const quotes = v.quotes ?? (decision ? "decision_ready" : "quoted");
-        setParams({ view: base === "prices" ? (quotes === "decision_ready" ? "decision" : "prices") : base });
-        if (v.basket) setMode(v.basket);
-        return [
-          base === "prices" ? (quotes === "decision_ready" ? "Prices, Decision-ready" : "Prices, Quoted") : base === "compliance" ? "Compliance" : "Quote Freshness",
-          v.basket && (v.basket === "common" ? "common basket" : "all lines"),
-        ]
-          .filter(Boolean)
-          .join(", ");
-      },
-    }),
-    [tab, decision],
-  );
-
-  const subCell =
-    side?.kind === "substitute"
-      ? (() => {
-          const [code, line] = side.key.split(":");
-          const cell = view.cells[code]?.[Number(line)];
-          const l = view.lines.find((x) => x.line_no === Number(line));
-          const s = view.suppliers.find((x) => x.code === code);
-          return cell && l && s ? { cell, label: `line ${l.line_no}: ${l.description}`, name: `${s.code}. ${s.name}` } : null;
-        })()
-      : null;
-  const panelOpen = analystOpen || !!side;
 
   // What Lens is told Priya is looking at.
   const selection = [
     `view ${tab === "prices" ? `Prices, ${decision ? "Decision-ready" : "Quoted"}, ${mode === "common" ? "common basket" : "all lines"}` : tab === "compliance" ? "Compliance" : "Quote Freshness"}`,
-    side?.kind === "supplier" && `supplier panel open for ${side.code}`,
-    side?.kind === "substitute" && `substitute sign-off open for supplier ${side.key.split(":")[0]}, line ${side.key.split(":")[1]}`,
+    sheet && opened,
     highlight && `highlighted cell supplier ${highlight.key.split(":")[0]}, line ${highlight.key.split(":")[1]}`,
   ]
     .filter(Boolean)
     .join("; ");
+
+  // Lens cites a cell as [[cell:B:17]]: clicking it scrolls to the cell and highlights it.
+  // set_view from Lens switches the view, Quoted or Decision-ready, and the basket.
+  useLensScreen({
+    selection,
+    cite: (key) => {
+      setParams({ view: decision ? "decision" : "prices" });
+      setHighlight((h) => ({ key, n: (h?.n ?? 0) + 1 }));
+    },
+    applyView: (v) => {
+      const base = v.view ?? tab;
+      const quotes = v.quotes ?? (decision ? "decision_ready" : "quoted");
+      setParams({ view: base === "prices" ? (quotes === "decision_ready" ? "decision" : "prices") : base });
+      if (v.basket) setMode(v.basket);
+      return [base === "prices" ? (quotes === "decision_ready" ? "Prices, Decision-ready" : "Prices, Quoted") : base === "compliance" ? "Compliance" : "Quote Freshness", v.basket && (v.basket === "common" ? "common basket" : "all lines")]
+        .filter(Boolean)
+        .join(", ");
+    },
+  });
 
   const tabs: [View, string][] = [
     ["prices", "Prices"],
     ["compliance", "Compliance"],
     ["freshness", "Quote Freshness"],
   ];
-  const names = Object.fromEntries(view.suppliers.map((s) => [s.code, s.name]));
 
   return (
-    <CiteContext.Provider value={citer}>
-      <ViewControlContext.Provider value={viewControl}>
-      <LensUiContext.Provider value={{ screen: "comparison", selection }}>
-      <div className={`grid gap-5 ${panelOpen ? "grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_460px]" : "grid-cols-1"}`}>
+    <div>
         <section className="min-w-0 space-y-3">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="text-xl font-semibold">Quote Comparison</h1>
               <p className="text-sm text-slate">INR per piece, ex-GST, delivered to hub</p>
             </div>
-            {!analystOpen && (
-              <button type="button" onClick={openAnalyst} className={btn.primary}>
-                Ask Lens
-              </button>
-            )}
           </div>
 
           <div role="tablist" aria-label="Comparison views" className="flex gap-5 border-b border-rule">
@@ -413,22 +377,17 @@ export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonV
                 result={result}
                 excluded={excluded}
                 mode={mode}
-                onOpenSupplier={(code) => openSide({ kind: "supplier", code })}
-                onOpenSubstitute={(key) => openSide({ kind: "substitute", key })}
+                onOpenSupplier={(code) => openSupplier(code)}
+                onOpenSubstitute={(key) => openSubstitute(key)}
                 highlight={highlight}
               />
             </>
           )}
-          {tab === "compliance" && <ComplianceView view={view} onOpenSubstitute={(key) => openSide({ kind: "substitute", key })} />}
-          {tab === "freshness" && <FreshnessView view={view} onOpenSupplier={(code) => openSide({ kind: "supplier", code })} />}
+          {tab === "compliance" && <ComplianceView view={view} onOpenSubstitute={(key) => openSubstitute(key)} />}
+          {tab === "freshness" && <FreshnessView view={view} onOpenSupplier={(code) => openSupplier(code)} />}
         </section>
 
-        {analystOpen && !side && <AnalystPanel onClose={closeAll} />}
-        {side?.kind === "supplier" && <SupplierPanel view={view} code={side.code} mode={mode} onClose={closeAll} />}
-        {side?.kind === "substitute" && subCell && <SubstitutePanel cell={subCell.cell} supplierName={subCell.name} lineLabel={subCell.label} onClose={closeAll} />}
       </div>
-      </LensUiContext.Provider>
-      </ViewControlContext.Provider>
-    </CiteContext.Provider>
+
   );
 }

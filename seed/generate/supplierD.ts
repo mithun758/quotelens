@@ -1,7 +1,7 @@
 // D. Sri Ganesh Computers: a printed rate card dated 4 June 2026, photographed at an
 // angle on a counter. 20 of 30 lines, cables per packet of 10, one handwritten
 // correction, no validity and no GST mention. Rendered as HTML, then screenshotted.
-import { D_HANDWRITTEN, D_PACK_LINE, D_PACK_SIZE, inr, truePrice } from "./prices";
+import { D_HANDWRITTEN, D_PACK_LINE, D_PACK_SIZE, D_RECONFIRMATION, inr, reconfirmedPrice, truePrice } from "./prices";
 
 const ITEMS: [number, string][] = [
   [1, 'Laptop i5 14th Gen / 16GB / 512GB SSD / 14" (Dell Vostro 3440)'],
@@ -105,4 +105,29 @@ ${buildRateCardHtml()}
 <svg class="noise" width="1200" height="1600"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
 <div class="vignette"></div>
 </body></html>`;
+}
+
+// The reconfirmation reply: a short email after Priya asks D to reconfirm its prices.
+export function buildReconfirmationReplyD(): string {
+  const lines = Object.keys(D_RECONFIRMATION.raise_pct).map(Number);
+  const name = (line: number) => ITEMS.find(([n]) => n === line)![1];
+  return [
+    "From: Ganesh R <sriganeshcomputers@example.in>",
+    "To: Priya <priya@meridiandiagnostics.example>",
+    "Date: Wed, 30 Sep 2026 16:40 +0530",
+    "Subject: RE: Price reconfirmation - RFx IT Refresh 2026",
+    "",
+    "Madam,",
+    "",
+    "Thank you for your mail. Our rate list dated 04-Jun-2026 is confirmed for all items as on today, except below items where memory and SSD prices have gone up:",
+    "",
+    ...lines.map((l) => `- ${name(l)}: Rs ${inr(reconfirmedPrice(l)!)}/- per unit (earlier ${inr(truePrice("D", l)!)}/-)`),
+    "",
+    `All rates are valid for ${D_RECONFIRMATION.validity_days} days from today (30-Sep-2026). Other terms as per our rate list.`,
+    "",
+    "Regards,",
+    "Ganesh R",
+    "Sri Ganesh Computers, Bengaluru",
+    "",
+  ].join("\n");
 }

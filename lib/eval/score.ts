@@ -49,7 +49,7 @@ function rawMatches(expected: GtLine, actualRaw: string | null): boolean {
 }
 
 export async function scoreExtraction(client: Db): Promise<EvalReport> {
-  const [suppliersRes, responsesRes, valuesRes, linesRes, termsRes, answersRes, eventRes] = await Promise.all([
+  const [suppliersRes, responsesRes, valuesRes, linesRes, termsRes, answersRes, eventRes, docsRes] = await Promise.all([
     client.from("supplier").select("*").order("code"),
     client.from("response").select("*"),
     client.from("extracted_value").select("*").eq("field", "unit_price"),
@@ -57,7 +57,12 @@ export async function scoreExtraction(client: Db): Promise<EvalReport> {
     client.from("quote_terms").select("*"),
     client.from("questionnaire_answer").select("*"),
     client.from("audit_event").select("created_at").eq("action", "extract_response").order("created_at", { ascending: false }).limit(1),
+    client.from("document").select("response_id, file_name"),
   ]);
+  // After Sri Ganesh's reconfirmation reply arrives, its revised lines and terms are
+  // scored against the "after" beat in the ground truth.
+  const reconfirm = groundTruth.demo_beats.d_reconfirmation;
+  const reconfirmFile = reconfirm.trigger.match(/\(([^)]+)\)/)?.[1] ?? "";
   for (const r of [suppliersRes, responsesRes, valuesRes, linesRes, termsRes, answersRes]) if (r.error) throw new Error(r.error.message);
   const lineNo = new Map((linesRes.data ?? []).map((l) => [l.id, l.line_no]));
 
@@ -69,7 +74,11 @@ export async function scoreExtraction(client: Db): Promise<EvalReport> {
     const values = (valuesRes.data ?? []).filter((v) => v.response_id === response?.id);
     const byLine = new Map(values.map((v) => [lineNo.get(v.line_item_id ?? ""), v]));
 
-    const lines: LineResult[] = (gt.lines as GtLine[]).map((e) => {
+    const reconfirmed = supplier.code === "D" && (docsRes.data ?? []).some((d) => d.response_id === response?.id && d.file_name === reconfirmFile);
+    const afterPrices = reconfirm.after.prices_inr as Record<string, number>;
+    const lines: LineResult[] = (gt.lines as GtLine[]).map((original) => {
+      const revisedPrice = reconfirmed ? afterPrices[String(original.line_no)] : undefined;
+      const e: GtLine = revisedPrice ? { ...original, expected_normalised_inr: revisedPrice, raw_value: revisedPrice.toLocaleString("en-IN"), expected_confidence: "extracted" } : original;
       const a = byLine.get(e.line_no);
       const actualValue = a?.normalised_value_inr ?? null;
       const valueOk =
@@ -86,8 +95,8 @@ export async function scoreExtraction(client: Db): Promise<EvalReport> {
 
     const terms = termsRes.data!.find((t) => t.response_id === response?.id);
     const termChecks = [
-      { field: "quote_date", expected: gt.terms.quote_date, actual: terms?.quote_date ?? null },
-      { field: "valid_until", expected: gt.terms.valid_until, actual: terms?.valid_until ?? null },
+      { field: "quote_date", expected: reconfirmed ? reconfirm.after.quote_date : gt.terms.quote_date, actual: terms?.quote_date ?? null },
+      { field: "valid_until", expected: reconfirmed ? reconfirm.after.valid_until : gt.terms.valid_until, actual: terms?.valid_until ?? null },
     ].map((t) => ({ ...t, ok: t.expected === t.actual }));
 
     const qKey = supplier.code === "E" ? "E_before_clarification" : supplier.code;

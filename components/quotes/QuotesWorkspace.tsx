@@ -6,7 +6,7 @@ import { decodeLocator, encodeLocator } from "@/lib/ai/lens/citations";
 import type { QueueItem } from "@/lib/review/queue";
 import { Stamp } from "../ui/Stamp";
 import { DocumentViewer, type SourceHighlight, type ViewerDocument } from "./DocumentViewer";
-import { displayDate, locatorLabel } from "./format";
+import { displayDate, inr, locatorLabel, revisionOf } from "./format";
 import { ReviewQueue } from "./ReviewQueue";
 import { SentEmails } from "./SentEmails";
 import { ValuesTable } from "./ValuesTable";
@@ -73,7 +73,7 @@ export function QuotesWorkspace({
           </h3>
           {freshness && <Stamp status={freshness} title="Quote Freshness; details on Quote Comparison" />}
         </div>
-        <dl className="grid grid-cols-3 gap-x-6 gap-y-2 text-[13px] xl:grid-cols-6">
+        <dl className="grid grid-cols-3 gap-x-6 gap-y-2 text-[13px] @4xl:grid-cols-6">
           {fields.map(([k, v]) => (
             <div key={k} className="min-w-0">
               <dt className="text-xs text-slate">{k}</dt>
@@ -85,14 +85,19 @@ export function QuotesWorkspace({
         </dl>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-2 lg:sticky lg:top-[4.75rem] lg:self-start">
+      <div className="grid gap-5 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-2 @4xl:sticky @4xl:top-[4.75rem] @4xl:self-start">
           <DocumentViewer documents={documents} activeId={activeDocId} onSelect={setActiveDocId} highlight={highlight} />
           {selected && (
             <p className="border-l-[3px] border-amber bg-amber-tint px-3 py-2 text-xs">
               <span className="font-semibold">Source</span> {sourceDoc?.file_name ?? "email body"}
               {locatorLabel(selected.source_locator) && `, ${locatorLabel(selected.source_locator)}`}
               {selected.source_snippet && <span className="block">“{selected.source_snippet}”</span>}
+              {revisionOf(selected.steps) && (
+                <span className="mt-1 block">
+                  <span className="font-semibold">Revised.</span> <s className="text-slate">{inr(Number(revisionOf(selected.steps)!.input))}</s> now {inr(Number(revisionOf(selected.steps)!.output))}. {revisionOf(selected.steps)!.rate_source}
+                </span>
+              )}
             </p>
           )}
         </div>

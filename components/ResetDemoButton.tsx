@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { resetDemo } from "@/app/actions/resetDemo";
+import { LENS_KEYS } from "./lens/LensProvider";
 import { btn } from "./ui/styles";
 
 export function ResetDemoButton() {
@@ -25,11 +26,14 @@ export function ResetDemoButton() {
         setError(result.error);
         return;
       }
+      // Reset also clears the Lens conversation and its briefing memory.
       try {
-        sessionStorage.removeItem("quotelens.analyst.v3");
+        sessionStorage.removeItem(LENS_KEYS.conversation);
+        sessionStorage.removeItem(LENS_KEYS.briefed);
       } catch {
         // Storage may be unavailable; nothing to clear then.
       }
+      window.dispatchEvent(new Event("quotelens:reset"));
       router.push("/quotes");
     });
   }

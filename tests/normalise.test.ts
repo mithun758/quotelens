@@ -162,3 +162,26 @@ describe("parseRef", () => {
     expect(parseRef("page 2")).toMatchObject({ page: 2 });
   });
 });
+
+describe("revised prices", () => {
+  it("a later-dated document's stated price wins, and the ledger keeps the earlier one", async () => {
+    const { normaliseResponse } = await import("@/lib/normalise/normaliseResponse");
+    const lines = [{ id: "l5", line_no: 5, quantity: 40, uom: "piece" }] as never;
+    const item = (doc: string, raw: string) =>
+      ({ rfx_line_no: 5, documentId: doc, price_status: "stated", price_basis: "per_piece", raw_price: raw, currency: "INR", pack_size: null, gst: "excluded", gst_rate_percent: null, is_substitute: false, substitute_check: null, confidence: "extracted", reason: null, bundle_rfx_lines: [], source: { snippet: raw } }) as never;
+    const r = normaliseResponse([item("photo", "48,350"), item("reply", "52,700")], {
+      lines,
+      fxRates: [],
+      asOfDate: "2026-09-30",
+      supplierCode: "D",
+      documentDates: { photo: "2026-06-04", reply: "2026-09-30" },
+    });
+    const v = r.values[0];
+    expect(v.normalised_value_inr).toBe(52700);
+    expect(v.confidence_state).toBe("extracted");
+    const step = v.steps.at(-1)!;
+    expect(step.kind).toBe("revision");
+    expect([step.input, step.output]).toEqual([48350, 52700]);
+    expect(step.rate_source).toMatch(/30 Sep 2026.*4 Jun 2026/);
+  });
+});

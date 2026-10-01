@@ -1,16 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { chatAction, newDraftAction, saveDraftAction, sendRfxAction } from "@/app/(app)/rfx/actions";
+import { useState, useTransition } from "react";
+import { newDraftAction, saveDraftAction, sendRfxAction } from "@/app/(app)/rfx/actions";
 import { sendProblems, type DraftLine, type RfxDraft } from "@/lib/rfx/draft";
 import type { DraftState } from "@/lib/rfx/store";
-import { Markdown } from "../analyst/AnswerCard";
 import { ErrorNote } from "../ErrorNote";
+import { useLensScreen } from "../lens/LensProvider";
 import { displayDate } from "../quotes/format";
 import { btn } from "../ui/styles";
-
-const SUGGESTIONS = ["We need to run our annual IT refresh across our three hubs.", "Draft the IT refresh from last year's list, with our standard questionnaire and terms."];
 
 const specToText = (spec: DraftLine["spec"]) => spec.map((s) => `${s.attribute}: ${s.value}`).join("\n");
 const textToSpec = (text: string) =>
@@ -36,23 +34,16 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
   const router = useRouter();
   const [draft, setDraft] = useState<RfxDraft>(initial.draft);
   const [saved, setSaved] = useState<RfxDraft>(initial.draft);
-  const [conversation, setConversation] = useState(initial.conversation);
   const [status, setStatus] = useState(initial.status);
-  const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [failedMessage, setFailedMessage] = useState<string | null>(null);
-  // Bumped when the co-pilot replaces the draft, so per-line editors re-read their value.
-  const [version, setVersion] = useState(0);
+  // The screen remounts when Lens changes the draft (keyed by its update time), so the
+  // per-line editors re-read their values.
+  const version = initial.updatedAt ?? "new";
   const [sent, setSent] = useState<{ sentAt: string; suppliers: { code: string; name: string; state: string | null }[] } | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
   const locked = status === "sent";
   const problems = sendProblems(draft, asOfDate);
-
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [conversation, pending]);
 
   const update = (patch: Partial<RfxDraft>) => setDraft((d) => ({ ...d, ...patch }));
   const updateLine = (i: number, patch: Partial<DraftLine>) => setDraft((d) => ({ ...d, lines: d.lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
@@ -71,126 +62,17 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
     );
   }
 
-  function send(text: string) {
-    const msg = text.trim();
-    if (!msg || pending) return;
-    setMessage("");
-    setFailedMessage(null);
-    setConversation((c) => [...c, { role: "user", content: msg }]);
-    startTransition(async () => {
-      setError(null);
-      if (dirty) {
-        const r = await saveDraftAction(draft);
-        if (!r.ok) {
-          setError(r.error);
-          return;
-        }
-      }
-      const r = await chatAction(msg);
-      if (r.ok) {
-        setConversation(r.data.conversation);
-        setDraft(r.data.draft);
-        setSaved(r.data.draft);
-        setVersion((v) => v + 1);
-      } else {
-        setError(r.error);
-        setFailedMessage(msg);
-        setConversation((c) => c.slice(0, -1));
-      }
-    });
-  }
+  // Lens drafts from the saved draft, so unsaved edits are saved before Lens runs.
+  useLensScreen({
+    selection: locked ? "sent RFx (read-only)" : `draft with ${draft.lines.length} line${draft.lines.length === 1 ? "" : "s"}${dirty ? ", unsaved edits" : ""}`,
+    beforeAsk: async () => {
+      if (dirty && !locked) await saveDraftAction(draft);
+    },
+  });
 
   const th = "border-b border-ink py-1 pr-2 text-left text-xs font-semibold text-slate";
   return (
-    <div className="grid grid-cols-[22rem_minmax(0,1fr)] gap-6 2xl:grid-cols-[26rem_minmax(0,1fr)]">
-      <aside aria-label="Lens" className="sticky top-[4.75rem] flex h-[calc(100vh-6rem)] min-h-0 flex-col border border-rule bg-sheet">
-        <div className="flex items-start justify-between gap-2 border-b border-rule px-4 py-3">
-          <div>
-            <h2 className="text-base font-semibold">Lens</h2>
-            <p className="text-xs text-slate">Describe what you need; the document fills in on the right.</p>
-          </div>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() =>
-              startTransition(async () => {
-                if (!window.confirm("Start a new draft? This clears the current draft and conversation.")) return;
-                const r = await newDraftAction();
-                if (r.ok) window.location.reload();
-                else setError(r.error);
-              })
-            }
-            className={`${btn.quiet} whitespace-nowrap`}
-          >
-            New draft
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3">
-          {conversation.length === 0 && (
-            <div>
-              <p className="text-sm text-slate">Tell the co-pilot what this RFx is for, or start with one of these:</p>
-              <ul className="mt-2 divide-y divide-rule border-y border-rule">
-                {SUGGESTIONS.map((s) => (
-                  <li key={s}>
-                    <button type="button" onClick={() => send(s)} disabled={locked} className="block w-full px-1 py-2 text-left text-sm hover:bg-tint">
-                      {s}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {conversation.map((t, i) =>
-            t.role === "user" ? (
-              <p key={i} className="border-l-[3px] border-ink pl-2 text-sm font-semibold">
-                {t.content}
-              </p>
-            ) : (
-              <div key={i}>
-                <Markdown text={t.content} />
-              </div>
-            ),
-          )}
-          {pending && conversation.at(-1)?.role === "user" && (
-            <p role="status" className="text-sm text-slate">
-              Drafting. A full RFx takes about 30 seconds.
-            </p>
-          )}
-          <div ref={endRef} />
-        </div>
-        <form
-          className="border-t border-rule p-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            send(message);
-          }}
-        >
-          <label htmlFor="copilot-message" className="sr-only">
-            Message the co-pilot
-          </label>
-          <textarea
-            id="copilot-message"
-            value={message}
-            disabled={locked}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send(message);
-              }
-            }}
-            rows={2}
-            placeholder={locked ? "This RFx has been sent" : "Describe the purchase, or ask for changes"}
-            className="w-full resize-none rounded-xs border border-field bg-sheet px-2 py-1.5 text-sm placeholder:text-slate"
-          />
-          <div className="mt-2 flex justify-end">
-            <button type="submit" disabled={pending || locked || !message.trim()} className={btn.primary}>
-              Send
-            </button>
-          </div>
-        </form>
-      </aside>
-
+    <div>
       <section aria-label="RFx draft" className="min-w-0 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm">
@@ -198,6 +80,21 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
             <span className="font-semibold">{locked ? `Sent${initial.sentAt ? ` ${displayDate(initial.sentAt)}` : ""}` : dirty ? "Draft, unsaved changes" : "Draft, saved"}</span>
           </p>
           <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                startTransition(async () => {
+                  if (!window.confirm("Start a new draft? This clears the current draft.")) return;
+                  const r = await newDraftAction();
+                  if (r.ok) window.location.reload();
+                  else setError(r.error);
+                })
+              }
+              className={btn.quiet}
+            >
+              New draft
+            </button>
             <button type="button" disabled={pending || !dirty || locked} onClick={save} className={btn.secondary}>
               {dirty ? "Save draft" : "Saved"}
             </button>
@@ -222,8 +119,11 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
             </button>
           </div>
         </div>
-        {error && <ErrorNote message={error} busy={pending} onRetry={failedMessage ? () => send(failedMessage) : undefined} />}
+        {error && <ErrorNote message={error} />}
         {locked && <p className="border-l-[3px] border-ledger bg-ledger-tint px-3 py-2 text-sm text-ledger">Sent to {supplierCount} suppliers (simulated). Start a new draft to make changes.</p>}
+        {!locked && draft.lines.length === 0 && (
+          <p className="border-l-[3px] border-ink bg-tint px-3 py-2 text-sm">Tell Lens what you need to buy, in the panel on the right, and it drafts the RFx here. Every field stays editable.</p>
+        )}
         {!locked && problems.length > 0 && draft.lines.length > 0 && (
           <div className="border-l-[3px] border-amber bg-amber-tint px-3 py-2 text-xs text-pencil">
             <p className="font-semibold">Before you can send</p>
@@ -271,7 +171,7 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
           <fieldset disabled={locked} className="mt-6 min-w-0">
             <legend className="text-base font-semibold">1. Lines</legend>
             {draft.lines.length === 0 ? (
-              <p className="mt-2 border-y border-rule py-6 text-center text-sm text-slate">No lines yet. Describe the purchase to the co-pilot, or add a line yourself.</p>
+              <p className="mt-2 border-y border-rule py-6 text-center text-sm text-slate">No lines yet. Describe the purchase to Lens, or add a line yourself.</p>
             ) : (
               <table className="mt-2 w-full table-fixed border-collapse text-[13px]">
                 <colgroup>

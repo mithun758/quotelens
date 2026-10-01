@@ -132,13 +132,13 @@ The app has five screens for one seeded RFx. There is no RFx list and no separat
 
 | # | Screen | What it must do |
 | --- | --- | --- |
-| 1 | RFx workspace | Lens on the left, live RFx draft on the right (lines, specs, questionnaire, terms). Every field editable, laid out as a printed RFx document. "Send RFx" button. |
+| 1 | RFx workspace | The RFx draft as a printed document (lines, specs, questionnaire, terms); Lens drafts it from the dock. Every field editable, laid out as a printed RFx document. "Send RFx" button. |
 | 2 | Quotes | Left rail: the five supplier emails with format, status and coverage (for example 27/30). Main pane: original document beside extracted values. Clicking a value highlights its source. Review queue shows only Inferred, Missing and flagged items ("7 to review"), grouped by reason, with Accept value, Accept all similar, Correct and Ask supplier actions. |
 | 3 | Comparison | 30 lines by 5 suppliers in INR, per piece, ex-GST delivered. L1 per line, coverage per supplier, confidence state per cell, flags, and a Freshness column per supplier. Hover any cell for its source and normalisation ledger. Tabs for questionnaire answers and attached documents. |
-| 4 | Lens | A right-hand drawer that pushes the comparison narrower; Esc closes it. Lens briefs Priya when she first opens it. A cell citation scrolls to its cell and highlights it for 2 seconds; a source citation opens the document at the cited place. Answers as text, tables or charts, with cited cells, the basis used (basket and scenario) and the tools that ran. Excel and PDF export. |
+| 4 | Lens | A 400px dock on the right of every screen that pushes the content narrower and collapses to a slim tab showing the count of things to look at (the screen's attention items plus action cards awaiting confirmation). One conversation runs across screens. Lens briefs Priya on first arrival at each screen, with two or three next steps as buttons; answers stream, with a typing indicator and a collapsed "What Lens did" log of tool calls in plain words. Supplier and substitute panels open in the dock as a sheet. A cell citation scrolls to its cell and highlights it for 2 seconds; a source citation opens the document at the cited place. Answers as text, tables or charts, with cited cells, the basis used (basket and scenario) and the tools that ran. Excel and PDF export. |
 | 5 | Award | Scenario comparison, the chosen award, savings versus L1 and last cycle, blockers still open, override log, and the exportable award memo for Meera. Stubbed buttons: "Send to negotiation" and "Convert to PO". |
 
-A persistent header shows the RFx name, the as-of date, and the award blockers for the chosen scenario. A left rail shows the sequence (1 RFx, 2 Quotes, 3 Comparison, 4 Award) with each step done, current, or a count needing attention, all read from the database.
+A persistent header shows the RFx name, the as-of date, and the award blockers for the chosen scenario. While the Lens dock is open the rail compacts to a 64px strip of numbered steps. A left rail shows the sequence (1 RFx, 2 Quotes, 3 Comparison, 4 Award) with each step done, current, or a count needing attention, all read from the database.
 
 ## Data model
 
@@ -192,6 +192,7 @@ Extraction is one model call per document, returning structured JSON against a f
 - Substitute models are compared attribute by attribute against the RFx spec (meets, exceeds, deviates) and need Arjun's sign-off before they count.
 - A bundle is split by subtracting the supplier's own standalone price for the other bundled line; the result is Inferred because the quote never states the split.
 - FX conversion at the seeded as-of rate stays Extracted: the price is stated and the rate is on file, and the ledger shows both.
+- The price basis is the latest-dated document that itself states prices: its quote date and validity are the quote's, never mixed with an older document's. A later document that reprices a line (for example a reconfirmation reply) wins; the value stays Extracted, the ledger keeps the earlier price as a revision step, and the cell, hover card and source panel show the earlier price struck through beside the new one with the reason.
 
 **Model and repeatability:** extraction uses structured outputs validated with zod and retries once on schema failure. The model does not accept a fixed temperature, so runs can differ; every full run is recorded with a snapshot, and /eval shows run-to-run variance as a known limitation alongside token use and cost per supplier and per run.
 
@@ -208,7 +209,7 @@ The as-of date is configurable and seeded as 30 September 2026. Approval is assu
 | Validity vs approval | valid\_until falls before as-of date plus approval days | High | Reconfirm or extend validity before award |
 | Validity missing | No validity stated anywhere in the quote | Medium | Ask supplier for validity |
 | Old price basis | Document or price list dated more than 30 days before the as-of date (High above 90 days) | Medium or High | Request a current quote |
-| Prior-pricing reference | Quote says prices are "same as last year" or similar | Medium | Show Meridian's last-cycle price as Inferred, and flag that market prices have moved since |
+| Prior-pricing reference | Quote says prices are "same as last year" or similar, and lines are shown at Meridian's last-cycle price as a result (a supplier reconfirming its own dated rate list is not a prior-pricing reference) | Medium | Show Meridian's last-cycle price as Inferred, and flag that market prices have moved since |
 | Market movement | Line is tagged memory-exposed (laptops, desktops) and the illustrative memory benchmark moved more than 5% since the quote date (High above 10%) | Medium or High | Reconfirm pricing for those lines |
 | FX movement | Quote is in a foreign currency and INR moved more than 1.5% since the quote date | Medium | Reconfirm rate or ask for an INR quote |
 
@@ -220,7 +221,7 @@ Example of what Priya sees:
 
 ## Lens (the agent)
 
-Lens is the one agent in QuoteLens: a Claude tool-use loop over the database with one system prompt, `lib/ai/lens/system-prompt.md`, on every screen. It drafts the RFx with Priya, reviews quotes, analyses the comparison and prepares the award. The prompt's placeholders (as-of date, event, RFx dates, screen, selection, an event-state summary with the supplier roster, briefing trigger) are filled from the database and the UI state on every turn; an unfilled placeholder is an error. Tool names in the prompt match the code exactly, and a test enforces it. Every number in an answer must come from a tool result; citations ([[cell:X:N]], [[doc:id:locator]]) must point at a real cell or document, and a cell citation must sit beside that cell's own figure.
+Lens is the one agent in QuoteLens: a Claude tool-use loop over the database with one system prompt, `lib/ai/lens/system-prompt.md`, on every screen. It drafts the RFx with Priya, reviews quotes, analyses the comparison and prepares the award. The system prompt is static and cached; the runtime values (as-of date, event, RFx dates, screen, selection, an event-state summary with the supplier roster, briefing trigger) arrive in a <context> block at the start of each user turn, filled from the database and the UI state. Answers stream from /api/lens. Tool names in the prompt match the code exactly, and a test enforces it. Every number in an answer must come from a tool result; citations ([[cell:X:N]], [[doc:id:locator]]) must point at a real cell or document, and a cell citation must sit beside that cell's own figure.
 
 | Tool | What it returns |
 | --- | --- |
@@ -233,6 +234,7 @@ Lens is the one agent in QuoteLens: a Claude tool-use loop over the database wit
 | compare\_last\_cycle | Price change per line and supplier against Meridian's last-cycle prices |
 | get\_freshness | Freshness status and fired rules per supplier, and the rupee FX exposure on lines quoted in a foreign currency |
 | list\_blockers | Open flags, Inferred values and clarifications that block the award |
+| get\_award\_status | The award exactly as set on the Award screen: chosen scenario under Priya's eligibility settings, totals, open blockers after overrides, and the memo status |
 | get\_source | Source document, locator, snippet and normalisation ledger for a cell |
 | draft\_clarification | A specific question to a supplier for a given flag |
 | get\_purchase\_history, get\_meridian\_standards, get\_suppliers | RFx drafting lookups: last IT refresh, Meridian's standard questionnaire and terms, onboarded suppliers |
@@ -249,7 +251,7 @@ Lens is the one agent in QuoteLens: a Claude tool-use loop over the database wit
 - Lead with the answer, then the table or chart.
 - State the basis used: which basket, which scenario, which suppliers were excluded and why.
 - If the answer depends on Inferred or Stale data, say so first.
-- Show a collapsible "How I got this" list of tools called.
+- Show a collapsible "What Lens did" list of the tools called, in plain words.
 - A post-check compares every number in the answer text with the tool results. Any number not found is flagged in the UI.
 - If a question cannot be answered from the data, say what is missing. Never estimate.
 - The analyst never performs an action without a preview Priya confirms; confirmed actions run through the same server actions and AuditEvents as the screens. It cannot override blockers: overrides need Priya's own typed reason on the Award screen.
@@ -344,13 +346,13 @@ Development is on a Mac (zsh). Secrets live in environment variables: ANTHROPIC\
 
 The Loom runs about 6 minutes and follows the five acts. The analyst questions below run live; none of their answers is hardcoded.
 
-1. **Act 1 (45 s):** Priya asks the co-pilot for a 30-line IT refresh across 3 hubs. Show the draft filling in, then Send.
+1. **Act 1 (45 s):** Priya asks Lens for a 30-line IT refresh across 3 hubs. Show the draft filling in, then Send.
 2. **Act 2 (45 s):** Five responses arrive. Open the phone photo and the one-line email to show how messy they are.
 3. **Act 3 (90 s):** Extraction runs. Click a price to see its source crop. Open the review queue: the per-pack cable price, the footnote discount, the bundled laptop line, the substitute models. Accept one, correct one, and send "Ask supplier" to E; show the reply updating the comparison.
-4. **Act 4 (60 s):** The comparison shows D as nominal L1 on several lines, then its Stale status and the rule that fired. B shows validity expiring before approval.
-5. **Act 5 (120 s):** Analyst conversation, then award.
+4. **Act 4 (60 s):** The comparison shows D as nominal L1 on several lines, then its Stale status and the rule that fired. B shows validity expiring before approval. Lens offers a reconfirmation to D; Priya sends it and simulates the reply. D's memory lines rise (shown struck through), D turns Fresh, and it loses L1 on lines 5, 6 and 28.
+5. **Act 5 (120 s):** Lens conversation, then award.
 
-**Analyst questions, in order**
+**Lens questions, in order**
 
 1. Who is cheapest overall on a like-for-like basis?
 2. Only among suppliers who passed the quality questionnaire?
@@ -406,6 +408,8 @@ Newest first. Add a row for every change to this document.
 
 | Date | Decision | Why |
 | --- | --- | --- |
+| 1 Oct 2026 | Sri Ganesh reconfirmation beat: after Priya sends a price reconfirmation, the seeded reply (read by the real extraction model) reconfirms the June rate list except lines 5, 6 and 28, which rise 9 to 12%, with 15-day validity. The reconfirmation date becomes D's price basis, so D goes from Stale to Fresh, and it loses L1 on all three lines to Vertex. Before and after states are beats in ground_truth.json, and /eval scores D against the after state once the reply is in. The prior-pricing rule now fires only when lines are shown at Meridian's last-cycle price | Shows Quote Freshness ending in an action that changes the decision, with real extraction rather than a scripted flip |
+| 1 Oct 2026 | Lens across the platform (Phase 13): a 400px dock on every screen replaces the co-pilot and analyst panels; it pushes content and collapses to a tab with the screen's attention count plus pending cards. One conversation across screens, briefings on first arrival with next-step buttons, streaming with a typing indicator and plain-words activity log, supplier and substitute panels as dock sheets. The system prompt is static and cached, with runtime values in a per-turn context block; get\_award\_status lets Lens quote the award exactly as the Award screen shows it. Reset demo also clears the Lens conversation and briefing memory | One agent, visible wherever Priya works, at about a third of the model cost |
 | 1 Oct 2026 | One agent, Lens, replaces the separate analyst and co-pilot prompts: lib/ai/lens/system-prompt.md is the single system prompt, with the Quote Freshness signature behaviour, filled per turn from the database and UI state. The co-pilot's five drafting writers became one update\_rfx\_draft tool; its three lookups are named in the prompt. send\_clarification gained a price reconfirmation. Citations are parsed into chips: a cell chip highlights the cell, a source chip opens the document at the cited place; invalid or mismatched citations are removed with a warning. Earlier answers carry the tools they used, and the event state carries the supplier roster, after the first test run mixed up supplier letters | One voice and one set of rules from RFx to memo, with freshness as the thread through every stage |
 | 1 Oct 2026 | Co-pilot: vendor-neutral specs for any category. Code refuses a line that names a brand or model unless it carries Priya's stated reason, which is then recorded in the spec ("Brand required", "Reason for brand"); vague requests become measurable attributes with a one-line reason (wider competition, comparable quotes). Before drafting it asks only for missing essentials (quantity, delivery locations, need-by date, warranty, quote validity, GST basis), computed from the draft each turn, never re-asks what was said, and asks at most two questions per turn. Non-IT categories get category-appropriate attributes and an adapted questionnaire. Transcripts in docs/copilot-transcripts.md | Brand-locked specs narrow competition and make quotes hard to compare; the buyer can still keep a brand, on the record |
 | 1 Oct 2026 | Add a response (Phase 11): on the Quotes inbox Priya picks a supplier or names a new one and uploads one file (PDF, xlsx, docx, JPG, PNG or UTF-8 text, at most 10 MB; the extension must match the file's first bytes). The file is stored under uploads/, logged as an AuditEvent and read by the same extraction pipeline. Unknown documents degrade safely: items that match no line are listed as unmatched, nothing is imputed, and lines not found are Missing. A new supplier has no GSTIN on file and is never the incumbent; up to eight suppliers. Reset removes uploaded files with the rows | Lets an evaluator try a quote of their own without weakening any rule |

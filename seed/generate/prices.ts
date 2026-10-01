@@ -137,3 +137,20 @@ export const SUPPLIER_FACTS = {
     delivery_days: null,
   },
 } as const;
+
+// ---------------------------------------------------------------------------
+// Sri Ganesh's reconfirmation reply (a demo beat): June prices stand except the
+// memory-exposed desktops and SSD, which rise 8 to 12%, with 15-day validity.
+export const D_RECONFIRMATION = {
+  date: "2026-09-30",
+  received_at: "2026-09-30T16:40:00+05:30",
+  validity_days: 15,
+  raise_pct: { 5: 9, 6: 10, 28: 12 } as Record<number, number>,
+};
+
+// The revised price for a reconfirmed line, rounded to the nearest 10 like the rate card.
+export function reconfirmedPrice(line: number): number | null {
+  const pct = D_RECONFIRMATION.raise_pct[line];
+  const june = truePrice("D", line);
+  return pct === undefined || june === null ? null : Math.round((june * (1 + pct / 100)) / 10) * 10;
+}

@@ -86,12 +86,34 @@ function verifySnippets(extraction: Extraction, text: string | null): Extraction
 
 type TermValue = { value: string; source: ExtractionSource; documentId: string };
 
+// A document's own date, when it states one (YYYY-MM-DD).
+const docDate = (d: DocExtraction) => {
+  const v = d.extraction.terms.quote_date.value;
+  return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+};
+
+// The price basis: the latest-dated document that itself states prices. A supplier's
+// later reconfirmation or revision moves the basis; a letter that states no prices does not.
+export function basisDocument(docs: DocExtraction[]): DocExtraction | null {
+  const priced = docs.filter((d) => docDate(d) && d.extraction.items.some((i) => i.price_status === "stated"));
+  return priced.sort((a, b) => docDate(b)!.localeCompare(docDate(a)!))[0] ?? null;
+}
+
+const BASIS_FIELDS: TermField[] = ["quote_date", "valid_until", "validity_days"];
+
 // First non-empty value per term, preferring quotations and emails over attachments.
+// The quote date and validity come only from the price-basis document, never mixed.
 function mergeTerms(docs: DocExtraction[]): Partial<Record<TermField, TermValue>> {
   const rank = (d: DocExtraction) => (["quotation", "email"].includes(d.extraction.document_kind) ? 0 : 1);
   const ordered = [...docs].sort((a, b) => rank(a) - rank(b));
+  const basis = basisDocument(docs);
   const merged: Partial<Record<TermField, TermValue>> = {};
   for (const field of TERM_FIELDS) {
+    if (basis && BASIS_FIELDS.includes(field)) {
+      const f = basis.extraction.terms[field];
+      if (f.value && f.source) merged[field] = { value: f.value, source: f.source, documentId: basis.documentId };
+      continue;
+    }
     for (const d of ordered) {
       const f = d.extraction.terms[field];
       if (f.value && f.source) {
@@ -151,6 +173,8 @@ export async function runExtractionForResponse(client: Db, responseId: string, r
       fxRates: fxRates ?? [],
       asOfDate: asOf,
       supplierCode: data.supplier.code,
+      // A later-dated document's price for a line revises the earlier one.
+      documentDates: Object.fromEntries(docs.map((d) => [d.documentId, docDate(d)])),
     });
     const terms = mergeTerms(docs);
     const questionnaire = evaluateQuestionnaire(docs, asOf);

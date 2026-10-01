@@ -14,12 +14,19 @@ import { FALLBACK_BETA, anthropic, modelId } from "../client";
 import { collectNumbers, postCheck, type PostCheckWarning } from "../postcheck";
 import { costUsd, type Usage } from "../pricing";
 import { checkCitations, stripCitations } from "./citations";
-import { lensContext, type LensUi } from "./context";
-import { renderLensPrompt } from "./prompt";
+import { contextBlock, lensContext, type LensUi } from "./context";
+import { lensSystemPrompt } from "./prompt";
 
 const MAX_ROUNDS = 10;
 
 // tools: the tools an earlier answer used, so Lens can see it was grounded.
+// Streamed to the dock as Lens works.
+export type LensEvent =
+  | { type: "text"; delta: string }
+  | { type: "round_end"; toolCalls: number }
+  | { type: "tool_start"; name: string }
+  | { type: "tool_done"; name: string; input: unknown; error: string | null };
+
 export type LensTurn = { role: "user" | "assistant"; content: string; tools?: string[] };
 
 export type LensAnswer = {
@@ -29,6 +36,8 @@ export type LensAnswer = {
   exports: { file_name: string; url: string }[];
   // Previews from action tools; nothing has changed until Priya confirms each card.
   actions: ChatAction[];
+  // A briefing's suggested next steps, shown as buttons.
+  nextSteps: string[];
   warnings: PostCheckWarning[];
   // The RFx draft after update_rfx_draft, when Lens ran on the RFx screen.
   draft: RfxDraft | null;
@@ -37,21 +46,46 @@ export type LensAnswer = {
   model: string;
 };
 
+// Marks the end of the conversation as a cache breakpoint, so each round of the tool
+// loop (and the next turn) reads the earlier rounds from cache.
+function withCacheBreakpoint(messages: Anthropic.Beta.BetaMessageParam[]): Anthropic.Beta.BetaMessageParam[] {
+  const last = messages.at(-1);
+  if (!last) return messages;
+  const blocks: Anthropic.Beta.BetaContentBlockParam[] = typeof last.content === "string" ? [{ type: "text", text: last.content }] : [...last.content];
+  const end = blocks.length - 1;
+  blocks[end] = { ...blocks[end], cache_control: { type: "ephemeral" } } as Anthropic.Beta.BetaContentBlockParam;
+  return [...messages.slice(0, -1), { ...last, content: blocks }];
+}
+
+// A briefing's next steps arrive in <next_steps>, one per line; the UI shows them as buttons.
+export function splitNextSteps(text: string): { answer: string; nextSteps: string[] } {
+  const m = text.match(/<next_steps>([\s\S]*?)<\/next_steps>/);
+  if (!m) return { answer: text, nextSteps: [] };
+  const nextSteps = m[1]
+    .split("\n")
+    .map((l) => l.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
+    .filter(Boolean)
+    .slice(0, 3);
+  return { answer: text.replace(m[0], "").trim(), nextSteps };
+}
+
 export async function runLens(
   client: Db,
-  input: { ui: LensUi; message: string; history?: LensTurn[]; draft?: RfxDraft | null },
+  input: { ui: LensUi; message: string; history?: LensTurn[]; draft?: RfxDraft | null; onEvent?: (e: LensEvent) => void },
 ): Promise<LensAnswer> {
+  const emit = input.onEvent ?? (() => {});
   const data = await loadAnalystData(client);
-  const system = renderLensPrompt(await lensContext(client, data, input.ui));
+  const system = lensSystemPrompt();
+  const context = contextBlock(await lensContext(client, data, input.ui));
   const tools = anthropicToolDefinitions();
   const draft = input.draft ? { current: input.draft } : undefined;
   // On the RFx screen the current draft travels with the message, so Lens never re-asks.
-  const context = draft ? `\n\n<current_draft>${JSON.stringify(draft.current)}</current_draft>\n<missing_essentials>${missingEssentials(draft.current).join(", ") || "none"}</missing_essentials>` : "";
+  const draftContext = draft ? `\n\n<current_draft>${JSON.stringify(draft.current)}</current_draft>\n<missing_essentials>${missingEssentials(draft.current).join(", ") || "none"}</missing_essentials>` : "";
   const past = (input.history ?? []).map((t) => ({
     role: t.role,
     content: t.role === "assistant" && t.tools?.length ? `${t.content}\n\n<grounding>tools used: ${t.tools.join(", ")}</grounding>` : t.content,
   }));
-  const messages: Anthropic.Beta.BetaMessageParam[] = [...past, { role: "user", content: `${input.message}${context}` }];
+  const messages: Anthropic.Beta.BetaMessageParam[] = [...past, { role: "user", content: `${context}\n\n${input.message}${draftContext}` }];
 
   const toolRuns: ToolRun[] = [];
   let cost = 0;
@@ -61,20 +95,24 @@ export async function runLens(
 
   for (; rounds < MAX_ROUNDS; rounds++) {
     const started = Date.now();
-    const response = await anthropic().beta.messages.create(
+    // Streamed, so the dock shows text as it arrives; the final message is the same.
+    const stream = anthropic().beta.messages.stream(
       {
         model: modelId(),
         max_tokens: 32000,
         betas: [FALLBACK_BETA],
         fallbacks: "default",
         output_config: { effort: "medium" },
-        system,
+        // Cached: the static system prompt (with the tools before it) and the conversation so far.
+        system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
         tools,
         tool_choice: { type: "auto" },
-        messages,
+        messages: withCacheBreakpoint(messages),
       },
       { timeout: 120_000, maxRetries: 1 },
     );
+    stream.on("text", (delta) => emit({ type: "text", delta }));
+    const response = await stream.finalMessage();
     model = response.model;
     const usage: Usage = {
       input_tokens: response.usage.input_tokens,
@@ -93,9 +131,15 @@ export async function runLens(
     const toolUses = response.content.filter((b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use");
     if (response.stop_reason === "tool_use" && toolUses.length) {
       messages.push({ role: "assistant", content: response.content });
+      emit({ type: "round_end", toolCalls: toolUses.length });
       // Sequential, so each draft update applies to the draft the previous one produced.
       const runs: ToolRun[] = [];
-      for (const t of toolUses) runs.push(await runTool({ data, client, draft }, t.name, t.input));
+      for (const t of toolUses) {
+        emit({ type: "tool_start", name: t.name });
+        const run = await runTool({ data, client, draft }, t.name, t.input);
+        emit({ type: "tool_done", name: t.name, input: run.input, error: run.error });
+        runs.push(run);
+      }
       toolRuns.push(...runs);
       messages.push({
         role: "user",
@@ -112,6 +156,9 @@ export async function runLens(
     break;
   }
   if (!answer) answer = "I could not finish this within the step limit. Try a narrower question.";
+
+  const split = splitNextSteps(answer);
+  answer = split.answer;
 
   // The history note is for Lens, never for Priya.
   answer = answer.replace(/\s*<grounding>[\s\S]*?<\/grounding>\s*/g, "\n").replace(/\s*\[This answer was built from[^\]]*\]\s*/g, "\n").trim();
@@ -150,6 +197,7 @@ export async function runLens(
     charts,
     exports: exportRuns.map((r) => r.output as { file_name: string; url: string }),
     actions: toolRuns.filter((r) => r.action && !r.error).map((r) => r.output as ChatAction),
+    nextSteps: split.nextSteps,
     warnings: [...cited.warnings, ...numberWarnings],
     draft: draft ? draft.current : null,
     rounds: rounds + 1,

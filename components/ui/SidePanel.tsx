@@ -1,21 +1,45 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
+
+// Inside the Lens dock, a panel shows as a sheet with "Back to Lens" instead of
+// pushing in as its own column.
+export const DockSheetContext = createContext<{ onBack: () => void } | null>(null);
 
 // A right-hand panel that pushes the content beside it (the parent grid narrows).
 // Esc closes it, and focus moves to its heading when it opens.
 export function SidePanel({ title, subtitle, onClose, children, footer }: { title: string; subtitle?: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
+  const sheet = useContext(DockSheetContext);
+  const close = sheet?.onBack ?? onClose;
   const headingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     headingRef.current?.focus();
   }, [title]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.defaultPrevented) onClose();
+      if (e.key === "Escape" && !e.defaultPrevented) close();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [close]);
+
+  if (sheet) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="border-b border-rule px-4 py-3">
+          <button type="button" onClick={close} className="text-xs font-semibold text-slate underline decoration-rule underline-offset-2 hover:text-ink">
+            Back to Lens
+          </button>
+          <h3 ref={headingRef} tabIndex={-1} className="mt-1 text-base font-semibold outline-none">
+            {title}
+          </h3>
+          {subtitle && <div className="text-xs text-slate">{subtitle}</div>}
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">{children}</div>
+        {footer && <div className="border-t border-rule px-4 py-3">{footer}</div>}
+      </div>
+    );
+  }
 
   return (
     <aside aria-label={title} className="panel-in sticky top-[4.75rem] flex h-[calc(100vh-6rem)] min-h-0 flex-col rounded-xs border border-rule bg-sheet shadow-[0_8px_24px_rgb(27_42_65/0.10)]">

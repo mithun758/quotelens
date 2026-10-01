@@ -2562,6 +2562,52 @@
           "saving_vs_last_cycle_inr": 585308
         }
       }
+    },
+    "d_reconfirmation": {
+      "trigger": "Priya sends Sri Ganesh a price reconfirmation request and the seeded reply arrives (SriGanesh_reconfirmation_reply_2026-09-30.txt).",
+      "before": {
+        "quote_date": "2026-06-04",
+        "valid_until": null,
+        "expected_freshness": "Stale",
+        "expected_fired_rules": [
+          "validity_missing",
+          "old_price_basis",
+          "market_movement"
+        ],
+        "prices_inr": {
+          "5": 48350,
+          "6": 35700,
+          "28": 7820
+        },
+        "l1_by_line": {
+          "5": "D",
+          "6": "D",
+          "28": "D"
+        }
+      },
+      "after": {
+        "quote_date": "2026-09-30",
+        "valid_until": "2026-10-15",
+        "expected_freshness": "Fresh",
+        "expected_fired_rules": [],
+        "prices_inr": {
+          "5": 52700,
+          "6": 39270,
+          "28": 8760
+        },
+        "revised_lines": [
+          5,
+          6,
+          28
+        ],
+        "expected_confidence": "extracted",
+        "unchanged_lines": "Every other D line keeps its June price, now reconfirmed as of 30 Sep 2026",
+        "l1_by_line": {
+          "5": "B",
+          "6": "B",
+          "28": "B"
+        }
+      }
     }
   }
 }

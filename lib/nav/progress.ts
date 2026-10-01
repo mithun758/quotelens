@@ -7,23 +7,29 @@ import { decisionReady } from "@/lib/comparison/decisionReady";
 import type { Db } from "@/lib/db/client";
 import { loadQuotes } from "@/lib/quotes/load";
 import { comparisonInputs } from "@/lib/tools/shared";
+import { asOfDate } from "@/lib/config";
+import { sendProblems } from "@/lib/rfx/draft";
+import { getDraft } from "@/lib/rfx/store";
+import type { LensScreen } from "@/lib/ai/lens/context";
 
 export type StageState = "done" | "attention" | "open";
 // Where a stage lives: a path, plus the view (?view=) or section (#id) on that screen.
 export type StageTarget = { path: "/rfx" | "/quotes" | "/comparison" | "/award"; view?: string; section?: string; analyst?: boolean };
 export type Stage = { key: string; label: string; target: StageTarget; state: StageState; count: number | null; note: string };
 export type Step = { href: StageTarget["path"]; label: string; stages: Stage[] };
-export type Progress = { rfxTitle: string; steps: Step[]; awardBlockers: number | null };
+// attention: what the collapsed Lens tab counts on each screen.
+export type Progress = { rfxTitle: string; steps: Step[]; awardBlockers: number | null; attention: Partial<Record<LensScreen, number>> };
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const href = (t: StageTarget) => `${t.path}${t.view ? `?view=${t.view}` : ""}${t.analyst ? `${t.view ? "&" : "?"}analyst=1` : ""}${t.section ? `#${t.section}` : ""}`;
 export const stageHref = href;
 
 export async function loadProgress(client: Db, displayDate: (iso: string) => string): Promise<Progress> {
-  const [{ rail, rfx }, award, pending] = await Promise.all([
+  const [{ rail, rfx }, award, pending, draft] = await Promise.all([
     loadQuotes(client, null),
     loadAwardView(client).catch(() => null),
     client.from("extracted_value").select("id", { count: "exact", head: true }).eq("substitute_status", "pending"),
+    getDraft(client).catch(() => null),
   ]);
   const received = rail.filter((r) => r.response).length;
   const notExtracted = rail.filter((r) => r.response && r.response.status !== "extracted").length;
@@ -131,5 +137,12 @@ export async function loadProgress(client: Db, displayDate: (iso: string) => str
       ],
     },
   ];
-  return { rfxTitle: rfx.title, steps, awardBlockers: blockers };
+  const attention: Progress["attention"] = {
+    rfx: draft && draft.status !== "sent" && draft.draft.lines.length ? sendProblems(draft.draft, asOfDate()).length : 0,
+    quotes: notExtracted + toReview,
+    comparison: extracted ? substitutes + stale + reconfirm : 0,
+    award: blockers ?? 0,
+    eval: 0,
+  };
+  return { rfxTitle: rfx.title, steps, awardBlockers: blockers, attention };
 }

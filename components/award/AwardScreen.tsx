@@ -283,7 +283,7 @@ export function AwardScreen({ view, supplierNames, freshness, memo, negotiationC
         </details>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div className="grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <div className="min-w-0 space-y-6">
           <section aria-labelledby="chosen-title">
             <h2 id="chosen-title" className="border-b border-ink pb-1 text-base font-semibold">

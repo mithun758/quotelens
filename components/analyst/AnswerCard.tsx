@@ -5,6 +5,7 @@ import { useContext, useState, useTransition } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { exportAnswerAction, type AnalystReply } from "@/app/(app)/comparison/analyst-actions";
+import { describeToolCall } from "@/lib/ai/lens/activity";
 import { btn } from "../ui/styles";
 import { ActionCard } from "./ActionCards";
 import { AnalystChart } from "./AnalystChart";
@@ -91,7 +92,20 @@ function CitationOrLink({ href, children }: { href: string; children: React.Reac
   );
 }
 
-export function AnswerCard({ question, reply, onActionDone }: { question: string; reply: AnalystReply; onActionDone?: (index: number, note: string) => void }) {
+export function AnswerCard({
+  question,
+  reply,
+  onActionDone,
+  onAsk,
+  busy = false,
+}: {
+  question: string;
+  reply: AnalystReply;
+  onActionDone?: (index: number, note: string) => void;
+  // Asks a suggested next step as a question.
+  onAsk?: (q: string) => void;
+  busy?: boolean;
+}) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -106,6 +120,15 @@ export function AnswerCard({ question, reply, onActionDone }: { question: string
   return (
     <div className="space-y-3">
       <Markdown text={reply.answer} />
+      {reply.nextSteps?.length > 0 && onAsk && (
+        <div className="flex flex-wrap gap-2">
+          {reply.nextSteps.map((s) => (
+            <button key={s} type="button" disabled={busy} onClick={() => onAsk(s)} className={`${btn.small} h-auto py-1 text-left font-normal`}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
       {(reply.actions ?? []).map((a, i) => (
         <ActionCard key={i} action={a} onDone={(note) => onActionDone?.(i, note)} />
       ))}
@@ -122,27 +145,13 @@ export function AnswerCard({ question, reply, onActionDone }: { question: string
           {reply.warnings.length} number{reply.warnings.length > 1 ? "s" : ""} not found in any tool result: {reply.warnings.map((w) => w.text).join(", ")}. Check {reply.warnings.length > 1 ? "them" : "it"} before relying on {reply.warnings.length > 1 ? "them" : "it"}.
         </p>
       )}
+      {reply.tools.length > 0 && (
       <details className="group border-t border-rule pt-2 text-xs">
-        <summary className="cursor-pointer font-semibold text-slate hover:text-ink">How I got this</summary>
+        <summary className="cursor-pointer font-semibold text-slate hover:text-ink">What Lens did ({reply.tools.length})</summary>
         <div className="mt-2 space-y-3">
-          <div>
-            <p className="font-semibold">Basis</p>
-            <ul className="mt-0.5 list-disc pl-4 text-slate">
-              {reply.basis.length ? reply.basis.map((b) => <li key={b}>{b}</li>) : <li>No supplier filter or basket was applied.</li>}
-            </ul>
-          </div>
-          <div>
-            <p className="font-semibold">Tools called ({reply.tools.length})</p>
-            <ol className="mt-0.5 list-decimal space-y-1.5 pl-4">
-              {reply.tools.map((t, i) => (
-                <li key={i}>
-                  <span className="font-semibold">{t.name}</span>
-                  {t.error && <span className="text-oxblood"> failed: {t.error}</span>}
-                  <span className="block break-all text-slate">{JSON.stringify(t.input)}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
+          <ol className="list-decimal space-y-1 pl-4">
+            {reply.tools.length ? reply.tools.map((t, i) => <li key={i}>{describeToolCall(t.name, t.input as Record<string, unknown>, t.error)}</li>) : <li>Answered from the conversation, without new lookups.</li>}
+          </ol>
           <p className={reply.warnings.length ? "text-pencil" : "text-slate"}>
             {reply.warnings.length
               ? reply.warnings.map((w) => `${w.text} (${w.where}) was not found in any tool result.`).join(" ")
@@ -170,6 +179,7 @@ export function AnswerCard({ question, reply, onActionDone }: { question: string
           {error && <p className="text-oxblood">{error}</p>}
         </div>
       </details>
+      )}
     </div>
   );
 }

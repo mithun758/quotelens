@@ -1,7 +1,7 @@
 // Builds seed/ground_truth.json from the price design and checks the demo beats.
 // Evaluation only: extraction and analyst code must never read the output.
 
-import { LINE_ITEMS, QUESTIONNAIRE } from "../data";
+import { LINE_ITEMS, QUESTIONNAIRE, RFX } from "../data";
 import {
   AS_OF_DATE,
   A_NETWORKING_LINES,
@@ -11,6 +11,7 @@ import {
   D_HANDWRITTEN,
   D_PACK_LINE,
   D_PACK_SIZE,
+  D_RECONFIRMATION,
   E_NOT_QUOTED,
   E_USD,
   GST_RATE,
@@ -19,6 +20,7 @@ import {
   SUPPLIER_FACTS,
   USD_INR_AS_OF,
   inr,
+  reconfirmedPrice,
   truePrice,
   type SupplierCode,
 } from "./prices";
@@ -299,6 +301,12 @@ export function buildGroundTruth() {
 }
 
 // ---------------------------------------------------------------------------
+const addDaysIso = (iso: string, days: number) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+};
+
 // Demo beats: computed from the numbers, never asserted by hand.
 // ---------------------------------------------------------------------------
 
@@ -349,6 +357,23 @@ function checkBeats(lines: Record<SupplierCode, GroundTruthLine[]>) {
   if (eInferredWins.length > 4) failures.push(`Q6 after clarification: ${eInferredWins.length} of E's winning lines rest on "same as last year" prices, want at most 4`);
   if (q6After.summary.saving_vs_last_cycle_inr <= 0) failures.push("Q6 after clarification: A plus E is not below last cycle");
 
+  // Sri Ganesh's reconfirmation: D loses L1 on every line it reprices, and its new
+  // validity covers approval, so its freshness improves.
+  const revised = Object.keys(D_RECONFIRMATION.raise_pct).map(Number);
+  const valueAfter = (c: SupplierCode, n: number) => (c === "D" && reconfirmedPrice(n) !== null ? reconfirmedPrice(n) : value(c, n));
+  const l1After: Record<number, SupplierCode> = {};
+  for (const n of revised) {
+    const offers = codes.filter((c) => valueAfter(c, n) !== null).map((c) => ({ c, v: valueAfter(c, n)! })).sort((a, b) => a.v - b.v);
+    l1After[n] = offers[0].c;
+    const rise = (reconfirmedPrice(n)! / value("D", n)! - 1) * 100;
+    if (rise < 8 || rise > 12.5) failures.push(`D's reconfirmed line ${n} rises ${rise.toFixed(1)}%, want 8 to 12%`);
+    if (l1[n] !== "D") failures.push(`D is not L1 on line ${n} before reconfirmation`);
+    if (l1After[n] === "D") failures.push(`D is still L1 on line ${n} after reconfirmation`);
+  }
+  const reconfirmValidUntil = addDaysIso(D_RECONFIRMATION.date, D_RECONFIRMATION.validity_days);
+  const approvalCompletes = addDaysIso(AS_OF_DATE, RFX.approval_days);
+  if (reconfirmValidUntil < approvalCompletes) failures.push("D's reconfirmed validity ends before approval completes");
+
   if (failures.length) throw new Error(`Demo beats not met:\n- ${failures.join("\n- ")}`);
 
   return {
@@ -363,6 +388,28 @@ function checkBeats(lines: Record<SupplierCode, GroundTruthLine[]>) {
       question: "Split it: cheapest per line among qualified suppliers, excluding stale quotes. What's the total and the saving against last cycle?",
       before_clarification: q6Before,
       after_clarification: q6After,
+    },
+    d_reconfirmation: {
+      trigger: "Priya sends Sri Ganesh a price reconfirmation request and the seeded reply arrives (SriGanesh_reconfirmation_reply_2026-09-30.txt).",
+      before: {
+        quote_date: "2026-06-04",
+        valid_until: null,
+        expected_freshness: "Stale",
+        expected_fired_rules: ["validity_missing", "old_price_basis", "market_movement"],
+        prices_inr: Object.fromEntries(revised.map((n) => [n, value("D", n)])),
+        l1_by_line: Object.fromEntries(revised.map((n) => [n, l1[n]])),
+      },
+      after: {
+        quote_date: D_RECONFIRMATION.date,
+        valid_until: reconfirmValidUntil,
+        expected_freshness: "Fresh",
+        expected_fired_rules: [],
+        prices_inr: Object.fromEntries(revised.map((n) => [n, reconfirmedPrice(n)])),
+        revised_lines: revised,
+        expected_confidence: "extracted",
+        unchanged_lines: "Every other D line keeps its June price, now reconfirmed as of 30 Sep 2026",
+        l1_by_line: l1After,
+      },
     },
   };
 }

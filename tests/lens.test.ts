@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 import { checkCitations, decodeLocator, docCite, encodeLocator, stripCitations } from "@/lib/ai/lens/citations";
-import type { LensPlaceholders } from "@/lib/ai/lens/context";
-import { lensTemplate, renderLensPrompt } from "@/lib/ai/lens/prompt";
+import { splitNextSteps } from "@/lib/ai/lens/agent";
+import { contextBlock, type LensPlaceholders } from "@/lib/ai/lens/context";
+import { lensSystemPrompt } from "@/lib/ai/lens/prompt";
 import { citationsToLinks, parseDocHref } from "@/components/analyst/cite";
 import { ANALYST_TOOLS } from "@/lib/tools";
 
@@ -21,25 +22,30 @@ const VALUES: LensPlaceholders = {
 
 describe("Lens system prompt", () => {
   it("names exactly the tools the code registers", () => {
-    const tools = lensTemplate().match(/<tools>([\s\S]*?)<\/tools>/)![1];
+    const tools = lensSystemPrompt().match(/<tools>([\s\S]*?)<\/tools>/)![1];
     const named = [...tools.matchAll(/^- ([a-z_]+):/gm)].map((m) => m[1]).sort();
     expect(named).toEqual(ANALYST_TOOLS.map((t) => t.name).sort());
   });
 
-  it("fills every placeholder, and refuses to send one it cannot fill", () => {
-    const out = renderLensPrompt(VALUES);
-    expect(out).not.toMatch(/\{\{/);
-    expect(out).toContain("As-of date: 30 Sep 2026");
-    expect(out).not.toContain("How to use this file");
-    const missing: Partial<LensPlaceholders> = { ...VALUES };
-    delete missing.screen;
-    expect(() => renderLensPrompt(missing as LensPlaceholders)).toThrow(/\{\{screen\}\}/);
+  it("is static, so it can be cached; runtime values go in the context block", () => {
+    const prompt = lensSystemPrompt();
+    expect(prompt).not.toMatch(/\{\{/);
+    expect(prompt).not.toContain("How to use this file");
+    const block = contextBlock(VALUES);
+    for (const v of Object.values(VALUES)) expect(block).toContain(v);
+    expect(block.startsWith("<context>")).toBe(true);
   });
 
   it("is the only system prompt: the old analyst and co-pilot prompts are gone", () => {
     expect(fs.existsSync("lib/ai/analyst.ts")).toBe(false);
     expect(fs.existsSync("lib/ai/copilot.ts")).toBe(false);
-    expect(lensTemplate()).toContain("<signature_behaviour>");
+    expect(lensSystemPrompt()).toContain("<signature_behaviour>");
+  });
+
+  it("splits a briefing's next steps out of the answer", () => {
+    const r = splitNextSteps("Vertex is Stale.\n\n<next_steps>\n- Switch to Decision-ready\n2. Draft a reconfirmation to Vertex\n</next_steps>");
+    expect(r.answer).toBe("Vertex is Stale.");
+    expect(r.nextSteps).toEqual(["Switch to Decision-ready", "Draft a reconfirmation to Vertex"]);
   });
 });
 

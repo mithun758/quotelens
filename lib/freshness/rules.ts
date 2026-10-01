@@ -100,8 +100,11 @@ export function oldPriceBasis(i: FreshnessInput): RuleResult {
   });
 }
 
+// Fires for lines shown at Meridian's last-cycle price because the supplier said "same as
+// last year". A supplier reconfirming its own dated rate list is not a prior-pricing
+// reference: its date is the price basis instead.
 export function priorPricing(i: FreshnessInput): RuleResult {
-  const fired = i.referencesPriorPricing;
+  const fired = i.referencesPriorPricing && i.priorPricingLines.length > 0;
   return rule("prior_pricing", "Prior-pricing reference", "Treat these lines as Meridian's last-cycle price (Inferred); market prices have moved since", {
     fired,
     severity: fired ? "medium" : null,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { stageHref, type Progress, type Stage, type StageState } from "@/lib/nav/progress";
+import { useLens } from "./lens/LensProvider";
 
 // Which section of a long screen is in view: the last one whose top has passed 35%
 // of the viewport. Drives the current stage on Quotes and Award.
@@ -37,6 +38,7 @@ function useSectionInView(ids: string[]): string | null {
 export function StepRail({ progress }: { progress: Progress | null }) {
   const path = usePathname();
   const params = useSearchParams();
+  const compact = useLens().open;
   const sections = (progress?.steps ?? []).find((s) => path.startsWith(s.href))?.stages.flatMap((st) => (st.target.section ? [st.target.section] : [])) ?? [];
   const inView = useSectionInView(sections);
   const view = params.get("view") ?? "prices";
@@ -51,7 +53,39 @@ export function StepRail({ progress }: { progress: Progress | null }) {
   };
 
   if (!progress) {
-    return <nav aria-label="Steps" className="sticky top-14 h-[calc(100vh-3.5rem)] w-[220px] shrink-0 border-r border-rule bg-sheet" />;
+    return <nav aria-label="Steps" className={`sticky top-14 h-[calc(100vh-3.5rem)] shrink-0 border-r border-rule bg-sheet ${compact ? "w-16" : "w-[220px]"}`} />;
+  }
+
+  // With Lens open, the rail compacts to a strip of numbered steps; the stages show on hover.
+  if (compact) {
+    return (
+      <nav aria-label="Steps" className="sticky top-14 h-[calc(100vh-3.5rem)] w-16 shrink-0 border-r border-rule bg-sheet py-3">
+        <ol className="flex flex-col items-center gap-1">
+          {progress.steps.map((step, i) => {
+            const onStep = path.startsWith(step.href);
+            const state: StageState = step.stages.every((st) => st.state === "done") ? "done" : step.stages.some((st) => st.state === "attention") ? "attention" : "open";
+            const count = step.stages.reduce((n, st) => n + (st.state === "attention" && st.count ? st.count : 0), 0);
+            const summary = `${i + 1}. ${step.label}: ${step.stages.map((st) => `${st.label}, ${st.note}`).join("; ")}`;
+            return (
+              <li key={step.href} className="w-full">
+                <Link
+                  href={step.href}
+                  aria-current={onStep ? "page" : undefined}
+                  aria-label={summary}
+                  title={summary}
+                  className={`relative flex flex-col items-center gap-1 py-2 hover:bg-tint ${onStep ? "bg-tint" : ""}`}
+                >
+                  {onStep && <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-ink" />}
+                  <StepMark n={i + 1} state={state} />
+                  <span className={`text-[11px] leading-3 ${onStep ? "font-semibold" : "text-slate"}`}>{step.label === "Comparison" ? "Compare" : step.label}</span>
+                  {count > 0 && <span className={`rounded-xs px-1 text-[11px] font-semibold leading-4 ${step.href === "/award" ? "bg-oxblood-tint text-oxblood" : "bg-amber-tint text-pencil"}`}>{count}</span>}
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+    );
   }
 
   return (

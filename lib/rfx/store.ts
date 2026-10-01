@@ -5,15 +5,16 @@ import type { Json, RfxDraftRow } from "@/lib/db/types";
 import { EMPTY_DRAFT, RfxDraft } from "./draft";
 
 export type ChatTurn = { role: "user" | "assistant"; content: string };
-export type DraftState = { id: string | null; draft: RfxDraft; conversation: ChatTurn[]; status: RfxDraftRow["status"]; sentAt: string | null };
+// updatedAt lets the RFx screen re-read the draft after Lens edits it.
+export type DraftState = { id: string | null; draft: RfxDraft; conversation: ChatTurn[]; status: RfxDraftRow["status"]; sentAt: string | null; updatedAt: string | null };
 
 export async function getDraft(client: Db): Promise<DraftState> {
   const { data, error } = await client.from("rfx_draft").select("*").order("created_at", { ascending: false }).limit(1);
   if (error) throw new Error(`load draft: ${error.message}`);
   const row = data?.[0];
-  if (!row) return { id: null, draft: EMPTY_DRAFT, conversation: [], status: "draft", sentAt: null };
+  if (!row) return { id: null, draft: EMPTY_DRAFT, conversation: [], status: "draft", sentAt: null, updatedAt: null };
   const parsed = RfxDraft.safeParse(row.draft);
-  return { id: row.id, draft: parsed.success ? parsed.data : EMPTY_DRAFT, conversation: (row.conversation as ChatTurn[]) ?? [], status: row.status, sentAt: row.sent_at };
+  return { id: row.id, draft: parsed.success ? parsed.data : EMPTY_DRAFT, conversation: (row.conversation as ChatTurn[]) ?? [], status: row.status, sentAt: row.sent_at, updatedAt: row.updated_at };
 }
 
 export async function saveDraft(client: Db, draft: RfxDraft, conversation?: ChatTurn[]): Promise<void> {

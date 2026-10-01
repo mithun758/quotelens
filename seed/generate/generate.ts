@@ -5,11 +5,11 @@ import path from "node:path";
 import { ATTACHMENTS } from "./attachments";
 import { htmlToPdf, htmlToPng, pngToJpeg } from "./chrome";
 import { buildGroundTruth } from "./groundTruth";
-import { SUPPLIER_FACTS, type SupplierCode } from "./prices";
+import { D_RECONFIRMATION, SUPPLIER_FACTS, type SupplierCode } from "./prices";
 import { buildSupplierA } from "./supplierA";
 import { buildSupplierBHtml } from "./supplierB";
 import { buildSupplierC } from "./supplierC";
-import { buildPhotoHtml } from "./supplierD";
+import { buildPhotoHtml, buildReconfirmationReplyD } from "./supplierD";
 import { buildClarificationReplyE, buildSupplierE } from "./supplierE";
 
 const SEED_DIR = path.join(process.cwd(), "seed");
@@ -145,6 +145,19 @@ async function main() {
       ],
     },
   ];
+
+  // D's seeded reconfirmation reply: June prices stand except the memory-exposed
+  // desktops and SSD, which rise, with 15-day validity.
+  const dReplyFile = "SriGanesh_reconfirmation_reply_2026-09-30.txt";
+  const dReplyBody = buildReconfirmationReplyD();
+  writeFileSync(path.join(OUT, "D", dReplyFile), dReplyBody);
+  clarificationReplies.push({
+    supplier_code: "D",
+    received_at: D_RECONFIRMATION.received_at,
+    channel: "email",
+    body_text: dReplyBody,
+    documents: [doc("D", dReplyFile, 1)],
+  });
 
   writeFileSync(
     path.join(OUT, "manifest.json"),

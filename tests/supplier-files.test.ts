@@ -41,10 +41,18 @@ describe("generated supplier files", () => {
   });
 
   it("E's clarification reply attaches ISO and OEM evidence and still declines 17, 18 and 23", () => {
-    expect(CLARIFICATION_REPLIES.map((r) => r.supplier_code)).toEqual(["E"]);
+    expect(CLARIFICATION_REPLIES.map((r) => r.supplier_code)).toEqual(["E", "D"]);
     const files = CLARIFICATION_REPLIES[0].documents.map((d) => d.file_name);
     expect(files).toEqual(expect.arrayContaining(["Lionbridge_ISO_9001_Certificate.pdf", "Lionbridge_OEM_Authorisation_HP.pdf"]));
     expect(CLARIFICATION_REPLIES[0].body_text).toMatch(/not able to quote the UPS units \(lines 17 and 18\) or the branch firewall \(line 23\)/);
+  });
+
+  it("D's reconfirmation reply reprices lines 5, 6 and 28 and states 15-day validity", () => {
+    const d = CLARIFICATION_REPLIES.find((r) => r.supplier_code === "D")!;
+    expect(d.documents.map((x) => x.file_name)).toEqual(["SriGanesh_reconfirmation_reply_2026-09-30.txt"]);
+    for (const price of ["52,700", "39,270", "8,760"]) expect(d.body_text).toContain(price);
+    expect(d.body_text).toMatch(/valid for 15 days from today \(30-Sep-2026\)/);
+    expect(groundTruth.demo_beats.d_reconfirmation.after.l1_by_line).toEqual({ "5": "B", "6": "B", "28": "B" });
   });
 
   it("questionnaire: A and B pass; C, D and E-before fail; E-after passes", () => {

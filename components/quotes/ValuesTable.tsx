@@ -2,12 +2,20 @@
 
 import type { ValueWithLine } from "@/lib/quotes/load";
 import { Value } from "../ui/Value";
-import { inr, locatorLabel, stepText } from "./format";
+import { inr, locatorLabel, revisionOf, stepText } from "./format";
 
 function Detail({ v }: { v: ValueWithLine }) {
   return (
     <div className="space-y-2 border-l-[3px] border-ink bg-paper px-3 py-2 text-xs">
       {v.reason && <p className="text-pencil">{v.reason}</p>}
+      {(() => {
+        const rev = revisionOf(v.steps);
+        return rev ? (
+          <p>
+            <span className="font-semibold">Revised.</span> <s className="text-slate">{inr(Number(rev.input))}</s> now {inr(Number(rev.output))}. <span className="text-slate">{rev.rate_source}</span>
+          </p>
+        ) : null;
+      })()}
       {v.match_reason && <p className="text-slate">Mapped to this line: {v.match_reason}</p>}
       {v.steps.length > 0 && (
         <div>
@@ -88,6 +96,11 @@ export function ValuesTable({ values, selectedId, onSelect, settled }: { values:
                       </span>
                     </span>
                     <span className="text-right">
+                      {revisionOf(v.steps) && (
+                        <s className="mr-1.5 text-xs text-slate" title={revisionOf(v.steps)!.rate_source ?? "Revised"}>
+                          {inr(Number(revisionOf(v.steps)!.input))}
+                        </s>
+                      )}
                       {v.normalised_value_inr !== null ? (
                         <Value state={v.confidence_state} reason={v.reason}>
                           {inr(v.normalised_value_inr)}

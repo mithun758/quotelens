@@ -1,5 +1,6 @@
-// Fills the Lens system prompt's {{placeholders}} from the database and the UI state.
-// Every value is read fresh for each turn; none is hardcoded in the prompt.
+// The <context> block at the start of each Lens user turn, from the database and the
+// UI state. Every value is read fresh for each turn; none is hardcoded in the prompt,
+// which stays static so it can be cached.
 import { SCENARIO_LABEL, toScenarioSpec } from "@/lib/award/spec";
 import { getAward } from "@/lib/award/store";
 import { scenarioBlockers } from "@/lib/blockers/scenario";
@@ -81,4 +82,18 @@ export async function lensContext(client: Db, data: AnalystData, ui: LensUi): Pr
     event_state: state,
     briefing_trigger: String(ui.briefing),
   };
+}
+
+// The block itself, in the order the system prompt describes.
+export function contextBlock(v: LensPlaceholders): string {
+  return [
+    "<context>",
+    `as_of_date: ${v.as_of_date}`,
+    `event: ${v.event_name} for ${v.customer_name}, RFx sent ${v.rfx_sent_date}, need-by ${v.need_by_date}, approval assumed to take ${v.approval_days} days`,
+    `screen: ${v.screen}`,
+    `selection: ${v.selection}`,
+    `event_state: ${v.event_state}`,
+    `briefing_trigger: ${v.briefing_trigger}`,
+    "</context>",
+  ].join("\n");
 }
