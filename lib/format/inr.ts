@@ -12,3 +12,11 @@ export function formatInrCompact(n: number | null | undefined): string {
   if (abs >= 1e5) return `${sign}₹${(abs / 1e5).toFixed(2)} lakh`;
   return `${sign}${formatInr(abs)}`;
 }
+
+// A signed difference in words, so no reader has to interpret a minus sign:
+// describeDelta(-132000, "last cycle") -> "₹1.32 lakh more than last cycle".
+// A positive amount is a saving (cheaper than the reference).
+export function describeDelta(saving: number, reference: string): string {
+  if (Math.abs(saving) < 0.5) return `the same as ${reference}`;
+  return `${formatInrCompact(Math.abs(saving))} ${saving > 0 ? "less" : "more"} than ${reference}`;
+}

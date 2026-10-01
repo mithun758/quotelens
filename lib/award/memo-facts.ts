@@ -1,7 +1,7 @@
 // The facts the award memo may use, all computed by code. The memo writer sees only
 // this; every figure carries a display string and a link back to where it came from.
 import type { Db } from "@/lib/db/client";
-import { formatInr, formatInrCompact } from "@/lib/format/inr";
+import { describeDelta, formatInr, formatInrCompact } from "@/lib/format/inr";
 import { rateOn } from "@/lib/normalise/fx";
 import { formatDisplayDate } from "@/lib/config";
 import { computeScenario } from "@/lib/scenarios/compute";
@@ -31,9 +31,9 @@ export async function buildMemoFacts(client: Db, view: AwardView & { data: impor
       suppliers: r.suppliers.map(name),
       total_display: r.totalDisplay,
       total_inr: r.total,
-      difference_vs_recommended_display: formatInrCompact(Math.round((r.total - chosen.total_inr) * 100) / 100),
+      difference_vs_recommended_display: describeDelta(Math.round((chosen.total_inr - r.total) * 100) / 100, "the recommendation"),
       difference_vs_recommended_inr: Math.round((r.total - chosen.total_inr) * 100) / 100,
-      saving_vs_last_cycle_display: r.savingsVsLastCycleDisplay,
+      saving_vs_last_cycle_display: describeDelta(r.savingsVsLastCycle, "last cycle"),
       open_blockers: r.openBlockers,
       stale_suppliers_used: r.staleUsed.map(name),
       lines_not_covered: r.unallocated,
@@ -49,7 +49,7 @@ export async function buildMemoFacts(client: Db, view: AwardView & { data: impor
         scenario: SCENARIO_LABEL[spec.scenario],
         suppliers: relaxed.by_supplier.map((b) => `${name(b.supplier)} (${b.freshness})`),
         total_display: relaxed.total_display,
-        difference_vs_recommended_display: formatInrCompact(Math.round((relaxed.total_inr - chosen.total_inr) * 100) / 100),
+        difference_vs_recommended_display: describeDelta(Math.round((chosen.total_inr - relaxed.total_inr) * 100) / 100, "the recommendation"),
         difference_vs_recommended_inr: Math.round((relaxed.total_inr - chosen.total_inr) * 100) / 100,
         stale_suppliers_used: relaxed.stale_suppliers_used.map(name),
         open_blockers: scenarioBlockers(data, relaxed).length,
@@ -98,11 +98,11 @@ export async function buildMemoFacts(client: Db, view: AwardView & { data: impor
       })),
       total_display: chosen.total_display,
       total_inr: chosen.total_inr,
-      saving_vs_last_cycle_display: chosen.saving_vs_last_cycle_display,
+      saving_vs_last_cycle_display: describeDelta(chosen.saving_vs_last_cycle_inr, "last cycle"),
       saving_vs_last_cycle_inr: chosen.saving_vs_last_cycle_inr,
       saving_vs_last_cycle_pct: chosen.saving_vs_last_cycle_pct,
       last_cycle_display: chosen.last_cycle_display,
-      saving_vs_l1_display: chosenRow.savingsVsL1Display,
+      saving_vs_l1_display: describeDelta(chosenRow.savingsVsL1, "the nominal L1"),
       saving_vs_l1_inr: chosenRow.savingsVsL1,
       nominal_l1_display: formatInrCompact(chosen.nominal_l1_inr),
       lines: chosen.allocation.map((a) => ({

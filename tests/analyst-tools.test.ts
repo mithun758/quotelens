@@ -57,3 +57,12 @@ describe("get_freshness", () => {
     expect(fx.inr_change_per_1pct_rate_move).toBeCloseTo(626.04 * qty, 2);
   });
 });
+
+describe("describeDelta", () => {
+  it("words a difference without a minus sign", async () => {
+    const { describeDelta } = await import("@/lib/format/inr");
+    expect(describeDelta(-132000, "last cycle")).toBe("₹1.32 lakh more than last cycle");
+    expect(describeDelta(358000, "the recommendation")).toBe("₹3.58 lakh less than the recommendation");
+    expect(describeDelta(0, "last cycle")).toBe("the same as last cycle");
+  });
+});

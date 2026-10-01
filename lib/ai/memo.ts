@@ -19,7 +19,7 @@ It must fit on one printed page: 280 to 360 words plus one short table. Use exac
 ## Quote Freshness (status of each awarded supplier and any fired rule)
 ## Overrides (group overrides that share a reason: give the reason once and list the lines with their linked prices; "None" if empty)
 ## Open risks (every item in open_risks; if any line rests on a "same as last year" price, say it may look cheap because it reflects last year's market; "None" if empty)
-UK English, plain and direct, no em dashes. INR exactly as given.`;
+The *_display differences are already worded ("₹1.32 lakh more than last cycle"); use them as written, never with a minus sign. UK English, plain and direct, no em dashes. INR exactly as given.`;
 
 export type MemoResult = { markdown: string; warnings: PostCheckWarning[]; costUsd: number };
 
