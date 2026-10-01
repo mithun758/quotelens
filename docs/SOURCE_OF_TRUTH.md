@@ -237,6 +237,10 @@ The analyst is a Claude tool-use loop over the database. It plans which tools to
 | draft\_clarification | A specific question to a supplier for a given flag |
 | make\_chart | Chart spec (bar or line) rendered by the UI |
 | export | Excel or PDF of the current table or answer |
+| accept\_values | Action, preview only: a supplier's Inferred values that share a reason, each with its reason. Confirm runs the Quotes accept action per value |
+| send\_clarification | Action, preview only: the drafted question for chosen review items. Send question runs the Quotes send action |
+| set\_view | Switches the comparison view, Quoted or Decision-ready, and basket. Applies at once; no data changes |
+| choose\_scenario\_and\_draft\_memo | Action, preview only: scenario totals and open blockers. Confirm saves the scenario and, when nothing blocks, generates the memo |
 
 **Answer rules**
 
@@ -246,6 +250,7 @@ The analyst is a Claude tool-use loop over the database. It plans which tools to
 - Show a collapsible "How I got this" list of tools called.
 - A post-check compares every number in the answer text with the tool results. Any number not found is flagged in the UI.
 - If a question cannot be answered from the data, say what is missing. Never estimate.
+- The analyst never performs an action without a preview Priya confirms; confirmed actions run through the same server actions and AuditEvents as the screens. It cannot override blockers: overrides need Priya's own typed reason on the Award screen.
 - The analyst does not forecast prices, markets or exchange rates. "Buy now or wait" is answered with what the data shows: freshness, movement since the quote date, and validity against approval.
 
 ## Award scenarios, gating and memo
@@ -399,6 +404,7 @@ Newest first. Add a row for every change to this document.
 
 | Date | Decision | Why |
 | --- | --- | --- |
+| 1 Oct 2026 | Chat can act, Priya confirms (Phase 10): four action tools return preview cards and never write; Confirm calls the existing server actions, so audit entries match the screens. set\_view applies at once because it only changes the display. There is no override tool: overrides need Priya's own typed reason on the Award screen. A test runs every action tool against a recording client and fails on any write | Lets Priya act from the conversation without giving the model authority to change data |
 | 1 Oct 2026 | The ten-stage journey is visible inside the four screens, UI only. The rail nests stages under each step (RFx workspace; Supplier inbox, Extraction and mapping, Exception review; Normalised comparison, Compliance, AI analyst, Quote Freshness, Decision-ready scenario; Decision readiness), each linking to its section or view with done, current or a count from existing data. Quotes runs Inbox, Extraction (found, mapped, needs review, missing per supplier) and Exceptions. Comparison has Prices, Compliance and Quote Freshness views and a Quoted / Decision-ready toggle: Decision-ready is a preset over existing filters (questionnaire passed, not Stale, substitutes counted only once approved) that recomputes L1 and totals with the same buildComparison and states what was excluded and why. Award titles its checklist Decision readiness and shows lines ready for award: allocated lines with no open blocker on the line or its supplier | Lets an evaluator see the whole journey and where the buyer stands at each stage, without adding screens or rules |
 | 1 Oct 2026 | Design pass (Phase 9), presentation only: Public Sans in two weights with tabular figures; ink, slate, paper, rule, ledger green, amber (pencil #8A5A12 for text, #B7791F for marks) and oxblood, all AA on paper. Confidence is shown in the type: Extracted solid ink, Inferred pencil amber with a dotted underline and its reason on hover or focus, Missing an empty hatched cell. Freshness is a stamp. Ruled sections instead of cards; shadows only on floating panels. The header counter now shows award blockers for the chosen scenario (the review count moved to the Quotes step in the rail). "Accept all similar" loops the existing accept action, one AuditEvent per value. Analyst citations link a price only when it matches exactly one cell on a line the same sentence or row mentions | A buyer who lives in the tool all day needs density and trust signals she can read at a glance; a mis-cited number would be worse than none |
 | 1 Oct 2026 | Memo facts carry differences in words ("₹1.32 lakh more than last cycle", "₹3.58 lakh less than the recommendation") and the memo never prints a minus sign on a saving | The live walkthrough produced "saving −₹1.32 lakh" and "−₹3.58 lakh against the recommendation", which a finance reader has to decode |

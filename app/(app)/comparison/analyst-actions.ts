@@ -11,6 +11,8 @@ import { recordAuditEvent } from "@/lib/db/queries";
 import { markdownToBlocks, type Block } from "@/lib/export/document";
 import { documentToPdf } from "@/lib/export/pdf";
 import { documentToXlsx } from "@/lib/export/xlsx";
+import { draftQuestion } from "@/lib/review/decisions";
+import type { ChatAction } from "@/lib/tools/actions";
 import type { ChartSpec } from "@/lib/tools/make_chart";
 
 export type AnalystReply = {
@@ -19,6 +21,8 @@ export type AnalystReply = {
   basis: string[];
   charts: ChartSpec[];
   exports: { file_name: string; url: string }[];
+  // Preview cards: nothing has changed until Priya confirms one.
+  actions: ChatAction[];
   warnings: { text: string; where: string; reason: string }[];
   costUsd: number;
   seconds: number;
@@ -33,6 +37,18 @@ export async function askAnalystAction(question: string, history: AnalystTurn[])
     await enforceRateLimit(client, "analyst");
     const r = await askAnalyst(client, question.trim(), history.slice(-12));
     await recordAuditEvent({ actor: "priya", action: "ask_analyst", target: "analyst", after: { question, tools: r.toolRuns.map((t) => t.name), warnings: r.warnings.length } }, client);
+    // A question card shows its drafted text before Priya sends it. Drafting changes no data.
+    const actions = await Promise.all(
+      r.actions.map(async (a): Promise<ChatAction> => {
+        if (a.kind !== "send_clarification") return a;
+        try {
+          await enforceRateLimit(client, "clarification");
+          return { ...a, draft: await draftQuestion(client, a.supplier, a.keys) };
+        } catch (error) {
+          return { ...a, draft_error: friendlyError(error, "Drafting the question") };
+        }
+      }),
+    );
     return {
       ok: true,
       reply: {
@@ -41,6 +57,7 @@ export async function askAnalystAction(question: string, history: AnalystTurn[])
         basis: basisNotes(r.toolRuns),
         charts: r.charts,
         exports: r.exports,
+        actions,
         warnings: r.warnings,
         costUsd: r.costUsd,
         seconds: Math.round((Date.now() - started) / 1000),

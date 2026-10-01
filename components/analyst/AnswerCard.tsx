@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { exportAnswerAction, type AnalystReply } from "@/app/(app)/comparison/analyst-actions";
 import { btn } from "../ui/styles";
+import { ActionCard } from "./ActionCards";
 import { AnalystChart } from "./AnalystChart";
 import { Cited, LineScopeFor, firstCellText, textOf } from "./cite";
 
@@ -85,7 +86,7 @@ export function Markdown({ text, size = "sm" }: { text: string; size?: "sm" | "d
   );
 }
 
-export function AnswerCard({ question, reply }: { question: string; reply: AnalystReply }) {
+export function AnswerCard({ question, reply, onActionDone }: { question: string; reply: AnalystReply; onActionDone?: (index: number, note: string) => void }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -100,6 +101,9 @@ export function AnswerCard({ question, reply }: { question: string; reply: Analy
   return (
     <div className="space-y-3">
       <Markdown text={reply.answer} />
+      {(reply.actions ?? []).map((a, i) => (
+        <ActionCard key={i} action={a} onDone={(note) => onActionDone?.(i, note)} />
+      ))}
       {reply.charts.map((c, i) => (
         <AnalystChart key={i} spec={c} />
       ))}

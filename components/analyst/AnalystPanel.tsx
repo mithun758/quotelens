@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useContext, useEffect, useRef, useState, useTransition } from "react";
 import { askAnalystAction, type AnalystReply } from "@/app/(app)/comparison/analyst-actions";
 import { ErrorNote } from "../ErrorNote";
 import { SidePanel } from "../ui/SidePanel";
 import { btn, input } from "../ui/styles";
 import { AnswerCard } from "./AnswerCard";
+import { ViewControlContext } from "./viewControl";
 
 type Exchange = { question: string; reply: AnalystReply | null; error: string | null };
 
-const STORAGE_KEY = "quotelens.analyst.v1";
+const STORAGE_KEY = "quotelens.analyst.v2";
 const SUGGESTIONS = [
   "Who is cheapest overall on a like-for-like basis?",
   "Only among suppliers who passed the quality questionnaire?",
@@ -35,6 +36,7 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
   const [question, setQuestion] = useState("");
   const [pending, startTransition] = useTransition();
   const endRef = useRef<HTMLDivElement>(null);
+  const viewControl = useContext(ViewControlContext);
 
   useEffect(() => {
     try {
@@ -54,7 +56,11 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
     setQuestion("");
     startTransition(async () => {
       const r = await askAnalystAction(text, turns);
-      setHistory((h) => h.map((e, i) => (i === h.length - 1 ? { ...e, reply: r.ok ? r.reply : null, error: r.ok ? null : r.error } : e)));
+      // set_view changes only what the comparison shows, so it applies as the answer arrives.
+      const reply = r.ok
+        ? { ...r.reply, actions: r.reply.actions.map((a) => (a.kind === "set_view" && viewControl ? { ...a, status: "done" as const, done_note: `Comparison switched to ${viewControl.apply(a)}.` } : a)) }
+        : null;
+      setHistory((h) => h.map((e, i) => (i === h.length - 1 ? { ...e, reply, error: r.ok ? null : r.error } : e)));
     });
   }
 
@@ -120,7 +126,15 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
         {history.map((e, i) => (
           <article key={i} className="space-y-2">
             <p className="border-l-[3px] border-ink pl-2 text-sm font-semibold">{e.question}</p>
-            {e.reply && <AnswerCard question={e.question} reply={e.reply} />}
+            {e.reply && (
+              <AnswerCard
+                question={e.question}
+                reply={e.reply}
+                onActionDone={(ai, note) =>
+                  setHistory((h) => h.map((x, xi) => (xi === i && x.reply ? { ...x, reply: { ...x.reply, actions: x.reply.actions.map((a, j) => (j === ai ? { ...a, status: "done" as const, done_note: note } : a)) } } : x)))
+                }
+              />
+            )}
             {e.error && <ErrorNote message={e.error} busy={pending} onRetry={i === history.length - 1 ? () => ask(e.question, true) : undefined} />}
             {!e.reply && !e.error && (
               <p role="status" className="text-sm text-slate">

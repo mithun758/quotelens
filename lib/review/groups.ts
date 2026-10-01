@@ -1,5 +1,6 @@
 // Presentation grouping for the review queue: items that share a reason sit together
-// so Priya can review them as one decision. Pure; reads only what each item carries.
+// so Priya can review them as one decision. The same rule tells the analyst's
+// accept_values tool which values are "similar". Pure.
 import type { NormalisationKind } from "@/lib/db/types";
 import { PRIOR_PRICING_REASON } from "@/lib/normalise/normaliseResponse";
 import type { QueueItem } from "./queue";
@@ -18,26 +19,28 @@ const FLAG_TITLE: Record<string, string> = {
   substitute_offered: "Substitute models",
 };
 
+// The reason group of an Inferred value: "prior", "step:<kind>" or "judgement".
+export function inferredGroup(reason: string | null, stepKinds: NormalisationKind[]): { key: string; title: string; note: string } {
+  if (reason === PRIOR_PRICING_REASON) return { key: "prior", title: "Same as last year", note: "Shown at Meridian's last-cycle price; the supplier gave no number." };
+  const kind = stepKinds.find((k) => STEP_GROUP[k]);
+  if (kind) return { key: `step:${kind}`, title: STEP_GROUP[kind]![0], note: STEP_GROUP[kind]![1] };
+  return { key: "judgement", title: "Judgement calls", note: "Claude read the document and made a call; the reason is shown on each." };
+}
+
 export function groupQueue(items: QueueItem[], stepsByValue: Map<string, NormalisationKind[]>): QueueGroup[] {
   const groups = new Map<string, QueueGroup>();
-  const add = (key: string, title: string, note: string, item: QueueItem) => {
-    if (!groups.has(key)) groups.set(key, { key, title, note, items: [] });
-    groups.get(key)!.items.push(item);
+  const add = (g: { key: string; title: string; note: string }, item: QueueItem) => {
+    if (!groups.has(g.key)) groups.set(g.key, { ...g, items: [] });
+    groups.get(g.key)!.items.push(item);
   };
   for (const item of items) {
-    if (item.kind === "questionnaire") add("questionnaire", "Questionnaire", "Failed answers leave the queue only when the supplier's reply passes.", item);
-    else if (item.kind === "response_flag") add("terms", "Quote terms", "Flags on the quote as a whole.", item);
-    else if (item.confidence === "missing") add("missing", "Not quoted", "Never imputed. Accept as not quoted, or ask the supplier.", item);
-    else if (item.confidence === "inferred") {
-      if (item.detail === PRIOR_PRICING_REASON) add("prior", "Same as last year", "Shown at Meridian's last-cycle price; the supplier gave no number.", item);
-      else {
-        const kind = (stepsByValue.get(item.valueId ?? "") ?? []).find((k) => STEP_GROUP[k]);
-        if (kind) add(`step:${kind}`, STEP_GROUP[kind]![0], STEP_GROUP[kind]![1], item);
-        else add("judgement", "Judgement calls", "Claude read the document and made a call; the reason is shown on each.", item);
-      }
-    } else {
+    if (item.kind === "questionnaire") add({ key: "questionnaire", title: "Questionnaire", note: "Failed answers leave the queue only when the supplier's reply passes." }, item);
+    else if (item.kind === "response_flag") add({ key: "terms", title: "Quote terms", note: "Flags on the quote as a whole." }, item);
+    else if (item.confidence === "missing") add({ key: "missing", title: "Not quoted", note: "Never imputed. Accept as not quoted, or ask the supplier." }, item);
+    else if (item.confidence === "inferred") add(inferredGroup(item.detail, stepsByValue.get(item.valueId ?? "") ?? []), item);
+    else {
       const type = item.flags[0]?.type ?? "other";
-      add(`flag:${type}`, FLAG_TITLE[type] ?? type.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase()), "Extracted values with an open flag.", item);
+      add({ key: `flag:${type}`, title: FLAG_TITLE[type] ?? type.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase()), note: "Extracted values with an open flag." }, item);
     }
   }
   const order = ["missing", "judgement", "prior", "step:gst", "step:pack_size", "step:bundle", "step:uom", "terms", "questionnaire"];

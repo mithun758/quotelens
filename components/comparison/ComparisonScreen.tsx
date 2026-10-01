@@ -7,6 +7,7 @@ import type { BasketMode } from "@/lib/comparison/build";
 import { decisionReady } from "@/lib/comparison/decisionReady";
 import type { ComparisonView } from "@/lib/comparison/load";
 import { CiteContext, type Citer } from "../analyst/cite";
+import { ViewControlContext, type ViewControl } from "../analyst/viewControl";
 import { displayDate } from "../quotes/format";
 import { Stamp } from "../ui/Stamp";
 import { btn } from "../ui/styles";
@@ -287,6 +288,25 @@ export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonV
     };
   }, [view.cells, decision]);
 
+  // set_view from the analyst: change the view, Quoted or Decision-ready, and the basket.
+  const viewControl = useMemo<ViewControl>(
+    () => ({
+      apply: (v) => {
+        const base = v.view ?? tab;
+        const quotes = v.quotes ?? (decision ? "decision_ready" : "quoted");
+        setParams({ view: base === "prices" ? (quotes === "decision_ready" ? "decision" : "prices") : base });
+        if (v.basket) setMode(v.basket);
+        return [
+          base === "prices" ? (quotes === "decision_ready" ? "Prices, Decision-ready" : "Prices, Quoted") : base === "compliance" ? "Compliance" : "Quote Freshness",
+          v.basket && (v.basket === "common" ? "common basket" : "all lines"),
+        ]
+          .filter(Boolean)
+          .join(", ");
+      },
+    }),
+    [tab, decision],
+  );
+
   const subCell =
     side?.kind === "substitute"
       ? (() => {
@@ -308,6 +328,7 @@ export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonV
 
   return (
     <CiteContext.Provider value={citer}>
+      <ViewControlContext.Provider value={viewControl}>
       <div className={`grid gap-5 ${panelOpen ? "grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_460px]" : "grid-cols-1"}`}>
         <section className="min-w-0 space-y-3">
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -406,6 +427,7 @@ export function ComparisonScreen({ view, focusCell = null }: { view: ComparisonV
         {side?.kind === "supplier" && <SupplierPanel view={view} code={side.code} mode={mode} onClose={closeAll} />}
         {side?.kind === "substitute" && subCell && <SubstitutePanel cell={subCell.cell} supplierName={subCell.name} lineLabel={subCell.label} onClose={closeAll} />}
       </div>
+      </ViewControlContext.Provider>
     </CiteContext.Provider>
   );
 }

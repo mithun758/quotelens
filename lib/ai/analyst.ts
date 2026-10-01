@@ -5,6 +5,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { Db } from "@/lib/db/client";
 import { loadAnalystData, type AnalystData } from "@/lib/tools/data";
 import { anthropicToolDefinitions, runTool, type ToolRun } from "@/lib/tools";
+import type { ChatAction } from "@/lib/tools/actions";
 import type { ChartSpec } from "@/lib/tools/make_chart";
 import { FALLBACK_BETA, anthropic, modelId } from "./client";
 import { collectNumbers, postCheck, type PostCheckWarning } from "./postcheck";
@@ -19,6 +20,8 @@ export type AnalystAnswer = {
   toolRuns: ToolRun[];
   charts: ChartSpec[];
   exports: { file_name: string; url: string }[];
+  // Previews from action tools; nothing has changed until Priya confirms each card.
+  actions: ChatAction[];
   warnings: PostCheckWarning[];
   rounds: number;
   costUsd: number;
@@ -39,8 +42,9 @@ Rules:
 5. If the data cannot answer the question, say exactly what is missing. Never guess. Describe statuses, reasons and failures only in the words tools return; do not add detail they did not give. Never explain why a result came out as it did unless a tool states the reason; if you have not checked, do not speculate. Claims with "none", "every", "only", "any" or "not on any line" need a tool result that covers every line or supplier in question (for per-line claims, rank_lines or get_comparison); otherwise do not make them.
 6. Use a short markdown table when listing several lines or suppliers. Use make_chart when asked for a chart or when a comparison is clearer as one. Use export only when asked for a file.
 7. You cannot forecast prices, markets or exchange rates. For "buy now or wait" style questions, say so and offer what the data does show: freshness, movement since the quote date, and validity against approval.
-8. Earlier turns of this conversation are context: "this award" or "it" refers to what was last discussed.
-9. UK English, plain and brief. INR with Indian grouping (₹1,05,000). No em dashes.`;
+8. Actions: accept_values, send_clarification and choose_scenario_and_draft_memo only prepare a preview card. You never perform an action without a preview that Priya confirms: nothing changes until she clicks Confirm on the card, so never say it has been done; say what the card will do and that she can confirm it. set_view only changes what the comparison shows and applies at once. You cannot override blockers: overrides need Priya's own typed reason, so point her to the Award screen (Decision readiness) for that.
+9. Earlier turns of this conversation are context: "this award" or "it" refers to what was last discussed.
+10. UK English, plain and brief. INR with Indian grouping (₹1,05,000). No em dashes.`;
 }
 
 function toolResultContent(run: ToolRun): string {
@@ -129,6 +133,7 @@ export async function askAnalyst(client: Db, question: string, history: AnalystT
     toolRuns,
     charts,
     exports: exportRuns.map((r) => r.output as { file_name: string; url: string }),
+    actions: toolRuns.filter((r) => r.action && !r.error).map((r) => r.output as ChatAction),
     warnings,
     rounds: rounds + 1,
     costUsd: cost,

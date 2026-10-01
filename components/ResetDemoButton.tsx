@@ -26,7 +26,7 @@ export function ResetDemoButton() {
         return;
       }
       try {
-        sessionStorage.removeItem("quotelens.analyst.v1");
+        sessionStorage.removeItem("quotelens.analyst.v2");
       } catch {
         // Storage may be unavailable; nothing to clear then.
       }

@@ -1,6 +1,7 @@
 // The analyst tools from the source of truth, as one registry.
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import { acceptValuesTool, chooseScenarioTool, sendClarificationTool, setViewTool } from "./actions";
 import { compareLastCycle } from "./compare_last_cycle";
 import { compareScenarios } from "./compare_scenarios";
 import { computeScenarioTool } from "./compute_scenario";
@@ -30,6 +31,10 @@ export const ANALYST_TOOLS: AnalystTool[] = [
   draftClarificationTool,
   makeChart,
   exportTool,
+  acceptValuesTool,
+  sendClarificationTool,
+  setViewTool,
+  chooseScenarioTool,
 ] as AnalystTool[];
 
 export function anthropicToolDefinitions(): Anthropic.Beta.BetaTool[] {
@@ -40,7 +45,7 @@ export function anthropicToolDefinitions(): Anthropic.Beta.BetaTool[] {
   });
 }
 
-export type ToolRun = { name: string; input: unknown; output: unknown; error: string | null; modelSuppliedNumbers: boolean };
+export type ToolRun = { name: string; input: unknown; output: unknown; error: string | null; modelSuppliedNumbers: boolean; action?: boolean };
 
 // Validates the model's input, runs the tool, and validates the output against its schema.
 export async function runTool(ctx: ToolContext, name: string, rawInput: unknown): Promise<ToolRun> {
@@ -50,7 +55,7 @@ export async function runTool(ctx: ToolContext, name: string, rawInput: unknown)
   if (!parsed.success) return { name, input: rawInput, output: null, error: `Invalid input: ${z.prettifyError(parsed.error)}`, modelSuppliedNumbers: !!tool.modelSuppliedNumbers };
   try {
     const output = tool.output.parse(await tool.run(ctx, parsed.data));
-    return { name, input: parsed.data, output, error: null, modelSuppliedNumbers: !!tool.modelSuppliedNumbers };
+    return { name, input: parsed.data, output, error: null, modelSuppliedNumbers: !!tool.modelSuppliedNumbers, action: !!tool.action };
   } catch (error) {
     return { name, input: parsed.data, output: null, error: error instanceof Error ? error.message : String(error), modelSuppliedNumbers: !!tool.modelSuppliedNumbers };
   }

@@ -12,6 +12,9 @@ export type AnalystTool<I extends z.ZodType = z.ZodType, O extends z.ZodType = z
   output: O;
   // Tools whose numbers come from the model (charts, exports) are checked, not trusted.
   modelSuppliedNumbers?: boolean;
+  // Action tools never write: they return a preview card, and the change happens only
+  // when Priya confirms it through the same server action the screens use.
+  action?: boolean;
   run: (ctx: ToolContext, input: z.infer<I>) => Promise<z.infer<O>> | z.infer<O>;
 };
 
