@@ -103,7 +103,8 @@ function Live({ e }: { e: Exchange }) {
 export function LensDock() {
   const { open, setOpen, screen, exchanges, pending, ask, attention, screenApi, sheet, closeSheet, newConversation } = useLens();
   const lastHere = [...exchanges].reverse().find((e) => e.screen === screen);
-  const idle = !pending && (!lastHere || lastHere.briefing || !!lastHere.reply);
+  // Suggestions stay in place while Lens works (disabled), so nothing jumps.
+  const showSuggestions = !lastHere || lastHere.briefing || !!lastHere.reply || !!lastHere.live;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -180,10 +181,10 @@ export function LensDock() {
               </CiteContext.Provider>
 
               <div className="shrink-0 space-y-3 border-t border-rule p-4">
-                {idle && (
+                {showSuggestions && (
                   <Suggestions aria-label="Suggested questions">
                     {SUGGESTIONS[screen].map((s) => (
-                      <Suggestion key={s} suggestion={s} onClick={(q) => ask(q)} />
+                      <Suggestion key={s} suggestion={s} disabled={pending} onClick={(q) => ask(q)} />
                     ))}
                   </Suggestions>
                 )}

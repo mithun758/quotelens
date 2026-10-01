@@ -5,7 +5,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { stageHref, type Progress, type Stage, type StageState } from "@/lib/nav/progress";
-import { useHydrated } from "@/lib/ui/useHydrated";
 import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
@@ -43,10 +42,8 @@ function useSectionInView(ids: string[]): string | null {
 export function StepRail({ progress }: { progress: Progress | null }) {
   const path = usePathname();
   const params = useSearchParams();
-  const lensOpen = useLens().open;
-  // The rail hydrates inside Suspense, after Lens has restored its saved state; until
-  // then it matches the server render (Lens open, rail compact).
-  const compact = useHydrated() ? lensOpen : true;
+  // The server knows the dock's state from its cookie, so the first render already matches.
+  const compact = useLens().open;
   const sections = (progress?.steps ?? []).find((s) => path.startsWith(s.href))?.stages.flatMap((st) => (st.target.section ? [st.target.section] : [])) ?? [];
   const inView = useSectionInView(sections);
   const view = params.get("view") ?? "prices";
