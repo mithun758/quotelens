@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { resetDemo } from "@/app/actions/resetDemo";
+import { useBusy } from "@/lib/ui/busy";
 import { LENS_KEYS } from "./lens/LensProvider";
 import { Button } from "./ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 export function ResetDemoButton() {
@@ -14,6 +16,8 @@ export function ResetDemoButton() {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  // Locked while extraction runs in this tab, saying why.
+  const busy = useBusy();
 
   function reset() {
     setError(null);
@@ -35,6 +39,24 @@ export function ResetDemoButton() {
       toast("Demo reset");
       router.push("/quotes");
     });
+  }
+
+  if (busy) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0} className="rounded-xs">
+            <Button variant="ghost" size="sm" disabled>
+              <RotateCcw aria-hidden />
+              Reset demo
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <BusyNote startedAt={busy.startedAt} label={busy.label} />
+        </TooltipContent>
+      </Tooltip>
+    );
   }
 
   return (
@@ -69,5 +91,15 @@ export function ResetDemoButton() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// "Extraction running, started 32s ago", counted when the tooltip opens.
+function BusyNote({ label, startedAt }: { label: string; startedAt: number }) {
+  const [now] = useState(() => Date.now());
+  return (
+    <>
+      {label}, started {Math.max(0, Math.round((now - startedAt) / 1000))}s ago.
+    </>
   );
 }

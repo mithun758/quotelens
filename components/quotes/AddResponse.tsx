@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { ACCEPT, MAX_UPLOAD_BYTES } from "@/lib/uploads/validate";
 import { ErrorNote } from "../ErrorNote";
@@ -38,25 +39,34 @@ export function AddResponse({ suppliers }: { suppliers: { code: string; name: st
     }
   }
 
+  // A list item in the supplier inbox: a dashed card, then the form across the full row.
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className={btn.secondary}>
-        Add a response
-      </button>
+      <li className="min-w-0">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex h-full min-h-40 w-full flex-col items-center justify-center gap-1 rounded-xs px-3 text-center border border-dashed border-slate text-body font-semibold text-ink hover:bg-tint"
+        >
+          <Plus aria-hidden className="size-4 stroke-[1.5] text-slate" />
+          Add a response
+          <span className="text-meta font-normal text-slate">PDF, Excel, Word, photo or text</span>
+        </button>
+      </li>
     );
   }
   return (
-    <div className="w-full space-y-3 border-l-[3px] border-ink bg-sheet px-4 py-3">
+    <li className="col-span-full space-y-3 rounded-xs border border-rule bg-sheet p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold">Add a response</h3>
+          <h3 className="text-heading font-semibold">Add a response</h3>
           <p className="text-xs text-slate">One file, up to 10 MB: PDF, Excel (.xlsx), Word (.docx), JPG, PNG or text. Claude reads it like the others; nothing is imputed, and lines it cannot find stay Missing.</p>
         </div>
         <button type="button" onClick={() => setOpen(false)} className="text-sm text-slate hover:text-ink">
           Close
         </button>
       </div>
-      <div className="grid grid-cols-[14rem_14rem_1fr] items-end gap-3">
+      <div className="grid grid-cols-1 items-end gap-3 @3xl:grid-cols-[14rem_14rem_1fr]">
         <label className="text-xs text-slate">
           Supplier
           <select value={supplier} onChange={(e) => setSupplier(e.target.value)} className={`${input} mt-1 w-full`} disabled={phase.kind === "working"}>
@@ -87,7 +97,7 @@ export function AddResponse({ suppliers }: { suppliers: { code: string; name: st
               setFile(e.target.files?.[0] ?? null);
               setPhase({ kind: "idle" });
             }}
-            className="mt-1 block w-full text-sm text-ink file:mr-3 file:rounded-xs file:border file:border-field file:bg-sheet file:px-2 file:py-1 file:text-sm file:font-semibold file:text-ink hover:file:bg-tint"
+            className="mt-1 block w-full text-sm text-ink file:mr-3 file:rounded-xs file:border file:border-slate file:bg-sheet file:px-2 file:py-1 file:text-sm file:font-semibold file:text-ink hover:file:bg-tint"
           />
         </label>
       </div>
@@ -113,6 +123,6 @@ export function AddResponse({ suppliers }: { suppliers: { code: string; name: st
         )}
       </div>
       {phase.kind === "error" && <ErrorNote message={phase.text} onRetry={ready ? submit : undefined} />}
-    </div>
+    </li>
   );
 }

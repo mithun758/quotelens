@@ -30,10 +30,28 @@ function locateSnippet(items: TextItem[], snippet: string, toFraction: (x0: numb
   return toFraction(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys));
 }
 
-// Renders one PDF page with pdf.js and draws the source box over it.
-export function PdfPage({ url, page, bbox, snippet }: { url: string; page: number; bbox: Box | null; snippet: string | null }) {
+export type Zoom = "fit" | 1 | 1.5;
+const SCALE = 1.6;
+
+// Renders one PDF page with pdf.js and draws the source box over it. Fit fills the
+// viewer's width; 100% and 150% are the page's own size and half as large again.
+export function PdfPage({
+  url,
+  page,
+  bbox,
+  snippet,
+  zoom = "fit",
+  onPageCount,
+}: {
+  url: string;
+  page: number;
+  bbox: Box | null;
+  snippet: string | null;
+  zoom?: Zoom;
+  onPageCount?: (n: number) => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [pageCount, setPageCount] = useState<number | null>(null);
+  const [baseWidth, setBaseWidth] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [exact, setExact] = useState<{ key: string; box: Box | null } | null>(null);
   const key = `${url}|${page}|${snippet ?? ""}`;
@@ -46,13 +64,14 @@ export function PdfPage({ url, page, bbox, snippet }: { url: string; page: numbe
         pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
         const pdf = await pdfjs.getDocument({ url }).promise;
         if (cancelled) return;
-        setPageCount(pdf.numPages);
+        onPageCount?.(pdf.numPages);
         const p = await pdf.getPage(Math.min(Math.max(page, 1), pdf.numPages));
         const canvas = canvasRef.current;
         if (!canvas || cancelled) return;
-        const viewport = p.getViewport({ scale: 1.6 });
+        const viewport = p.getViewport({ scale: SCALE });
         canvas.width = viewport.width;
         canvas.height = viewport.height;
+        setBaseWidth(viewport.width / SCALE);
         await p.render({ canvas, viewport }).promise;
         if (snippet) {
           const content = await p.getTextContent();
@@ -73,18 +92,18 @@ export function PdfPage({ url, page, bbox, snippet }: { url: string; page: numbe
     return () => {
       cancelled = true;
     };
+    // onPageCount is a notification only; re-rendering the page for it would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, page, snippet]);
 
   const shown = exact?.key === key && exact.box ? exact.box : bbox;
 
-  if (error) return <p className="p-3 text-sm text-oxblood">{error}</p>;
+  if (error) return <p className="p-3 text-body text-oxblood">This page could not be shown. Use Open original to see the file.</p>;
+  const width = zoom === "fit" || !baseWidth ? undefined : baseWidth * zoom;
   return (
-    <div>
-      {pageCount && pageCount > 1 && <p className="mb-1 text-xs text-slate">Page {page} of {pageCount}</p>}
-      <div className="relative">
-        <canvas ref={canvasRef} className="h-auto w-full" />
-        {shown && <Highlight bbox={shown} />}
-      </div>
+    <div className={zoom === "fit" ? "relative" : "relative w-max"} style={width ? { width } : undefined}>
+      <canvas ref={canvasRef} className="block h-auto w-full" />
+      {shown && <Highlight bbox={shown} />}
     </div>
   );
 }
@@ -95,7 +114,7 @@ export function Highlight({ bbox }: { bbox: Box }) {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute rounded-xs border-2 border-amber bg-amber/15"
+      className="pointer-events-none absolute rounded-xs border-2 border-amber bg-amber-tint/30"
       style={{
         left: `${(x0 - pad) * 100}%`,
         top: `${(y0 - pad) * 100}%`,

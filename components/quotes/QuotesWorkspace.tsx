@@ -16,12 +16,15 @@ export function QuotesWorkspace({
   documents,
   freshness,
   cited = null,
+  next = null,
 }: {
   detail: SupplierDetail;
   documents: ViewerDocument[];
   freshness: string | null;
   // Opened from a Lens citation: show this document at this place.
   cited?: { documentId: string; locator: string } | null;
+  // The next supplier with open items, for the empty queue.
+  next?: { code: string; name: string; count: number } | null;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Open on the document most values were read from (the quotation, not a certificate).
@@ -64,19 +67,20 @@ export function QuotesWorkspace({
     ["GSTIN", supplier.gstin ? `${supplier.gstin} (${supplier.state})` : "Not on file"],
   ];
 
+  const rev = selected ? revisionOf(selected.steps) : null;
   return (
     <div className="space-y-4">
-      <header className="space-y-2 border-b border-rule pb-3">
+      <header className="space-y-3">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold">
-            {supplier.code}. {supplier.name}
+          <h3 className="text-heading font-semibold">
+            <span className="text-slate">{supplier.code}</span> {supplier.name}
           </h3>
           {freshness && <Stamp status={freshness} title="Quote Freshness; details on Quote Comparison" />}
         </div>
-        <dl className="grid grid-cols-3 gap-x-6 gap-y-2 text-[13px] @4xl:grid-cols-6">
+        <dl className="grid grid-cols-3 gap-x-6 gap-y-2 text-table @4xl:grid-cols-6">
           {fields.map(([k, v]) => (
             <div key={k} className="min-w-0">
-              <dt className="text-xs text-slate">{k}</dt>
+              <dt className="text-meta text-slate">{k}</dt>
               <dd className={`truncate ${v === "Not stated" ? "text-slate" : ""}`} title={v}>
                 {v}
               </dd>
@@ -85,23 +89,25 @@ export function QuotesWorkspace({
         </dl>
       </header>
 
-      <div className="grid gap-5 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-2 @4xl:sticky @4xl:top-[4.75rem] @4xl:self-start">
+      <div className="grid gap-6 @3xl:grid-cols-[minmax(0,11fr)_minmax(0,9fr)]">
+        <div className="min-w-0 space-y-2 @3xl:sticky @3xl:top-[4.75rem] @3xl:self-start">
           <DocumentViewer documents={documents} activeId={activeDocId} onSelect={setActiveDocId} highlight={highlight} />
           {selected && (
-            <p className="border-l-[3px] border-amber bg-amber-tint px-3 py-2 text-xs">
-              <span className="font-semibold">Source</span> {sourceDoc?.file_name ?? "email body"}
-              {locatorLabel(selected.source_locator) && `, ${locatorLabel(selected.source_locator)}`}
-              {selected.source_snippet && <span className="block">“{selected.source_snippet}”</span>}
-              {revisionOf(selected.steps) && (
-                <span className="mt-1 block">
-                  <span className="font-semibold">Revised.</span> <s className="text-slate">{inr(Number(revisionOf(selected.steps)!.input))}</s> now {inr(Number(revisionOf(selected.steps)!.output))}. {revisionOf(selected.steps)!.rate_source}
-                </span>
+            <figure className="rounded-xs border border-rule bg-sheet px-3 py-2 text-meta">
+              <figcaption className="text-slate">
+                Source: {sourceDoc?.file_name ?? "email body"}
+                {locatorLabel(selected.source_locator) && `, ${locatorLabel(selected.source_locator)}`}
+              </figcaption>
+              {selected.source_snippet && <blockquote className="mt-1 border-l-2 border-amber pl-2 text-ink">“{selected.source_snippet}”</blockquote>}
+              {rev && (
+                <p className="mt-1">
+                  <span className="font-semibold">Revised.</span> <s className="text-slate">{inr(Number(rev.input))}</s> now {inr(Number(rev.output))}. <span className="text-slate">{rev.rate_source}</span>
+                </p>
               )}
-            </p>
+            </figure>
           )}
         </div>
-        <div className="min-w-0 space-y-5">
+        <div className="min-w-0 space-y-6">
           <ReviewQueue
             supplierCode={supplier.code}
             supplierName={supplier.name}
@@ -111,6 +117,7 @@ export function QuotesWorkspace({
             onFocus={focusQueueItem}
             focusedValueId={selectedId}
             onAccepted={(ids) => setSettled((s) => ({ ids, n: s.n + 1 }))}
+            next={next}
           />
           <SentEmails clarifications={detail.clarifications} supplierName={supplier.name} />
           <ValuesTable values={detail.values} selectedId={selectedId} onSelect={selectValue} settled={settled} />

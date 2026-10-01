@@ -6,7 +6,7 @@ import { inr, locatorLabel, revisionOf, stepText } from "./format";
 
 function Detail({ v }: { v: ValueWithLine }) {
   return (
-    <div className="space-y-2 border-l-[3px] border-ink bg-paper px-3 py-2 text-xs">
+    <div className="space-y-2 border-t border-rule bg-paper px-3 py-3 text-meta">
       {v.reason && <p className="text-pencil">{v.reason}</p>}
       {(() => {
         const rev = revisionOf(v.steps);
@@ -55,11 +55,11 @@ export function ValuesTable({ values, selectedId, onSelect, settled }: { values:
   const rows = [...values.filter((v) => v.field === "unit_price"), ...values.filter((v) => v.field === "unmatched_item")];
   return (
     <section aria-label="Extracted values">
-      <div className="border-b border-ink pb-1">
-        <h4 className="text-base font-semibold">Extracted values</h4>
-        <p className="text-xs text-slate">₹ per piece, ex-GST, delivered. Select a row for its source and ledger.</p>
+      <div className="pb-2">
+        <h4 className="text-heading font-semibold">Extracted values</h4>
+        <p className="text-meta text-slate">₹ per piece, ex-GST, delivered. Select a row for its source and ledger.</p>
       </div>
-      <table className="w-full table-fixed border-collapse text-[13px]">
+      <table className="w-full table-fixed border-collapse rounded-xs border border-rule bg-sheet text-table">
         <colgroup>
           <col className="w-9" />
           <col />
@@ -67,11 +67,11 @@ export function ValuesTable({ values, selectedId, onSelect, settled }: { values:
           <col className="w-[5.5rem]" />
         </colgroup>
         <thead>
-          <tr className="text-xs text-slate">
-            <th className="border-b border-rule py-1 text-right font-semibold">Line</th>
-            <th className="border-b border-rule px-3 py-1 text-left font-semibold">As quoted</th>
-            <th className="border-b border-rule py-1 text-right font-semibold">Normalised</th>
-            <th className="border-b border-rule py-1 text-right font-semibold">Review</th>
+          <tr className="text-meta text-slate">
+            <th className="border-b-2 border-rule-strong py-2 text-right font-semibold">Line</th>
+            <th className="border-b-2 border-rule-strong px-3 py-2 text-left font-semibold">As quoted</th>
+            <th className="border-b-2 border-rule-strong py-2 text-right font-semibold">Normalised</th>
+            <th className="border-b-2 border-rule-strong py-2 pr-3 text-right font-semibold">Review</th>
           </tr>
         </thead>
         <tbody>
@@ -86,30 +86,25 @@ export function ValuesTable({ values, selectedId, onSelect, settled }: { values:
                     aria-expanded={selected}
                     className={`grid min-h-9 w-full grid-cols-[2.25rem_1fr_6.5rem_5.5rem] items-center text-left hover:bg-tint ${selected ? "bg-tint" : ""}`}
                   >
-                    <span className="text-right text-xs text-slate">{v.line_no ?? ""}</span>
+                    <span className="text-right text-meta text-slate">{v.line_no ?? ""}</span>
                     <span className="min-w-0 px-3 py-1">
-                      <span className="block truncate text-xs text-slate">{v.description ?? "Matches no RFx line"}</span>
+                      <span className="block truncate text-meta text-slate">{v.description ?? "Matches no RFx line"}</span>
                       <span className="block truncate">
                         {v.raw_value ?? <span className="text-slate">Not quoted</span>}
                         {v.raw_currency && v.raw_currency !== "INR" ? ` ${v.raw_currency}` : ""}
                         {v.raw_unit && v.raw_unit !== "per piece" ? <span className="text-slate"> {v.raw_unit}</span> : null}
                       </span>
                     </span>
-                    <span className="text-right">
-                      {revisionOf(v.steps) && (
-                        <s className="mr-1.5 text-xs text-slate" title={revisionOf(v.steps)!.rate_source ?? "Revised"}>
-                          {inr(Number(revisionOf(v.steps)!.input))}
-                        </s>
-                      )}
+                    <span className="py-1 text-right">
                       {v.normalised_value_inr !== null ? (
-                        <Value state={v.confidence_state} reason={v.reason}>
+                        <Value plain state={v.confidence_state} revised={revisionOf(v.steps) ? { was: inr(Number(revisionOf(v.steps)!.input)) } : null}>
                           {inr(v.normalised_value_inr)}
                         </Value>
                       ) : (
-                        <Value state="missing" reason={v.reason} />
+                        <Value plain state="missing" />
                       )}
                     </span>
-                    <span className={`text-right text-xs ${REVIEW[v.status] ? "text-ledger" : "text-slate"}`}>{REVIEW[v.status] ?? (v.status === "needs_review" ? "To review" : "")}</span>
+                    <span className={`pr-3 text-right text-meta ${REVIEW[v.status] ? "text-ledger" : "text-slate"}`}>{REVIEW[v.status] ?? (v.status === "needs_review" ? "To review" : "")}</span>
                   </button>
                   {selected && <Detail v={v} />}
                 </td>
