@@ -21,6 +21,12 @@ const REASONS = {
   judgement: "judgement",
 } as const;
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const displayDay = (iso: string) => {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return `${d} ${MONTHS[m - 1]} ${y}`;
+};
+
 const awaiting = (data: AnalystData, code: string, line: number | null, flagType?: string) =>
   data.clarifications.some((c) => c.supplierCode === code && c.status === "awaiting" && (flagType ? c.target_flag_type === flagType : c.lineNo === line));
 
@@ -122,7 +128,7 @@ export const sendClarificationTool = defineTool({
     }
     if (input.reconfirm_prices && !awaiting(data, s.code, null, RECONFIRM_TARGET)) {
       keys.push(RECONFIRM_KEY);
-      labels.push(`Reconfirm prices${s.quoteDate ? ` dated ${s.quoteDate}` : ""} and state validity`);
+      labels.push(`Reconfirm prices${s.quoteDate ? ` dated ${displayDay(s.quoteDate)}` : ""} and state validity`);
     }
     if (!keys.length) throw new Error(`Nothing open to ask ${s.name} about with those choices (items already awaiting a reply are skipped).`);
     return { kind: "send_clarification" as const, supplier: s.code, supplier_name: s.name, keys, count: keys.length, items: labels, requires_confirmation: true as const };

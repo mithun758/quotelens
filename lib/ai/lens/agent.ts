@@ -174,6 +174,8 @@ export async function runLens(
   // citations are checked there.
   const pool = collectNumbers(toolRuns.filter((r) => !r.modelSuppliedNumbers && !r.error).map((r) => r.output));
   collectNumbers(input.message, pool);
+  // The context block's figures (roster, review counts, blockers) come from the database too.
+  collectNumbers(context, pool);
   // Figures in earlier answers were checked when Lens gave them.
   collectNumbers((input.history ?? []).filter((t) => t.role === "assistant").map((t) => t.content), pool);
   collectNumbers([data.rfx.approval_days, data.lines.length, data.asOfDate, data.rfx.need_by_date, data.rfx.sent_at ?? ""], pool);
