@@ -1,33 +1,36 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { runExtraction } from "./actions";
 
 export function RunExtractionButton() {
   const [pending, startTransition] = useTransition();
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="flex items-center gap-3">
-      <button
-        type="button"
+    <div className="flex flex-col items-start gap-2 @4xl:items-end">
+      <Button
+        variant="primary"
         disabled={pending}
         onClick={() =>
           startTransition(async () => {
-            setMessage(null);
+            setError(null);
             const result = await runExtraction();
-            setMessage(
-              result.ok
-                ? `Extraction finished in ${result.seconds}s for $${result.costUsd.toFixed(2)}.${result.errors.length ? ` Failed: ${result.errors.join("; ")}` : ""}`
-                : result.error,
-            );
+            if (!result.ok) return setError(result.error);
+            toast(`Extraction finished in ${result.seconds}s for $${result.costUsd.toFixed(2)}`, { description: result.errors.length ? `Failed: ${result.errors.join("; ")}` : undefined });
           })
         }
-        className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60"
       >
-        {pending ? "Extracting all five suppliers..." : "Run extraction"}
-      </button>
-      {message && <span className="text-sm text-zinc-600">{message}</span>}
+        {pending ? "Extracting all five suppliers..." : "Re-run extraction"}
+      </Button>
+      {pending && <span className="text-meta text-slate">Reading every supplier&apos;s documents. It takes about a minute.</span>}
+      {error && (
+        <span role="alert" className="text-meta text-oxblood">
+          {error}
+        </span>
+      )}
     </div>
   );
 }
