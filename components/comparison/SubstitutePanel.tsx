@@ -71,21 +71,21 @@ export function SubstitutePanel({ cell, supplierName, lineLabel, onClose }: { ce
         </div>
       </dl>
       {cell.source_snippet && (
-        <blockquote className="mt-4 border-l-[3px] border-rule pl-3 text-sm">
+        <blockquote className="mt-4 border-l-2 border-rule pl-3 text-sm">
           <span className="block text-xs text-slate">Offered in {cell.documentName ?? "the email"}</span>“{cell.source_snippet}”
         </blockquote>
       )}
       {cell.substitute_check && (
-        <table className="mt-4 w-full border-collapse text-[13px]">
+        <table className="mt-4 w-full border-collapse text-table">
           <caption className="pb-1 text-left text-sm font-semibold">
             Attribute check{deviations ? `: ${deviations} deviation${deviations === 1 ? "" : "s"}` : ""}
           </caption>
           <thead>
             <tr className="text-xs text-slate">
-              <th className="border-b border-ink py-1 pr-2 text-left font-semibold">Attribute</th>
-              <th className="border-b border-ink py-1 pr-2 text-left font-semibold">Required</th>
-              <th className="border-b border-ink py-1 pr-2 text-left font-semibold">Offered</th>
-              <th className="border-b border-ink py-1 text-left font-semibold">Result</th>
+              <th className="border-b-2 border-rule-strong py-1 pr-2 text-left font-semibold">Attribute</th>
+              <th className="border-b-2 border-rule-strong py-1 pr-2 text-left font-semibold">Required</th>
+              <th className="border-b-2 border-rule-strong py-1 pr-2 text-left font-semibold">Offered</th>
+              <th className="border-b-2 border-rule-strong py-1 text-left font-semibold">Result</th>
             </tr>
           </thead>
           <tbody>

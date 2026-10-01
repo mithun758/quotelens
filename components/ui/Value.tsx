@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { motion } from "motion/react";
+import { useState, type ReactNode } from "react";
 import type { ConfidenceState } from "@/lib/db/types";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
@@ -28,14 +29,21 @@ export function Value({
   plain?: boolean;
   className?: string;
 }) {
+  // A price revised while on screen (after a reconfirmation) shows the change: the old
+  // price fades to a strike-through and the new one fades in. Never on page load.
+  const [mountedUnrevised] = useState(!revised);
+  const animate = mountedUnrevised && !!revised;
+  const fade = animate ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.3 } } : {};
   if (plain) {
     if (state === "missing") return <span aria-hidden className={cn("val-missing inline-block h-[18px] w-full min-w-10 align-middle", className)} />;
     const value = <span className={cn(state === "inferred" && "val-inferred", !revised && className)}>{children}</span>;
     if (!revised) return value;
     return (
       <span className={cn("inline-flex flex-col items-end leading-4", className)}>
-        {value}
-        <s className="revised-was text-meta leading-4 font-normal text-slate decoration-slate">{revised.was}</s>
+        <motion.span {...fade}>{value}</motion.span>
+        <motion.s {...fade} className="revised-was text-meta leading-4 font-normal text-slate decoration-slate">
+          {revised.was}
+        </motion.s>
       </span>
     );
   }

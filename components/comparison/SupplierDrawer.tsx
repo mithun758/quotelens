@@ -44,7 +44,7 @@ export function SupplierPanel({ view, code, mode, onClose }: { view: ComparisonV
         {freshness && (
           <ul className="mt-3 divide-y divide-rule border-y border-rule">
             {freshness.rules.map((r) => (
-              <li key={r.key} className={`py-2 pl-3 text-sm ${r.fired ? `border-l-[3px] ${r.severity === "high" ? "border-oxblood" : "border-amber"}` : "border-l-[3px] border-transparent"}`}>
+              <li key={r.key} className={`py-2 pl-3 text-sm ${r.fired ? `border-l-2 ${r.severity === "high" ? "border-oxblood" : "border-amber"}` : "border-l-2 border-transparent"}`}>
                 <div className="flex items-baseline justify-between gap-2">
                   <span className={r.fired ? "font-semibold" : "text-slate"}>{r.label}</span>
                   <span className={`text-xs ${r.fired ? (r.severity === "high" ? "font-semibold text-oxblood" : "font-semibold text-pencil") : "text-slate"}`}>
