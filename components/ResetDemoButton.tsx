@@ -1,24 +1,21 @@
 "use client";
 
+import { RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { resetDemo } from "@/app/actions/resetDemo";
 import { LENS_KEYS } from "./lens/LensProvider";
-import { btn } from "./ui/styles";
+import { Button } from "./ui/button";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 export function ResetDemoButton() {
+  const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  function onClick() {
-    if (
-      !window.confirm(
-        "Reset the demo? Supplier quotes go back to received (extract them again on Quotes, about a minute), and all decisions, clarifications, the award and the RFx draft are cleared.",
-      )
-    ) {
-      return;
-    }
+  function reset() {
     setError(null);
     startTransition(async () => {
       const result = await resetDemo();
@@ -34,25 +31,43 @@ export function ResetDemoButton() {
         // Storage may be unavailable; nothing to clear then.
       }
       window.dispatchEvent(new Event("quotelens:reset"));
+      setOpen(false);
+      toast("Demo reset");
       router.push("/quotes");
     });
   }
 
   return (
-    <span className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={pending}
-        className={btn.secondary}
-      >
-        {pending ? "Resetting..." : "Reset demo"}
-      </button>
-      {error && (
-        <span role="alert" className="text-xs text-oxblood">
-          {error}
-        </span>
-      )}
-    </span>
+    <Dialog open={open} onOpenChange={(o) => !pending && setOpen(o)}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <RotateCcw aria-hidden />
+          Reset demo
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reset the demo?</DialogTitle>
+          <DialogDescription>
+            Supplier quotes go back to received; extract them again on Quotes, which takes about a minute. All decisions, clarifications, the award and the RFx draft are cleared.
+          </DialogDescription>
+        </DialogHeader>
+        {error && (
+          <p role="alert" className="rounded-xs border-l-2 border-oxblood bg-oxblood-tint px-3 py-2 text-body text-oxblood">
+            Reset did not finish: {error}. Try again.
+          </p>
+        )}
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="secondary" disabled={pending}>
+              Cancel
+            </Button>
+          </DialogClose>
+          <Button variant="primary" onClick={reset} disabled={pending}>
+            {pending ? "Resetting..." : "Reset demo"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

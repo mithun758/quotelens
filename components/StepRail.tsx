@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Check } from "lucide-react";
 import { stageHref, type Progress, type Stage, type StageState } from "@/lib/nav/progress";
+import { useHydrated } from "@/lib/ui/useHydrated";
+import { cn } from "@/lib/utils";
+import { Badge } from "./ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { useLens } from "./lens/LensProvider";
 
 // Which section of a long screen is in view: the last one whose top has passed 35%
@@ -34,11 +39,14 @@ function useSectionInView(ids: string[]): string | null {
 }
 
 // The real sequence: four steps with the journey's stages nested under each.
-// /eval is deliberately not linked.
+// Evaluation sits at the foot of the rail.
 export function StepRail({ progress }: { progress: Progress | null }) {
   const path = usePathname();
   const params = useSearchParams();
-  const compact = useLens().open;
+  const lensOpen = useLens().open;
+  // The rail hydrates inside Suspense, after Lens has restored its saved state; until
+  // then it matches the server render (Lens open, rail compact).
+  const compact = useHydrated() ? lensOpen : true;
   const sections = (progress?.steps ?? []).find((s) => path.startsWith(s.href))?.stages.flatMap((st) => (st.target.section ? [st.target.section] : [])) ?? [];
   const inView = useSectionInView(sections);
   const view = params.get("view") ?? "prices";
@@ -56,51 +64,67 @@ export function StepRail({ progress }: { progress: Progress | null }) {
     return <nav aria-label="Steps" className={`sticky top-14 h-[calc(100vh-3.5rem)] shrink-0 border-r border-rule bg-sheet ${compact ? "w-16" : "w-[220px]"}`} />;
   }
 
-  // With Lens open, the rail compacts to a strip of numbered steps; the stages show on hover.
+  const stepState = (step: Progress["steps"][number]): StageState =>
+    step.stages.every((st) => st.state === "done") ? "done" : step.stages.some((st) => st.state === "attention") ? "attention" : "open";
+  const stepCount = (step: Progress["steps"][number]) => step.stages.reduce((n, st) => n + (st.state === "attention" && st.count ? st.count : 0), 0);
+
+  // With Lens open, the rail compacts to numbered squares; the name and count show on hover.
   if (compact) {
     return (
-      <nav aria-label="Steps" className="sticky top-14 h-[calc(100vh-3.5rem)] w-16 shrink-0 border-r border-rule bg-sheet py-3">
+      <nav aria-label="Steps" className="sticky top-14 flex h-[calc(100vh-3.5rem)] w-16 shrink-0 flex-col border-r border-rule bg-sheet py-3">
         <ol className="flex flex-col items-center gap-1">
           {progress.steps.map((step, i) => {
             const onStep = path.startsWith(step.href);
-            const state: StageState = step.stages.every((st) => st.state === "done") ? "done" : step.stages.some((st) => st.state === "attention") ? "attention" : "open";
-            const count = step.stages.reduce((n, st) => n + (st.state === "attention" && st.count ? st.count : 0), 0);
-            const summary = `${i + 1}. ${step.label}: ${step.stages.map((st) => `${st.label}, ${st.note}`).join("; ")}`;
+            const count = stepCount(step);
+            const summary = `${i + 1}. ${step.label}${count ? `, ${count} need attention` : ""}`;
             return (
               <li key={step.href} className="w-full">
-                <Link
-                  href={step.href}
-                  aria-current={onStep ? "page" : undefined}
-                  aria-label={summary}
-                  title={summary}
-                  className={`relative flex flex-col items-center gap-1 py-2 hover:bg-tint ${onStep ? "bg-tint" : ""}`}
-                >
-                  {onStep && <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-ink" />}
-                  <StepMark n={i + 1} state={state} />
-                  <span className={`text-[11px] leading-3 ${onStep ? "font-semibold" : "text-slate"}`}>{step.label === "Comparison" ? "Compare" : step.label}</span>
-                  {count > 0 && <span className={`rounded-xs px-1 text-[11px] font-semibold leading-4 ${step.href === "/award" ? "bg-oxblood-tint text-oxblood" : "bg-amber-tint text-pencil"}`}>{count}</span>}
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href={step.href} aria-current={onStep ? "page" : undefined} aria-label={summary} className={cn("relative flex flex-col items-center gap-1 py-2 hover:bg-tint", onStep && "bg-tint")}>
+                      {onStep && <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 bg-ink" />}
+                      <StepSquare n={i + 1} state={stepState(step)} current={onStep} />
+                      {count > 0 && <CountChip count={count} tone={step.href === "/award" ? "oxblood" : "pencil"} />}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <span className="font-semibold">{step.label}</span>
+                    {step.stages.map((st) => (
+                      <span key={st.key} className="block text-slate">
+                        {st.label}: {st.note}
+                      </span>
+                    ))}
+                  </TooltipContent>
+                </Tooltip>
               </li>
             );
           })}
         </ol>
+        <Link href="/eval" aria-current={path.startsWith("/eval") ? "page" : undefined} className={cn("mt-auto py-2 text-center text-meta text-slate hover:bg-tint hover:text-ink", path.startsWith("/eval") && "font-semibold text-ink")}>
+          Eval
+        </Link>
       </nav>
     );
   }
 
   return (
-    <nav aria-label="Steps" className="sticky top-14 h-[calc(100vh-3.5rem)] w-[220px] shrink-0 overflow-y-auto border-r border-rule bg-sheet py-3">
-      <ol>
+    <nav aria-label="Steps" className="sticky top-14 flex h-[calc(100vh-3.5rem)] w-[220px] shrink-0 flex-col overflow-y-auto border-r border-rule bg-sheet py-4">
+      <ol className="space-y-4">
         {progress.steps.map((step, i) => {
           const onStep = path.startsWith(step.href);
-          const state: StageState = step.stages.every((s) => s.state === "done") ? "done" : step.stages.some((s) => s.state === "attention") ? "attention" : "open";
+          const state = stepState(step);
+          const count = stepCount(step);
           return (
-            <li key={step.href} className="pb-2">
-              <Link href={step.href} aria-current={onStep ? "page" : undefined} className="flex items-center gap-2.5 px-4 py-1.5 hover:bg-tint">
-                <StepMark n={i + 1} state={state} />
-                <span className={`text-sm ${onStep ? "font-semibold" : ""}`}>{step.label}</span>
+            <li key={step.href}>
+              <Link href={step.href} aria-current={onStep ? "page" : undefined} className="flex h-8 items-center gap-2 px-4 hover:bg-tint">
+                <StepIcon state={state} current={onStep} />
+                <span className={cn("flex-1 text-body", onStep && "font-semibold")}>
+                  <span className="sr-only">Step {i + 1}: </span>
+                  {step.label}
+                </span>
+                {count > 0 && <CountChip count={count} tone={step.href === "/award" ? "oxblood" : "pencil"} />}
               </Link>
-              <ol className="ml-[1.6rem] border-l border-rule">
+              <ol className="mt-1">
                 {step.stages.map((st) => {
                   const current = isCurrent(st);
                   return (
@@ -108,11 +132,12 @@ export function StepRail({ progress }: { progress: Progress | null }) {
                       <Link
                         href={stageHref(st.target)}
                         aria-current={current ? "step" : undefined}
-                        className={`relative -ml-px flex items-start gap-2 border-l-[3px] py-1 pl-2.5 pr-3 hover:bg-tint ${current ? "border-ink bg-tint" : "border-transparent"}`}
+                        className={cn("relative flex items-start gap-2 py-1 pr-4 pl-10 hover:bg-tint", current && "bg-tint")}
                       >
+                        {current && <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 bg-ink" />}
                         <span className="min-w-0 flex-1">
-                          <span className={`block text-[13px] leading-[18px] ${current ? "font-semibold" : ""}`}>{st.label}</span>
-                          <span className={`block text-xs ${st.state === "attention" ? (st.key === "readiness" ? "text-oxblood" : "text-pencil") : "text-slate"}`}>{st.note}</span>
+                          <span className={cn("block text-table", current && "font-semibold")}>{st.label}</span>
+                          <span className={cn("block text-meta", st.state === "attention" ? (st.key === "readiness" ? "text-oxblood" : "text-pencil") : "text-slate")}>{st.note}</span>
                         </span>
                         <StageMark stage={st} />
                       </Link>
@@ -124,7 +149,19 @@ export function StepRail({ progress }: { progress: Progress | null }) {
           );
         })}
       </ol>
+      <Link href="/eval" aria-current={path.startsWith("/eval") ? "page" : undefined} className={cn("mt-auto flex h-8 items-center px-4 text-meta text-slate hover:bg-tint hover:text-ink", path.startsWith("/eval") && "font-semibold text-ink")}>
+        Evaluation
+      </Link>
     </nav>
+  );
+}
+
+function CountChip({ count, tone }: { count: number; tone: "oxblood" | "pencil" }) {
+  return (
+    <Badge variant={tone} className="min-w-5 justify-center px-1 font-semibold">
+      {count}
+      <span className="sr-only"> need attention</span>
+    </Badge>
   );
 }
 
@@ -132,34 +169,44 @@ function StageMark({ stage }: { stage: Stage }) {
   if (stage.state === "done") {
     return (
       <span className="mt-0.5 text-ledger">
-        <svg viewBox="0 0 12 12" className="size-3.5" aria-hidden>
-          <path d="M2.5 6.2 5 8.5l4.5-5" fill="none" stroke="currentColor" strokeWidth="1.8" />
-        </svg>
+        <Check aria-hidden className="size-3.5 stroke-[1.5]" />
         <span className="sr-only">Done</span>
       </span>
     );
   }
-  if (stage.state === "attention" && stage.count !== null) {
-    return (
-      <span className={`mt-0.5 min-w-5 rounded-xs px-1 text-center text-xs font-semibold leading-[18px] ${stage.key === "readiness" ? "bg-oxblood-tint text-oxblood" : "bg-amber-tint text-pencil"}`}>
-        {stage.count}
-        <span className="sr-only"> need attention</span>
-      </span>
-    );
-  }
+  if (stage.state === "attention" && stage.count !== null) return <CountChip count={stage.count} tone={stage.key === "readiness" ? "oxblood" : "pencil"} />;
   return null;
 }
 
-function StepMark({ n, state }: { n: number; state: StageState }) {
+// Expanded rail: a ledger check for done, a filled ink dot for the current step, a
+// hollow circle for what is still to come.
+function StepIcon({ state, current }: { state: StageState; current: boolean }) {
   if (state === "done") {
     return (
-      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-ledger text-white">
-        <svg viewBox="0 0 12 12" className="size-3" aria-hidden>
-          <path d="M2.5 6.2 5 8.5l4.5-5" fill="none" stroke="currentColor" strokeWidth="1.8" />
-        </svg>
+      <span className="flex size-4 items-center justify-center text-ledger">
+        <Check aria-hidden className="size-4 stroke-[1.5]" />
         <span className="sr-only">Done:</span>
       </span>
     );
   }
-  return <span className={`flex size-5 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${state === "attention" ? "border-ink text-ink" : "border-field text-slate"}`}>{n}</span>;
+  return (
+    <span className="flex size-4 items-center justify-center">
+      <span aria-hidden className={cn("size-2.5 rounded-full border-[1.5px]", current ? "border-ink bg-ink" : "border-slate")} />
+    </span>
+  );
+}
+
+// Compact rail: a numbered square in the step's state colour.
+function StepSquare({ n, state, current }: { n: number; state: StageState; current: boolean }) {
+  return (
+    <span
+      className={cn(
+        "flex size-6 items-center justify-center rounded-xs border text-meta font-semibold",
+        state === "done" ? "border-ledger bg-ledger text-white" : current ? "border-ink bg-ink text-white" : "border-slate text-slate",
+      )}
+    >
+      {state === "done" ? <Check aria-hidden className="size-3.5 stroke-2" /> : n}
+      {state === "done" && <span className="sr-only">Done</span>}
+    </span>
+  );
 }

@@ -18,18 +18,29 @@ export type StageTarget = { path: "/rfx" | "/quotes" | "/comparison" | "/award";
 export type Stage = { key: string; label: string; target: StageTarget; state: StageState; count: number | null; note: string };
 export type Step = { href: StageTarget["path"]; label: string; stages: Stage[] };
 // attention: what the collapsed Lens tab counts on each screen.
-export type Progress = { rfxTitle: string; steps: Step[]; awardBlockers: number | null; attention: Partial<Record<LensScreen, number>> };
+// status: where the event stands, for the badge beside its name in the top bar.
+// search: what the Cmd+K bar can jump to.
+export type EventStatus = "Draft" | "Collecting quotes" | "Evaluating" | "Awarded";
+export type Progress = {
+  rfxTitle: string;
+  status: EventStatus;
+  steps: Step[];
+  awardBlockers: number | null;
+  attention: Partial<Record<LensScreen, number>>;
+  search: { suppliers: { code: string; name: string }[]; lines: { line_no: number; description: string }[] };
+};
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const href = (t: StageTarget) => `${t.path}${t.view ? `?view=${t.view}` : ""}${t.analyst ? `${t.view ? "&" : "?"}analyst=1` : ""}${t.section ? `#${t.section}` : ""}`;
 export const stageHref = href;
 
 export async function loadProgress(client: Db, displayDate: (iso: string) => string): Promise<Progress> {
-  const [{ rail, rfx }, award, pending, draft] = await Promise.all([
+  const [{ rail, rfx }, award, pending, draft, lineRows] = await Promise.all([
     loadQuotes(client, null),
     loadAwardView(client).catch(() => null),
     client.from("extracted_value").select("id", { count: "exact", head: true }).eq("substitute_status", "pending"),
     getDraft(client).catch(() => null),
+    client.from("line_item").select("line_no, description").order("line_no"),
   ]);
   const received = rail.filter((r) => r.response).length;
   const notExtracted = rail.filter((r) => r.response && r.response.status !== "extracted").length;
@@ -144,5 +155,19 @@ export async function loadProgress(client: Db, displayDate: (iso: string) => str
     award: blockers ?? 0,
     eval: 0,
   };
-  return { rfxTitle: rfx.title, steps, awardBlockers: blockers, attention };
+  const status: EventStatus = !rfx.sent_at
+    ? "Draft"
+    : award?.award?.memo_generated_at
+      ? "Awarded"
+      : extracted && received === rail.length
+        ? "Evaluating"
+        : "Collecting quotes";
+  return {
+    rfxTitle: rfx.title,
+    status,
+    steps,
+    awardBlockers: blockers,
+    attention,
+    search: { suppliers: rail.map((r) => ({ code: r.supplier.code, name: r.supplier.name })), lines: lineRows.data ?? [] },
+  };
 }

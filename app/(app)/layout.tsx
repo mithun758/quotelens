@@ -4,7 +4,9 @@ import { Suspense } from "react";
 import { Header } from "@/components/Header";
 import { LensDock } from "@/components/lens/LensDock";
 import { LensProvider } from "@/components/lens/LensProvider";
+import { ContentFrame } from "@/components/ContentFrame";
 import { StepRail } from "@/components/StepRail";
+import { Toaster } from "@/components/ui/sonner";
 import { PASSCODE_COOKIE, isValidSessionToken } from "@/lib/auth/passcode";
 import { formatDisplayDate } from "@/lib/config";
 import { db } from "@/lib/db/client";
@@ -27,9 +29,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={<div className="w-16 shrink-0 border-r border-rule bg-sheet" />}>
           <StepRail progress={progress} />
         </Suspense>
-        <main className="@container min-w-0 flex-1 px-6 py-5">{children}</main>
+        <main className="@container min-w-0 flex-1 px-6 py-6">
+          <ContentFrame>{children}</ContentFrame>
+        </main>
         <LensDock />
       </div>
+      <Toaster />
     </LensProvider>
   );
 }

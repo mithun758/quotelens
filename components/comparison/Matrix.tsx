@@ -33,6 +33,7 @@ export function Matrix({
   onOpenRules,
   onOpenSubstitute,
   highlight,
+  focusLine = null,
   result,
   excluded = {},
 }: {
@@ -46,6 +47,8 @@ export function Matrix({
   onOpenRules: (code: string) => void;
   onOpenSubstitute: (key: string) => void;
   highlight: { key: string; n: number } | null;
+  // A line to scroll to and highlight, from the Cmd+K bar.
+  focusLine?: number | null;
 }) {
   const { lines, suppliers, cells } = view;
   const [hover, setHover] = useState<string | null>(null);
@@ -53,6 +56,8 @@ export function Matrix({
   const [cited, setCited] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Focus handed back to a cell after its pinned card closes should not reopen the card.
+  const quietFocus = useRef(false);
   const anchorRef = useRef<{ getBoundingClientRect: () => DOMRect }>({ getBoundingClientRect: () => new DOMRect() });
   const open = pinned ?? hover;
   const best = cheapest(result, mode);
@@ -82,6 +87,16 @@ export function Matrix({
     const t = setTimeout(() => el.classList.remove("cited"), 2000);
     return () => clearTimeout(t);
   }, [highlight]);
+
+  useEffect(() => {
+    if (focusLine === null) return;
+    const cells = scrollRef.current?.querySelectorAll<HTMLElement>(`tr[data-line="${focusLine}"] > *`);
+    if (!cells?.length) return;
+    cells[0].scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    cells.forEach((c) => c.classList.add("cited"));
+    const t = setTimeout(() => cells.forEach((c) => c.classList.remove("cited")), 2000);
+    return () => clearTimeout(t);
+  }, [focusLine]);
 
   const openCell = useMemo(() => {
     if (!open) return null;
@@ -266,7 +281,10 @@ export function Matrix({
       <button
         type="button"
         onClick={() => (cell?.substitute_check && cell.substitute_status !== null ? onOpenSubstitute(key) : setPinned(pinned === key ? null : key))}
-        onFocus={() => enter(key)}
+        onFocus={() => {
+          if (quietFocus.current) quietFocus.current = false;
+          else enter(key);
+        }}
         onBlur={leave}
         aria-label={label}
         className="relative flex h-9 w-full items-center justify-end gap-1.5 px-3"
@@ -345,7 +363,7 @@ export function Matrix({
               const lr = lineResult.get(row.original.line_no)!;
               const outside = mode === "common" && !lr.inCommonBasket;
               return (
-                <tr key={row.id} className={cn("group", outside && "text-slate")}>
+                <tr key={row.id} data-line={row.original.line_no} className={cn("group", outside && "text-slate", focusLine === row.original.line_no && "[&>*]:bg-tint")}>
                   {row.getAllCells().map((c) => {
                     const id = c.column.id;
                     const f = frame(id);
@@ -425,7 +443,11 @@ export function Matrix({
             onCloseAutoFocus={(e) => {
               // A pinned card hands focus back to its cell; a hover card never had it.
               e.preventDefault();
-              if (pinned) scrollRef.current?.querySelector<HTMLElement>(`[data-cell="${pinned}"] button`)?.focus();
+              const cellButton = pinned ? scrollRef.current?.querySelector<HTMLElement>(`[data-cell="${pinned}"] button`) : null;
+              if (cellButton) {
+                quietFocus.current = true;
+                cellButton.focus();
+              }
             }}
             onInteractOutside={(e) => {
               // A click on the cell itself toggles the card; let the cell handle it.

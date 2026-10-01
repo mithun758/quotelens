@@ -310,7 +310,7 @@ const FILTERS: [SupplierFilter, string][] = [
   ["not_stale", "Not stale"],
 ];
 
-export function ComparisonScreen({ view, asOf, focusCell = null }: { view: ComparisonView; asOf: string; focusCell?: string | null }) {
+export function ComparisonScreen({ view, asOf, focusCell = null, focusLine = null }: { view: ComparisonView; asOf: string; focusCell?: string | null; focusLine?: number | null }) {
   const params = useSearchParams();
   const raw = params.get("view") ?? "prices";
   const decision = raw === "decision";
@@ -319,7 +319,7 @@ export function ComparisonScreen({ view, asOf, focusCell = null }: { view: Compa
   const [filter, setFilter] = useState<SupplierFilter>("all");
   const [highlight, setHighlight] = useState<{ key: string; n: number } | null>(focusCell ? { key: focusCell, n: 0 } : null);
   const [opened, setOpened] = useState<string | null>(null);
-  const { open: dockOpen, setOpen: setDockOpen, ask, openSheet, closeSheet, sheet } = useLens();
+  const { setOpen: setDockOpen, ask, openSheet, closeSheet, sheet } = useLens();
 
   const ready = useMemo(() => decisionReady(view), [view]);
   const filtered = useMemo(() => filterSuppliers(view, filter), [view, filter]);
@@ -404,7 +404,7 @@ export function ComparisonScreen({ view, asOf, focusCell = null }: { view: Compa
         : "Every supplier's counted price.";
 
   return (
-    <div className={cn("space-y-4", !dockOpen && "mx-auto max-w-[1200px]")}>
+    <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-title font-semibold">Quote Comparison</h1>
@@ -461,6 +461,7 @@ export function ComparisonScreen({ view, asOf, focusCell = null }: { view: Compa
             onOpenRules={openRules}
             onOpenSubstitute={openSubstitute}
             highlight={highlight}
+            focusLine={focusLine}
           />
         </TabsContent>
         <TabsContent value="compliance" className="pt-4">

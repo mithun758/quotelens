@@ -215,3 +215,8 @@ body {
     opacity: 1;
   }
 }
+
+/* The Cmd+K input sits in its own focused dialog; the caret is the focus mark. */
+[cmdk-input]:focus-visible {
+  outline: none;
+}
