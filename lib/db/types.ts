@@ -105,6 +105,8 @@ export type SourceLocator = {
   page?: number;
   sheet?: string;
   cell?: string;
+  paragraph?: number;
+  line?: number;
   bbox?: [number, number, number, number];
   span?: [number, number];
 };
@@ -182,6 +184,10 @@ export type ClarificationRow = {
   question: string;
   reply_text: string | null;
   status: ClarificationStatus;
+  line_item_id: string | null;
+  field: string | null;
+  target_flag_type: string | null;
+  answered_at: string | null;
   created_at: string;
 };
 

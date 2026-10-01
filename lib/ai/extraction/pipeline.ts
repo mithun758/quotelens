@@ -11,6 +11,9 @@ import { validUntil } from "@/lib/normalise/dates";
 import { normaliseResponse, type NormalisedValue, type SourcedItem } from "@/lib/normalise/normaliseResponse";
 import { evaluateQuestionnaire, type DocExtraction } from "@/lib/questionnaire/evaluate";
 import { extractDocument } from "./extract";
+
+// Response-level flag type that carries a clarification; never cleared by re-extraction.
+export const CLARIFICATION_FLAG = "clarification_requested";
 import { prepareDocument, snippetFound } from "./prepare";
 import { extractionSystemPrompt } from "./prompt";
 import { TERM_FIELDS, type Extraction, type ExtractionSource, type TermField } from "./schema";
@@ -190,9 +193,18 @@ async function replaceResponseData(
   const { responseId, supplier, lines } = data;
   const lineId = new Map(lines.map((l) => [l.line_no, l.id]));
 
+  // Priya's decisions survive re-extraction only while the value they were made on is unchanged.
+  const { data: decided } = await client
+    .from("extracted_value")
+    .select("line_item_id, field, status, raw_value, normalised_value_inr, reason")
+    .eq("response_id", responseId)
+    .in("status", ["confirmed", "corrected"]);
+  const decisions = new Map((decided ?? []).map((d) => [`${d.line_item_id ?? ""}|${d.field}`, d]));
+
   // Clear previous extraction for this response. Steps and value flags cascade.
+  // Clarification flags are kept: they carry the conversation with the supplier.
   check(await client.from("extracted_value").delete().eq("response_id", responseId), "clear values");
-  check(await client.from("flag").delete().eq("response_id", responseId), "clear response flags");
+  check(await client.from("flag").delete().eq("response_id", responseId).neq("type", CLARIFICATION_FLAG), "clear response flags");
   check(await client.from("quote_terms").delete().eq("response_id", responseId), "clear terms");
   check(await client.from("questionnaire_answer").delete().eq("supplier_id", supplier.id), "clear questionnaire");
 
@@ -321,6 +333,29 @@ async function replaceResponseData(
   );
 
   check(await client.from("response").update({ status: "extracted", coverage_count: result.coverage }).eq("id", responseId), "mark extracted");
+
+  for (const v of values) {
+    const prior = decisions.get(`${v.line_item_id ?? ""}|${v.field}`);
+    if (!prior) continue;
+    decisions.delete(`${v.line_item_id ?? ""}|${v.field}`);
+    if (prior.raw_value !== (v.raw_value ?? null)) {
+      await recordAuditEvent(
+        { actor: "system", action: "decision_dropped", target: `extracted_value:${v.id}`, before: prior as unknown as Json, reason: "Source value changed on re-extraction" },
+        client,
+      );
+      continue;
+    }
+    check(
+      await client
+        .from("extracted_value")
+        .update(prior.status === "corrected" ? { status: "corrected", normalised_value_inr: prior.normalised_value_inr, reason: prior.reason } : { status: "confirmed" })
+        .eq("id", v.id!),
+      "reapply decision",
+    );
+    if (prior.status === "confirmed" || prior.status === "corrected") {
+      await client.from("flag").update({ status: "resolved" }).eq("extracted_value_id", v.id!).eq("status", "open");
+    }
+  }
 }
 
 export type RunReport = {
