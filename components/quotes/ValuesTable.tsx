@@ -48,7 +48,7 @@ export function ValuesTable({ values, selectedId, onSelect, settled }: { values:
   return (
     <section aria-label="Extracted values">
       <div className="border-b border-ink pb-1">
-        <h2 className="text-base font-semibold">Extracted values</h2>
+        <h4 className="text-base font-semibold">Extracted values</h4>
         <p className="text-xs text-slate">₹ per piece, ex-GST, delivered. Select a row for its source and ledger.</p>
       </div>
       <table className="w-full table-fixed border-collapse text-[13px]">

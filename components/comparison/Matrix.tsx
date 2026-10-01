@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { cheapest, totalFor, type BasketMode } from "@/lib/comparison/build";
+import { cheapest, totalFor, type BasketMode, type ComparisonResult } from "@/lib/comparison/build";
 import type { ComparisonView } from "@/lib/comparison/load";
 import { formatInrCompact } from "@/lib/format/inr";
 import { Stamp } from "../ui/Stamp";
@@ -19,14 +19,20 @@ export function Matrix({
   onOpenSupplier,
   onOpenSubstitute,
   highlight,
+  result,
+  excluded = {},
 }: {
   view: ComparisonView;
+  // The result to mark L1 and totals with: all suppliers, or the decision-ready set.
+  result: ComparisonResult;
+  // Suppliers left out of that result, with why; their columns stay visible but muted.
+  excluded?: Record<string, string[]>;
   mode: BasketMode;
   onOpenSupplier: (code: string) => void;
   onOpenSubstitute: (key: string) => void;
   highlight: { key: string; n: number } | null;
 }) {
-  const { lines, suppliers, cells, result } = view;
+  const { lines, suppliers, cells } = view;
   const [hover, setHover] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -105,11 +111,12 @@ export function Matrix({
               Last cycle
             </th>
             {suppliers.map((s) => {
-              const r = result.suppliers.find((x) => x.code === s.code)!;
+              const r = view.result.suppliers.find((x) => x.code === s.code)!;
               const f = view.freshness[s.code];
+              const out = excluded[s.code];
               const passed = s.questionnairePassed === s.questionnaireTotal;
               return (
-                <th key={s.code} scope="col" className={`${th} sticky top-0 z-20 py-2 text-right align-bottom font-normal`}>
+                <th key={s.code} scope="col" className={`${th} sticky top-0 z-20 py-2 text-right align-bottom font-normal ${out ? "bg-paper" : ""}`} title={out ? `Excluded: ${out.join("; ")}` : undefined}>
                   <span className="flex h-12 items-end justify-end">
                     <button
                       type="button"
@@ -140,6 +147,7 @@ export function Matrix({
                       <span>Not extracted</span>
                     )}
                   </span>
+                  {out && <span className="mt-1 block text-xs font-semibold text-slate">Excluded</span>}
                 </th>
               );
             })}
@@ -166,15 +174,15 @@ export function Matrix({
                 {suppliers.map((s) => {
                   const cell = cells[s.code]?.[line.line_no];
                   const key = `${s.code}:${line.line_no}`;
-                  const isL1 = lr.l1.includes(s.code) && !outside;
-                  const gap = mode === "all" && !lr.countable[s.code] ? lr.gapFill[s.code] : null;
+                  const isL1 = lr.l1.includes(s.code) && !outside && !excluded[s.code];
+                  const gap = mode === "all" && !excluded[s.code] && !lr.countable[s.code] ? lr.gapFill[s.code] : null;
                   const sub = cell?.substitute_status === "pending" || cell?.substitute_status === "rejected";
                   const missing = !cell || cell.normalised_value_inr === null || cell.confidence_state === "missing";
                   return (
                     <td
                       key={s.code}
                       data-cell={key}
-                      className={`${td} relative overflow-hidden p-0 group-hover:bg-tint ${open === key ? "bg-tint" : ""}`}
+                      className={`${td} relative overflow-hidden p-0 group-hover:bg-tint ${open === key ? "bg-tint" : ""} ${excluded[s.code] ? "bg-paper text-slate" : ""}`}
                       onMouseEnter={() => setHover(key)}
                       onMouseLeave={() => setHover((h) => (h === key ? null : h))}
                     >
@@ -233,7 +241,13 @@ export function Matrix({
             <td className="sticky bottom-0 z-20 border-t-2 border-ink bg-sheet" />
             <td className="sticky bottom-0 z-20 whitespace-nowrap border-t-2 border-r border-ink border-r-rule bg-sheet px-2 text-right align-top pt-2 text-slate">{formatInrCompact(lastCycleTotal)}</td>
             {suppliers.map((s) => {
-              const r = result.suppliers.find((x) => x.code === s.code)!;
+              const r = result.suppliers.find((x) => x.code === s.code);
+              if (!r)
+                return (
+                  <td key={s.code} className="sticky bottom-0 z-20 border-t-2 border-ink bg-paper px-3 text-right text-xs text-slate">
+                    Excluded
+                  </td>
+                );
               const total = totalFor(r, mode);
               const vsLast = lastCycleTotal ? ((total - lastCycleTotal) / lastCycleTotal) * 100 : null;
               const isBest = s.code === best;

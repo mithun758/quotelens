@@ -134,17 +134,25 @@ export function DocumentViewer({
   highlight: SourceHighlight;
 }) {
   const active = documents.find((d) => d.id === activeId) ?? documents[0];
+  // Keep the active document's tab in view when there are more tabs than fit.
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const row = tabsRef.current;
+    const tab = row?.querySelector<HTMLElement>("[aria-current=true]");
+    if (row && tab) row.scrollLeft = Math.max(0, tab.offsetLeft - row.offsetLeft - 12);
+  }, [active?.id]);
   if (!active) return <p className="text-sm text-slate">No documents.</p>;
   const bbox = highlight?.locator?.bbox && highlight.locator.bbox.length === 4 ? (highlight.locator.bbox as [number, number, number, number]) : null;
 
   return (
     <div className="border border-rule bg-sheet">
-      <div className="flex gap-x-4 overflow-x-auto border-b border-rule px-3">
+      <div ref={tabsRef} className="flex gap-x-4 overflow-x-auto border-b border-rule px-3">
         {documents.map((d) => (
           <button
             key={d.id}
             type="button"
             onClick={() => onSelect(d.id)}
+            aria-current={d.id === active.id}
             className={`-mb-px max-w-[13rem] shrink-0 truncate border-b-2 pb-2 pt-2.5 text-xs ${d.id === active.id ? "border-ink font-semibold" : "border-transparent text-slate hover:text-ink"}`}
             title={d.file_name}
           >

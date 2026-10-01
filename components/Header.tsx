@@ -8,7 +8,7 @@ export function Header({ progress }: { progress: Progress | null }) {
   return (
     <header className="sticky top-0 z-30 border-b border-rule bg-sheet">
       <div className="flex h-14 items-center gap-6 px-5">
-        <Link href="/quotes" className="w-[176px] shrink-0 text-sm font-semibold tracking-tight">
+        <Link href="/quotes" className="w-[196px] shrink-0 text-sm font-semibold tracking-tight">
           QuoteLens
         </Link>
         <div className="min-w-0 flex-1">

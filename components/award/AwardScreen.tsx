@@ -28,6 +28,7 @@ type Props = {
   negotiationCount: number;
   memoDate: string;
   rfxTitle: string;
+  readiness: { ready: number; total: number };
 };
 
 const BLOCKER_LABEL: Record<string, string> = {
@@ -67,7 +68,7 @@ function Check({ done }: { done: boolean }) {
   );
 }
 
-export function AwardScreen({ view, supplierNames, freshness, memo, negotiationCount, memoDate, rfxTitle }: Props) {
+export function AwardScreen({ view, supplierNames, freshness, memo, negotiationCount, memoDate, rfxTitle, readiness }: Props) {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [overriding, setOverriding] = useState<string | null>(null);
@@ -327,11 +328,16 @@ export function AwardScreen({ view, supplierNames, freshness, memo, negotiationC
             </ul>
           </section>
 
-          <section aria-labelledby="blockers-title">
+          <section id="readiness" aria-labelledby="blockers-title" className="scroll-mt-20">
             <div className="border-b border-ink pb-1">
-              <h2 id="blockers-title" className="text-base font-semibold">
-                Before the memo
-              </h2>
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 id="blockers-title" className="text-base font-semibold">
+                  Decision readiness
+                </h2>
+                <p className={`text-sm font-semibold ${readiness.ready === readiness.total ? "text-ledger" : ""}`}>
+                  {readiness.ready} of {readiness.total} lines ready for award
+                </p>
+              </div>
               <p className="text-xs text-slate">
                 {total === 0
                   ? "Nothing blocks this scenario."

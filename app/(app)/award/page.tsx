@@ -1,6 +1,7 @@
 import { NotExtractedNote } from "@/components/ErrorNote";
 import { AwardScreen } from "@/components/award/AwardScreen";
 import { negotiationLines } from "@/lib/award/negotiation";
+import { readinessFor } from "@/lib/award/readiness";
 import { loadAwardView } from "@/lib/award/view";
 import { asOfDate, formatDisplayDate } from "@/lib/config";
 import { db } from "@/lib/db/client";
@@ -24,6 +25,7 @@ export default async function AwardPage() {
       negotiationCount={negotiationLines(view.chosen).length}
       memoDate={formatDisplayDate(asOfDate())}
       rfxTitle={data.rfx.title}
+      readiness={readinessFor(view.chosen.allocation, view.blockers, data.lines.length)}
     />
   );
 }

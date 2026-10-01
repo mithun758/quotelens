@@ -48,9 +48,9 @@ export function QuotesWorkspace({ detail, documents, freshness }: { detail: Supp
     <div className="space-y-4">
       <header className="space-y-2 border-b border-rule pb-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold">
+          <h3 className="text-lg font-semibold">
             {supplier.code}. {supplier.name}
-          </h1>
+          </h3>
           {freshness && <Stamp status={freshness} title="Quote Freshness; details on Quote Comparison" />}
         </div>
         <dl className="grid grid-cols-3 gap-x-6 gap-y-2 text-[13px] xl:grid-cols-6">

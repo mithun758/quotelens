@@ -15,7 +15,7 @@ export function SentEmails({ clarifications, supplierName }: { clarifications: C
   return (
     <section aria-label="Questions to the supplier">
       <div className="border-b border-ink pb-1">
-        <h2 className="text-base font-semibold">Questions to {supplierName}</h2>
+        <h4 className="text-base font-semibold">Questions to {supplierName}</h4>
         <p className="text-xs text-slate">Sending is simulated; replies are read by the real model.</p>
       </div>
       <ul>

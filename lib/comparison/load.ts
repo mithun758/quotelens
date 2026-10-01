@@ -16,6 +16,8 @@ export type ComparisonView = {
   lines: LineItemRow[];
   suppliers: (SupplierRow & { formats: string[]; questionnairePassed: number; questionnaireTotal: number; documents: { id: string; file_name: string; format: string }[] })[];
   cells: Record<string, Record<number, ComparisonCell>>;
+  // The pure comparison inputs, so a view can recompute L1 and totals for a subset of suppliers.
+  inputs: Record<string, Record<number, ComparisonCellInput>>;
   result: ComparisonResult;
   questions: QuestionnaireQuestion[];
   answers: Record<string, Record<string, QuestionnaireAnswerRow>>;
@@ -66,6 +68,7 @@ export async function loadComparison(client: Db): Promise<ComparisonView> {
       documents: d.documents.map((doc) => ({ id: doc.id, file_name: doc.file_name, format: formatLabel(doc.mime_type) })),
     })),
     cells,
+    inputs,
     result,
     questions: rfx.questionnaire,
     answers: Object.fromEntries(details.map((d) => [d.supplier.code, Object.fromEntries(d.questionnaire.map((q) => [q.question_key, q]))])),

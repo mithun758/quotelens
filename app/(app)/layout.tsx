@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { Header } from "@/components/Header";
 import { StepRail } from "@/components/StepRail";
 import { PASSCODE_COOKIE, isValidSessionToken } from "@/lib/auth/passcode";
@@ -20,7 +21,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     <>
       <Header progress={progress} />
       <div className="flex flex-1">
-        <StepRail progress={progress} />
+        <Suspense fallback={<div className="w-[220px] shrink-0 border-r border-rule bg-sheet" />}>
+          <StepRail progress={progress} />
+        </Suspense>
         <main className="min-w-0 flex-1 px-6 py-5">{children}</main>
       </div>
     </>

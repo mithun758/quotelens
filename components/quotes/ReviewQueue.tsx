@@ -133,7 +133,7 @@ export function ReviewQueue({
     <section aria-label="Review queue" className="border border-rule bg-sheet">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink px-3 py-2">
         <div>
-          <h2 className="text-base font-semibold">{items.length === 0 ? "Nothing needs you" : `${items.length} to review`}</h2>
+          <h4 className="text-base font-semibold">{items.length === 0 ? "Nothing needs you" : `${items.length} to review`}</h4>
           <p className="text-xs text-slate">Only Inferred, Missing and flagged items appear here.</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -206,9 +206,9 @@ export function ReviewQueue({
             <section key={g.key} aria-label={g.title} className="border-b border-rule last:border-b-0">
               <div className="flex items-start justify-between gap-2 bg-paper px-3 py-2">
                 <div>
-                  <h3 className="text-sm font-semibold">
+                  <h5 className="text-sm font-semibold">
                     {g.title} <span className="font-normal text-slate">{g.items.length}</span>
-                  </h3>
+                  </h5>
                   <p className="text-xs text-slate">{g.note}</p>
                 </div>
                 {acceptable.length > 1 && (
