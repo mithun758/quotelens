@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { askAnalystAction, type AnalystReply } from "@/app/(app)/comparison/analyst-actions";
+import { ErrorNote } from "../ErrorNote";
 import { AnswerCard } from "./AnswerCard";
 
 type Exchange = { question: string; reply: AnalystReply | null; error: string | null };
@@ -42,11 +43,12 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [history]);
 
-  function ask(q: string) {
+  function ask(q: string, replaceLast = false) {
     const text = q.trim();
     if (!text || pending) return;
-    const turns = history.flatMap((e) => (e.reply ? [{ role: "user" as const, content: e.question }, { role: "assistant" as const, content: e.reply.answer }] : []));
-    setHistory((h) => [...h, { question: text, reply: null, error: null }]);
+    const base = replaceLast ? history.slice(0, -1) : history;
+    const turns = base.flatMap((e) => (e.reply ? [{ role: "user" as const, content: e.question }, { role: "assistant" as const, content: e.reply.answer }] : []));
+    setHistory([...base, { question: text, reply: null, error: null }]);
     setQuestion("");
     startTransition(async () => {
       const r = await askAnalystAction(text, turns);
@@ -88,7 +90,7 @@ export function AnalystPanel({ onClose }: { onClose: () => void }) {
           <div key={i} className="space-y-2">
             <p className="ml-6 rounded-md bg-zinc-900 px-3 py-2 text-sm text-white">{e.question}</p>
             {e.reply && <AnswerCard question={e.question} reply={e.reply} />}
-            {e.error && <p className="rounded border border-red-200 bg-red-50 px-2 py-1 text-sm text-red-800">{e.error}</p>}
+            {e.error && <ErrorNote message={e.error} busy={pending} onRetry={i === history.length - 1 ? () => ask(e.question, true) : undefined} />}
             {!e.reply && !e.error && <p className="text-sm text-zinc-500">Working through the tools...</p>}
           </div>
         ))}

@@ -6,6 +6,7 @@ import { chatAction, newDraftAction, saveDraftAction, sendRfxAction } from "@/ap
 import { sendProblems, type DraftLine, type RfxDraft } from "@/lib/rfx/draft";
 import type { DraftState } from "@/lib/rfx/store";
 import { Markdown } from "../analyst/AnswerCard";
+import { ErrorNote } from "../ErrorNote";
 
 const SUGGESTIONS = ["We need to run our annual IT refresh across our three hubs.", "Draft the IT refresh from last year's list, with our standard questionnaire and terms."];
 
@@ -37,6 +38,7 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [failedMessage, setFailedMessage] = useState<string | null>(null);
   // Bumped when the co-pilot replaces the draft, so per-line editors re-read their value.
   const [version, setVersion] = useState(0);
   const [sent, setSent] = useState<{ sentAt: string; suppliers: { code: string; name: string; state: string | null }[] } | null>(null);
@@ -70,6 +72,7 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
     const msg = text.trim();
     if (!msg || pending) return;
     setMessage("");
+    setFailedMessage(null);
     setConversation((c) => [...c, { role: "user", content: msg }]);
     startTransition(async () => {
       setError(null);
@@ -88,8 +91,8 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
         setVersion((v) => v + 1);
       } else {
         setError(r.error);
+        setFailedMessage(msg);
         setConversation((c) => c.slice(0, -1));
-        setMessage(msg);
       }
     });
   }
@@ -177,7 +180,7 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
       </aside>
 
       <section aria-label="RFx draft" className="min-w-0 space-y-4">
-        {error && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>}
+        {error && <ErrorNote message={error} busy={pending} onRetry={failedMessage ? () => send(failedMessage) : undefined} />}
         {locked && (
           <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
             Sent to {supplierCount} suppliers{initial.sentAt ? ` on ${new Date(initial.sentAt).toLocaleString("en-GB", { timeZone: "Asia/Kolkata" })} IST` : ""} (simulated). Start a new draft to make changes.
@@ -223,7 +226,7 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
           </ul>
         )}
 
-        <fieldset disabled={locked} className="grid gap-3 rounded-md border border-zinc-200 bg-white p-3 sm:grid-cols-2 lg:grid-cols-5">
+        <fieldset disabled={locked} className="min-w-0 grid gap-3 rounded-md border border-zinc-200 bg-white p-3 sm:grid-cols-2 lg:grid-cols-5">
           <legend className="px-1 text-xs font-medium text-zinc-500">RFx</legend>
           <div className="sm:col-span-2">
             <Field label="Title">
@@ -257,7 +260,7 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
           </div>
         </fieldset>
 
-        <fieldset disabled={locked} className="rounded-md border border-zinc-200 bg-white">
+        <fieldset disabled={locked} className="min-w-0 rounded-md border border-zinc-200 bg-white">
           <legend className="ml-3 px-1 text-xs font-medium text-zinc-500">Lines</legend>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] text-sm">
@@ -315,7 +318,7 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
         </fieldset>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <fieldset disabled={locked} className="space-y-2 rounded-md border border-zinc-200 bg-white p-3">
+          <fieldset disabled={locked} className="min-w-0 space-y-2 rounded-md border border-zinc-200 bg-white p-3">
             <legend className="px-1 text-xs font-medium text-zinc-500">Commercial terms</legend>
             <div className="grid grid-cols-2 gap-2">
               <Field label="Quote validity required (days)">
@@ -332,7 +335,7 @@ export function RfxScreen({ initial, supplierCount, asOfDate }: { initial: Draft
             ))}
           </fieldset>
 
-          <fieldset disabled={locked} className="space-y-2 rounded-md border border-zinc-200 bg-white p-3">
+          <fieldset disabled={locked} className="min-w-0 space-y-2 rounded-md border border-zinc-200 bg-white p-3">
             <legend className="px-1 text-xs font-medium text-zinc-500">Quality questionnaire</legend>
             {draft.questionnaire.map((q, i) => (
               <div key={i} className="flex gap-2">

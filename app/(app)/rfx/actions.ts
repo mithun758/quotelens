@@ -4,6 +4,8 @@ import { runCopilot } from "@/lib/ai/copilot";
 import { hasValidSession } from "@/lib/auth/gate";
 import { asOfDate } from "@/lib/config";
 import { db } from "@/lib/db/client";
+import { friendlyError } from "@/lib/errors";
+import { enforceRateLimit } from "@/lib/ratelimit";
 import { recordAuditEvent } from "@/lib/db/queries";
 import { RfxDraft, sendProblems } from "@/lib/rfx/draft";
 import { getDraft, markSent, saveDraft, startNewDraft } from "@/lib/rfx/store";
@@ -18,7 +20,7 @@ async function guarded<T>(fn: () => Promise<T>): Promise<Result<T>> {
     const data = await fn();
     return { ok: true, data };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Something went wrong" };
+    return { ok: false, error: friendlyError(error, "The co-pilot") };
   }
 }
 
@@ -28,6 +30,7 @@ export async function chatAction(message: string) {
     const client = db();
     const state = await getDraft(client);
     if (state.status === "sent") throw new Error("This RFx has been sent. Start a new draft to change it.");
+    await enforceRateLimit(client, "copilot");
     const turn = await runCopilot(client, state.draft, state.conversation.slice(-20), message.trim());
     const conversation = [...state.conversation, { role: "user" as const, content: message.trim() }, { role: "assistant" as const, content: turn.reply }];
     await saveDraft(client, turn.draft, conversation);

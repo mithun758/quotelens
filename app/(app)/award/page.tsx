@@ -1,3 +1,4 @@
+import { NotExtractedNote } from "@/components/ErrorNote";
 import { AwardScreen } from "@/components/award/AwardScreen";
 import { negotiationLines } from "@/lib/award/negotiation";
 import { loadAwardView } from "@/lib/award/view";
@@ -10,6 +11,7 @@ export const maxDuration = 120;
 
 export default async function AwardPage() {
   const { data, award, ...view } = await loadAwardView(db());
+  if (!Object.values(data.cells).some((c) => Object.keys(c).length)) return <NotExtractedNote />;
   const supplierNames = Object.fromEntries(data.suppliers.map((s) => [s.code, s.name]));
   const freshness = Object.fromEntries(data.suppliers.map((s) => [s.code, s.freshness?.status ?? null]));
   return (

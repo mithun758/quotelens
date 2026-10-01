@@ -138,7 +138,7 @@ export async function runCopilot(client: Db, draft: RfxDraft, history: ChatTurn[
       tools,
       tool_choice: { type: "auto" },
       messages,
-    });
+    }, { timeout: 120_000, maxRetries: 1 });
     const usage: Usage = {
       input_tokens: response.usage.input_tokens,
       output_tokens: response.usage.output_tokens,

@@ -4,6 +4,7 @@ import type { Database } from "./types";
 export type Db = SupabaseClient<Database>;
 
 let cached: Db | null = null;
+const DB_TIMEOUT_MS = 30_000;
 
 // Server-side only: uses the service role key, which bypasses RLS.
 // Not guarded with "server-only" because the seed script also runs it under plain Node.
@@ -21,6 +22,8 @@ export function db(): Db {
 
   cached = createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    // A slow database must fail with a friendly message, not hang the demo.
+    global: { fetch: (input, init) => fetch(input, { ...init, signal: init?.signal ?? AbortSignal.timeout(DB_TIMEOUT_MS) }) },
   });
   return cached;
 }

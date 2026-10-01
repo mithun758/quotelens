@@ -36,7 +36,7 @@ export async function draftClarification(
         content: `Supplier: ${args.supplierName}\nRFx: ${args.rfxTitle}\n\nIssues to ask about:\n${args.issues.map((i, n) => `${n + 1}. ${i.label}: ${i.detail}`).join("\n")}`,
       },
     ],
-  });
+  }, { timeout: 45_000, maxRetries: 1 });
 
   const usage: Usage = {
     input_tokens: response.usage.input_tokens,

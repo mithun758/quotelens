@@ -1,3 +1,4 @@
+import { ExtractPanel } from "@/components/quotes/ExtractPanel";
 import { QuotesWorkspace } from "@/components/quotes/QuotesWorkspace";
 import { SupplierRail } from "@/components/quotes/SupplierRail";
 import { db } from "@/lib/db/client";
@@ -17,7 +18,11 @@ export default async function QuotesPage({ searchParams }: PageProps<"/quotes">)
     ? await Promise.all(detail.documents.map(async (d) => ({ id: d.id, file_name: d.file_name, mime_type: d.mime_type, model: await renderDocument(client, d) })))
     : [];
 
+  const notExtracted = rail.filter((r) => r.response && r.response.status !== "extracted").map((r) => ({ code: r.supplier.code, name: r.supplier.name }));
+
   return (
+    <div className="space-y-4">
+    {notExtracted.length > 0 && <ExtractPanel key={notExtracted.map((p) => p.code).join()} pending={notExtracted} />}
     <div className="flex flex-col gap-4 lg:flex-row">
       <SupplierRail rail={rail} selected={detail?.supplier.code ?? null} />
       <div className="min-w-0 flex-1">
@@ -27,6 +32,7 @@ export default async function QuotesPage({ searchParams }: PageProps<"/quotes">)
           <p className="text-sm text-zinc-600">No supplier responses yet.</p>
         )}
       </div>
+    </div>
     </div>
   );
 }

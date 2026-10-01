@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { runExtractionForAll } from "@/lib/ai/extraction/pipeline";
 import { PASSCODE_COOKIE, isValidSessionToken } from "@/lib/auth/passcode";
 import { db } from "@/lib/db/client";
+import { UserFacingError, friendlyError } from "@/lib/errors";
+import { enforceRateLimit } from "@/lib/ratelimit";
 
 // All five suppliers run in parallel; a full run takes about a minute.
 export const maxDuration = 300;
@@ -12,7 +14,13 @@ export async function POST() {
   if (!isValidSessionToken(cookieStore.get(PASSCODE_COOKIE)?.value)) {
     return Response.json({ error: "Passcode required" }, { status: 401 });
   }
-  const run = await runExtractionForAll(db());
+  let run;
+  try {
+    await enforceRateLimit(db(), "extraction");
+    run = await runExtractionForAll(db());
+  } catch (error) {
+    return Response.json({ error: friendlyError(error, "Extraction") }, { status: error instanceof UserFacingError ? 429 : 502 });
+  }
   return Response.json({
     runId: run.runId,
     seconds: Math.round(run.durationMs / 1000),

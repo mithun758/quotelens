@@ -11,6 +11,8 @@ import { writeAwardMemo } from "@/lib/ai/memo";
 import { hasValidSession } from "@/lib/auth/gate";
 import { asOfDate, formatDisplayDate } from "@/lib/config";
 import { db } from "@/lib/db/client";
+import { friendlyError } from "@/lib/errors";
+import { enforceRateLimit } from "@/lib/ratelimit";
 import { recordAuditEvent } from "@/lib/db/queries";
 import type { Json } from "@/lib/db/types";
 import { markdownToBlocks } from "@/lib/export/document";
@@ -28,7 +30,7 @@ async function guarded<T>(fn: () => Promise<T>): Promise<Result<T>> {
     revalidatePath("/", "layout");
     return { ok: true, data };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Something went wrong" };
+    return { ok: false, error: friendlyError(error) };
   }
 }
 
@@ -73,6 +75,7 @@ export async function generateMemoAction() {
     const view = await loadAwardView(client);
     if (view.openBlockers > 0) throw new Error(`Resolve or override the ${view.openBlockers} open blocker${view.openBlockers === 1 ? "" : "s"} first.`);
     if (!view.chosen.allocation.length) throw new Error("This scenario awards no lines.");
+    await enforceRateLimit(client, "memo");
     const facts = await buildMemoFacts(client, view);
     const memo = await writeAwardMemo(client, facts);
     await saveMemo(client, memo.markdown, memo.warnings as unknown as Json, {
@@ -111,7 +114,7 @@ export async function exportMemoAction(format: "pdf" | "md") {
       mime: format === "pdf" ? "application/pdf" : "text/markdown",
     };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Export failed" };
+    return { ok: false as const, error: friendlyError(error, "The export") };
   }
 }
 
@@ -138,7 +141,7 @@ export async function sendToNegotiationAction() {
     await recordAuditEvent({ actor: "priya", action: "send_to_negotiation", target: "award", after: { lines: lines.map((l) => l.line) }, reason: "Stubbed hand-off to Aerchain negotiation" }, client);
     return { ok: true as const, count: lines.length, fileName: "negotiation-targets-it-refresh-2026.xlsx", base64: bytes.toString("base64"), mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Export failed" };
+    return { ok: false as const, error: friendlyError(error, "The export") };
   }
 }
 

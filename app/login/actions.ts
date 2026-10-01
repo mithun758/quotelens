@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   PASSCODE_COOKIE,
   PASSCODE_COOKIE_MAX_AGE,
+  SESSION_COOKIE,
   checkPasscode,
   isGateConfigured,
   sessionToken,
@@ -36,6 +37,10 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
     path: "/",
     maxAge: PASSCODE_COOKIE_MAX_AGE,
   });
+
+  if (!cookieStore.get(SESSION_COOKIE)) {
+    cookieStore.set(SESSION_COOKIE, crypto.randomUUID(), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: PASSCODE_COOKIE_MAX_AGE });
+  }
 
   redirect(safeNext(formData.get("next")));
 }

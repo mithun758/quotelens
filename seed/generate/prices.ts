@@ -47,7 +47,6 @@ export const GST_RATE = 0.18;
 export const B_WRONG_GST_LINES = [17, 18];
 export const B_WRONG_GST_RATE = 0.28;
 export const B_FOOTNOTE_DISCOUNT = 0.04;
-export const B_FOOTNOTE_THRESHOLD_INR = 25_00_000;
 
 // D prices patch cables per pack of 10 and has one handwritten correction.
 export const D_PACK_LINE = 24;

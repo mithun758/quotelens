@@ -70,7 +70,7 @@ export async function askAnalyst(client: Db, question: string, history: AnalystT
       tools,
       tool_choice: { type: "auto" },
       messages,
-    });
+    }, { timeout: 90_000, maxRetries: 1 });
     model = response.model;
     const usage: Usage = {
       input_tokens: response.usage.input_tokens,

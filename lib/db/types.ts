@@ -303,6 +303,8 @@ export type RfxDraftRow = {
   created_at: string;
 };
 
+export type AiRequestRow = { id: string; session_id: string; kind: string; created_at: string };
+
 // Columns the database fills in; optional on insert. Nullable columns are optional too.
 type OptionalOnInsert<R> = Extract<keyof R, "id" | "created_at"> | { [K in keyof R]: null extends R[K] ? K : never }[keyof R];
 type Insertable<R> = Omit<R, OptionalOnInsert<R>> & Partial<Pick<R, OptionalOnInsert<R>>>;
@@ -333,6 +335,7 @@ export type Database = {
       benchmark_series: TableDef<BenchmarkSeriesRow, "is_illustrative">;
       fx_rate: TableDef<FxRateRow, "is_illustrative">;
       rfx_draft: TableDef<RfxDraftRow, "conversation" | "status" | "updated_at">;
+      ai_request: TableDef<AiRequestRow>;
       extraction_run: TableDef<ExtractionRunRow, "status" | "started_at">;
       model_call: TableDef<ModelCallRow, "attempt" | "cache_read_input_tokens" | "cache_creation_input_tokens">;
     };
@@ -368,4 +371,4 @@ export const TABLE_NAMES = [
 ] as const satisfies readonly TableName[];
 
 // Operational history: not demo data, so "Reset demo" leaves these alone.
-export const OPS_TABLE_NAMES = ["extraction_run", "model_call"] as const satisfies readonly TableName[];
+export const OPS_TABLE_NAMES = ["extraction_run", "model_call", "ai_request"] as const satisfies readonly TableName[];

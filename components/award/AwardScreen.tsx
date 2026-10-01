@@ -16,6 +16,7 @@ import type { AwardSpec } from "@/lib/award/spec";
 import type { AwardView } from "@/lib/award/view";
 import { formatInr, formatInrCompact } from "@/lib/format/inr";
 import { Markdown } from "../analyst/AnswerCard";
+import { ErrorNote } from "../ErrorNote";
 
 type Props = {
   view: Omit<AwardView, "award">;
@@ -57,8 +58,10 @@ export function AwardScreen({ view, supplierNames, freshness, memo, negotiationC
   const [customDefault, setCustomDefault] = useState(view.spec.default_supplier ?? "");
   const { spec, rows, chosen, blockers, openBlockers } = view;
 
-  const run = (fn: () => Promise<{ ok: boolean; error?: string; data?: unknown }>, done?: string | ((d: unknown) => string)) =>
+  const [retry, setRetry] = useState<(() => void) | null>(null);
+  const run = (fn: () => Promise<{ ok: boolean; error?: string; data?: unknown }>, done?: string | ((d: unknown) => string)): void =>
     startTransition(async () => {
+      setRetry(() => () => run(fn, done));
       setMessage(null);
       const r = await fn();
       if (!r.ok) setMessage({ tone: "error", text: r.error ?? "Something went wrong" });
@@ -80,9 +83,8 @@ export function AwardScreen({ view, supplierNames, freshness, memo, negotiationC
         <p className="text-sm text-zinc-600">Compare award scenarios, clear the blockers, and send a memo to Meera. Scenarios are computed by code; QuoteLens never awards on its own.</p>
       </div>
 
-      {message && (
-        <p className={`rounded-md border px-3 py-2 text-sm ${message.tone === "ok" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-red-200 bg-red-50 text-red-800"}`}>{message.text}</p>
-      )}
+      {message?.tone === "ok" && <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{message.text}</p>}
+      {message?.tone === "error" && <ErrorNote message={message.text} busy={pending} onRetry={retry ?? undefined} />}
 
       <fieldset className="flex flex-wrap gap-x-5 gap-y-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm" disabled={pending}>
         <legend className="px-1 text-xs font-medium text-zinc-500">Eligibility</legend>

@@ -5,6 +5,9 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // itself, so changing DEMO_PASSCODE invalidates every existing cookie.
 
 export const PASSCODE_COOKIE = "ql_gate";
+// A random id per browser, used only to rate-limit AI calls. The passcode cookie is the
+// same for everyone, so it cannot tell sessions apart.
+export const SESSION_COOKIE = "ql_sid";
 export const PASSCODE_COOKIE_MAX_AGE = 60 * 60 * 24 * 14; // 14 days
 
 function configuredPasscode(): string | null {

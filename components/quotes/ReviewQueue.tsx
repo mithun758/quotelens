@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { acceptAction, correctAction, draftAction, receiveReplyAction, sendAction } from "@/app/(app)/quotes/actions";
 import type { QueueItem } from "@/lib/review/queue";
+import { ErrorNote } from "../ErrorNote";
 import { CONFIDENCE_LABEL, CONFIDENCE_STYLE } from "./format";
 
 const SEVERITY_STYLE = { high: "text-red-700", medium: "text-amber-800", low: "text-zinc-600" } as const;
@@ -58,8 +59,10 @@ export function ReviewQueue({
   const [correcting, setCorrecting] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ subject: string; body: string } | null>(null);
 
-  const run = (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) =>
+  const [retry, setRetry] = useState<(() => void) | null>(null);
+  const run = (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string): void =>
     startTransition(async () => {
+      setRetry(() => () => run(fn, done));
       setError(null);
       setNotice(null);
       const result = await fn();
@@ -81,14 +84,17 @@ export function ReviewQueue({
             <button
               type="button"
               disabled={pending}
-              onClick={() =>
-                startTransition(async () => {
-                  setError(null);
-                  const result = await draftAction(supplierCode, selected);
-                  if (result.ok && result.data) setDraft(result.data);
-                  else if (!result.ok) setError(result.error);
-                })
-              }
+              onClick={() => {
+                const draftIt = () =>
+                  startTransition(async () => {
+                    setError(null);
+                    setRetry(() => draftIt);
+                    const result = await draftAction(supplierCode, selected);
+                    if (result.ok && result.data) setDraft(result.data);
+                    else if (!result.ok) setError(result.error);
+                  });
+                draftIt();
+              }}
               className="rounded bg-zinc-900 px-2 py-1 text-xs text-white disabled:opacity-60"
             >
               {pending && !draft ? "Drafting..." : `Ask supplier about ${selected.length}`}
@@ -107,7 +113,11 @@ export function ReviewQueue({
         </div>
       </div>
 
-      {error && <p className="border-b border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>}
+      {error && (
+        <div className="border-b border-red-200">
+          <ErrorNote message={error} busy={pending} onRetry={retry ?? undefined} />
+        </div>
+      )}
       {notice && <p className="border-b border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</p>}
 
       {draft && (

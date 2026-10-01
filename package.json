@@ -12,11 +12,11 @@
     "seed": "tsx --env-file=.env.local seed/seed.ts",
     "seed:generate": "tsx seed/generate/generate.ts",
     "extract": "tsx --env-file=.env.local scripts/extract.ts",
-    "analyst:demo": "tsx --env-file=.env.local scripts/analyst-demo.ts"
+    "analyst:demo": "tsx --env-file=.env.local scripts/analyst-demo.ts",
+    "smoke": "node --env-file=.env.local scripts/smoke.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
-    "@expo-google-fonts/noto-sans": "^0.4.2",
     "@pdf-lib/fontkit": "^1.1.1",
     "@supabase/supabase-js": "^2.117.2",
     "mammoth": "^1.13.0",

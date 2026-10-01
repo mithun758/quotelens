@@ -42,7 +42,7 @@ export async function extractDocument(args: {
           content: [args.document.block, { type: "text", text: extractionUserPrompt(args.supplierName, args.fileName) + retryNote }],
         },
       ],
-    });
+    }, { timeout: 150_000, maxRetries: 1 });
 
     const usage: Usage = {
       input_tokens: response.usage.input_tokens,

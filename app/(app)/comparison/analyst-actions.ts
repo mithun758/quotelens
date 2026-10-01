@@ -5,6 +5,8 @@ import { basisNotes } from "@/lib/ai/basis";
 import { hasValidSession } from "@/lib/auth/gate";
 import { asOfDate, formatDisplayDate } from "@/lib/config";
 import { db } from "@/lib/db/client";
+import { friendlyError } from "@/lib/errors";
+import { enforceRateLimit } from "@/lib/ratelimit";
 import { recordAuditEvent } from "@/lib/db/queries";
 import { markdownToBlocks, type Block } from "@/lib/export/document";
 import { documentToPdf } from "@/lib/export/pdf";
@@ -28,6 +30,7 @@ export async function askAnalystAction(question: string, history: AnalystTurn[])
   const started = Date.now();
   try {
     const client = db();
+    await enforceRateLimit(client, "analyst");
     const r = await askAnalyst(client, question.trim(), history.slice(-12));
     await recordAuditEvent({ actor: "priya", action: "ask_analyst", target: "analyst", after: { question, tools: r.toolRuns.map((t) => t.name), warnings: r.warnings.length } }, client);
     return {
@@ -44,7 +47,7 @@ export async function askAnalystAction(question: string, history: AnalystTurn[])
       },
     };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "The analyst could not answer." };
+    return { ok: false, error: friendlyError(error, "The analyst") };
   }
 }
 
@@ -81,6 +84,6 @@ export async function exportAnswerAction(req: ExportRequest): Promise<{ ok: true
       mime: req.format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Export failed" };
+    return { ok: false, error: friendlyError(error, "The export") };
   }
 }

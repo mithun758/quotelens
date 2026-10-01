@@ -33,7 +33,7 @@ export async function writeAwardMemo(client: Db, facts: MemoFacts): Promise<Memo
     output_config: { effort: "medium" },
     system: SYSTEM,
     messages: [{ role: "user", content: `Facts:\n${JSON.stringify(facts, null, 1)}` }],
-  });
+  }, { timeout: 60_000, maxRetries: 1 });
   const usage: Usage = {
     input_tokens: response.usage.input_tokens,
     output_tokens: response.usage.output_tokens,

@@ -62,31 +62,24 @@ export async function runSeed(client: Db): Promise<void> {
   check(benchmarkResult.error, "benchmark_series");
   check(fxResult.error, "fx_rate");
 
+  // Two batched inserts: all responses, then all their documents.
   const supplierIds = new Map(supplierResult.data!.map((s) => [s.code, s.id]));
-  for (const response of SUPPLIER_RESPONSES) {
-    const supplierId = supplierIds.get(response.supplier_code);
-    if (!supplierId) throw new Error(`seed response: unknown supplier ${response.supplier_code}`);
-
-    const { data: row, error } = await client
-      .from("response")
-      .insert({
-        rfx_id: rfx!.id,
-        supplier_id: supplierId,
-        received_at: response.received_at,
-        channel: response.channel,
-        body_text: response.body_text,
-      })
-      .select("id")
-      .single();
-    check(error, `response ${response.supplier_code}`);
-
-    const documents: Insert<"document">[] = response.documents.map((d) => ({
-      response_id: row!.id,
+  const responseRows: Insert<"response">[] = SUPPLIER_RESPONSES.map((r) => {
+    const supplierId = supplierIds.get(r.supplier_code);
+    if (!supplierId) throw new Error(`seed response: unknown supplier ${r.supplier_code}`);
+    return { rfx_id: rfx!.id, supplier_id: supplierId, received_at: r.received_at, channel: r.channel, body_text: r.body_text };
+  });
+  const { data: responses, error: responseError } = await client.from("response").insert(responseRows).select("id, supplier_id");
+  check(responseError, "responses");
+  const responseFor = new Map(responses!.map((r) => [r.supplier_id, r.id]));
+  const documents: Insert<"document">[] = SUPPLIER_RESPONSES.flatMap((r) =>
+    r.documents.map((d) => ({
+      response_id: responseFor.get(supplierIds.get(r.supplier_code)!)!,
       file_name: d.file_name,
       mime_type: d.mime_type,
       storage_path: d.storage_path,
       page_count: d.page_count,
-    }));
-    check((await client.from("document").insert(documents)).error, `documents ${response.supplier_code}`);
-  }
+    })),
+  );
+  check((await client.from("document").insert(documents)).error, "documents");
 }

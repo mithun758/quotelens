@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { PASSCODE_COOKIE, isValidSessionToken } from "@/lib/auth/passcode";
 import { db } from "@/lib/db/client";
 import { recordAuditEvent } from "@/lib/db/queries";
+import { friendlyError } from "@/lib/errors";
 import { runSeed } from "@/seed/runSeed";
 
 export type ResetDemoResult = { ok: true } | { ok: false; error: string };
@@ -24,7 +25,7 @@ export async function resetDemo(): Promise<ResetDemoResult> {
       client,
     );
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Reset failed" };
+    return { ok: false, error: friendlyError(error, "Reset") };
   }
 
   revalidatePath("/", "layout");

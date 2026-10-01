@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { hasValidSession } from "@/lib/auth/gate";
 import { db } from "@/lib/db/client";
+import { friendlyError } from "@/lib/errors";
+import { enforceRateLimit } from "@/lib/ratelimit";
 import { acceptItem, correctValue, draftQuestion, receiveReply, sendClarification } from "@/lib/review/decisions";
 
 export type ActionResult<T = undefined> = { ok: true; data?: T } | { ok: false; error: string };
@@ -15,7 +17,7 @@ async function guarded<T>(fn: () => Promise<T>, { changesData = true } = {}): Pr
     if (changesData) revalidatePath("/", "layout");
     return { ok: true, data };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Something went wrong" };
+    return { ok: false, error: friendlyError(error) };
   }
 }
 
@@ -29,7 +31,10 @@ export async function correctAction(supplier: string, key: string, valueInr: num
 
 export async function draftAction(supplier: string, keys: string[]) {
   // Drafting changes nothing, so no refresh: the draft is ready to send immediately.
-  return guarded(() => draftQuestion(db(), supplier, keys), { changesData: false });
+  return guarded(async () => {
+    await enforceRateLimit(db(), "clarification");
+    return draftQuestion(db(), supplier, keys);
+  }, { changesData: false });
 }
 
 export async function sendAction(supplier: string, keys: string[], subject: string, body: string) {
@@ -37,5 +42,9 @@ export async function sendAction(supplier: string, keys: string[], subject: stri
 }
 
 export async function receiveReplyAction(supplier: string) {
-  return guarded(() => receiveReply(db(), supplier));
+  return guarded(async () => {
+    await enforceRateLimit(db(), "extraction");
+    return receiveReply(db(), supplier);
+  });
 }
+
