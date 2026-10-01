@@ -259,7 +259,7 @@ export default async function EvalPage() {
                   <td className="px-3 py-2 whitespace-nowrap">
                     <span className="text-slate">{s.code}</span> {s.name}
                   </td>
-                  <td className="px-3 py-2 text-slate">{STATUS[s.status] ?? s.status}</td>
+                  <td className="px-3 py-2 text-slate">{(s.status && STATUS[s.status]) ?? s.status ?? "No response"}</td>
                   <td className="px-3 py-2">
                     <Bar value={s.valueAccuracy} />
                   </td>
